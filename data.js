@@ -59,7 +59,7 @@ window.GameData = {
         'ENEL_S3': { type: 'raigo', cd: 45000, telegraph: 500, castTime: 4000, tickInterval: 400, tickDamage: 40, width: 270, offset: 320, effect: 'raigo' }
     },
     Map: {
-        WORLD_WIDTH: 32000, WORLD_HEIGHT: 3000, GROUND_Y: 2000, VIEW_SCALE: 0.5,
+        WORLD_WIDTH: 34000, WORLD_HEIGHT: 3000, GROUND_Y: 2000, VIEW_SCALE: 0.5,
         POIs: { BLUE_SHOP_X: 11800, RED_SHOP_X: 20200, BLUE_NEXUS_X: 12250, RED_NEXUS_X: 19750, BLUE_SMITH_X: 11430, RED_SMITH_X: 20570, BLUE_STORAGE_X: 11100, RED_STORAGE_X: 20900 },
         BUSHES: [ { x: 14600, y: 1350, w: 2800, h: 150 } ],
         Platforms: [
