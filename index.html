@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>얼굴 난투</title>
+
+    <!-- ★ 2-B 수정: alert 제거. alert 은 메인 스레드를 완전히 정지시킨다. -->
+    <script>
+        window.onerror = function (msg, url, line, col, err) {
+            console.error('[HTML ERR]', msg, url + ':' + line, err);
+            return false;
+        };
+    </script>
+
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background-color: #0b0c10; display: flex; align-items: center; justify-content: center; height: 100vh; width: 100vw; color: white; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+        #gameCanvas { width: 100vw; height: 100vh; object-fit: cover; display: none; touch-action: none; }
+        .screen-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0b0c10; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; overflow: hidden; touch-action: none; }
+        .screen-container h1 { color: #3498db; font-size: 40px; margin: 0 0 10px 0; }
+        .screen-container p { color: #ccc; font-size: 16px; margin: 0 0 15px 0; }
+        input[type="text"] { font-size: 18px; padding: 12px; border-radius: 10px; border: 3px solid #3498db; background: #1a1e29; color: white; text-align: center; font-weight: bold; width: 280px; margin-bottom: 15px; outline: none; max-width: 90vw; }
+        .btn-main { background: #3498db; color: white; font-size: 20px; font-weight: bold; padding: 12px 30px; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4); max-width: 90vw; touch-action: manipulation; }
+        .btn-main:active { transform: scale(0.95); background: #2980b9; }
+        .lobby-panel { width: 800px; max-width: 95vw; max-height: 95vh; background: #1f2833; border: 3px solid #f1c40f; border-radius: 20px; padding: 15px 20px; display: flex; flex-direction: column; }
+        .lobby-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; margin-bottom: 10px; flex-shrink: 0; }
+        .lobby-header h2 { margin: 0; color: #f1c40f; font-size: 22px; }
+        .player-count { background: #333; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; color: #fff; border: 2px solid #555; }
+        .player-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; width: 100%; flex: 1; min-height: 0; }
+        .player-card { background: #2c3e50; border-radius: 12px; padding: 8px 5px; text-align: center; position: relative; border: 4px solid transparent; transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; height: 100%; min-height: 115px; }
+        .player-card.empty { border: 4px dashed #555; background: transparent; color: #555; font-weight: bold; font-size: 16px; justify-content: center; }
+        .player-card.team-blue { border-color: #3498db; background: rgba(52, 152, 219, 0.15); box-shadow: 0 0 10px rgba(52, 152, 219, 0.3); }
+        .player-card.team-red { border-color: #e74c3c; background: rgba(231, 76, 60, 0.15); box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 3px solid #fff; flex-shrink: 0; }
+        .team-blue .avatar { background: #3498db; }
+        .team-red .avatar { background: #e74c3c; }
+        .card-name { font-size: 15px; font-weight: bold; margin: 0 0 5px 0; color: #fff; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+        .btn-switch { margin-top: auto; background: #f1c40f; border: none; padding: 6px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 95%; font-size: 12px; color: #000; flex-shrink: 0; touch-action: manipulation; }
+        .btn-switch:active { background: #d4ac0d; }
+        .lobby-footer { margin-top: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; width: 100%; }
+        #btn-start-battle { display: none; width: 100%; padding: 12px; font-size: 18px; background: #e74c3c; touch-action: manipulation; }
+        @media (max-width: 600px) {
+            .player-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
+            .lobby-panel { padding: 10px 15px; }
+            .lobby-header h2 { font-size: 18px; }
+            .player-card { min-height: 95px; padding: 6px 5px; }
+            .avatar { width: 35px; height: 35px; font-size: 18px; margin-bottom: 4px; border-width: 2px; }
+            .card-name { font-size: 13px; margin: 0 0 4px 0; }
+            .btn-switch { font-size: 11px; padding: 4px; }
+            #btn-start-battle { padding: 10px; font-size: 16px; }
+        }
+        .mobile-controls { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; touch-action: none; }
+        .controls-left { position: absolute; bottom: 25px; left: 50px; pointer-events: auto; }
+        /* 🚀 [렉 수정①] backdrop-filter: blur(4px) 제거.
+           조이스틱은 매 프레임 갱신되는 게임 캔버스 위에 항상 떠 있다.
+           backdrop-filter 는 그 아래 캔버스를 매 프레임 다시 읽어 블러를 계산하므로
+           모바일에서 프레임당 수십~수백 ms 의 정지를 유발한다.
+           특히 점프로 배경이 크게 스크롤될 때 블러 캐시가 매번 무효화되어
+           '점프 연타 시 렉이 심해지는' 증상으로 나타났다.
+           반투명 배경(rgba)은 그대로라 겉모습 차이는 거의 없다. */
+        .joystick-container { width: 140px; height: 140px; background: rgba(0, 0, 0, 0.4); border: 6px solid rgba(255, 255, 255, 0.4); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; }
+        .joystick-knob { width: 60px; height: 60px; border-radius: 50%; position: absolute; background: linear-gradient(135deg, #5fb4ff, #0073e6); }
+        .controls-right-action { position: absolute; bottom: 0; right: 0; width: 350px; height: 350px; pointer-events: auto; }
+        .btn { background: rgba(30, 30, 40, 0.9); color: #fff; border: 4px solid #555; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%; position: absolute; cursor: pointer; touch-action: none; text-align: center;}
+        .action-attack { bottom: 20px; right: 20px; width: 100px; height: 100px; font-size: 24px; background: rgba(231, 76, 60, 0.85); border-color: #ff7675; line-height: 1.1; }
+        .action-jump { bottom: 140px; right: 20px; width: 80px; height: 80px; background: rgba(241, 196, 15, 0.85); border-color: #f39c12; font-size: 18px; }
+        /* 🎛️ [배치 수정] 스킬 버튼 — 아래에서부터 1 · 2 · 3 · 4 번.
+           1번과 4번의 자리는 그대로 두고, 2·3번을 곡선 위에 균등하게 다시 놓았다.
+             (기존) 1-2 110.7px · 2-3 83.5px · 3-4 71.3px  ← 2번이 3번 쪽에 붙어 있었다
+             (수정) 1-2  88.0px · 2-3 87.8px · 3-4 86.9px  ← 간격이 거의 같아진다
+           · skill2 : right 120→128 · bottom 110→89
+           · skill3 : right  76→ 83 · bottom 180→163 */
+        .action-skill1 { bottom: 5px; right: 155px; width: 75px; height: 75px; background: rgba(52, 152, 219, 0.85); border-color: #2980b9; font-size: 14px; }
+        .action-skill2 { bottom: 89px; right: 128px; width: 75px; height: 75px; background: rgba(46, 204, 113, 0.85); border-color: #27ae60; font-size: 14px; }
+        .action-skill3 { bottom: 163px; right: 83px; width: 80px; height: 80px; background: rgba(155, 89, 182, 0.85); border-color: #8e44ad; font-size: 16px; }
+        /* 🗡️ 4번 스킬 — '세계를 가르는 참격' / '유명이경 역월' 장착 시에만 표시된다 */
+        .action-skill4 { bottom: 219px; right: 17px; width: 76px; height: 76px; background: rgba(10, 10, 14, 0.92); border-color: #e8e8f0; font-size: 13px; line-height: 1.05; color: #f5f5ff; display: none; }
+        .cd-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: white; }
+        .top-ui { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 8px; border: 2px solid #555; display: none; }
+        #goldUI { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.7); border: 2px solid #f1c40f; color: #f1c40f; font-weight: bold; font-size: 22px; padding: 10px 20px; border-radius: 10px; z-index: 20; display: none; }
+        /* 🎁 [배치 수정] 전리품 · 퀘스트 보상 문구
+           전장 인원 박스와 골드 박스 사이, 화면 위쪽에 가로로 긴 직사각형으로 띄운다.
+           (골드 UI 아래를 가리던 기존 위치에서 옮겼다) */
+        #goldenToast { position: fixed; top: 12px; left: 36%; width: 47%; background: rgba(46, 204, 113, 0.95); border: 3px solid #27ae60; color: #fff; font-weight: bold; font-size: 18px; padding: 10px 16px; border-radius: 10px; z-index: 1000; display: none; pointer-events: none; box-shadow: 0 5px 18px rgba(0,0,0,0.5); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .action-open-btn { position: absolute; bottom: 220px; left: 80px; width: 80px; height: 80px; background: rgba(241, 196, 15, 0.9); border: 4px solid #f39c12; border-radius: 50%; font-size: 22px; font-weight: bold; color: #000; text-shadow: 0 1px 2px rgba(255,255,255,0.5); display: none; align-items: center; justify-content: center; text-align: center; z-index: 15; pointer-events: auto; touch-action: manipulation; cursor: pointer; }
+        .game-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(26, 30, 41, 0.95); border: 4px solid #3498db; border-radius: 15px; width: 750px; max-width: 95vw; height: 80vh; max-height: 600px; z-index: 100; display: none; flex-direction: row; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        #chestModal { border-color: #8e44ad; width: 600px; } 
+        #smithModal { border-color: #e67e22; width: 600px; }
+        #storageModal { border-color: #2ecc71; width: 900px; flex-direction: column; } 
+        #testStorageModal { border-color: #e84393; width: 600px; } /* 🛠️ 테스트 창고 모달 스타일 */
+        .shop-sidebar { width: 150px; background: #12151c; border-right: 2px solid #3498db; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+        .shop-tab { padding: 15px 10px; text-align: center; color: #aaa; font-weight: bold; cursor: pointer; border-bottom: 1px solid #2a3143; transition: 0.2s; font-size: 16px; touch-action: manipulation; }
+        .shop-tab.active { background: #3498db; color: #fff; }
+        .shop-content { flex: 1; display: flex; flex-direction: column; padding: 20px; height: 100%; overflow: hidden; }
+        .shop-header { flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #555; padding-bottom: 10px; }
+        .shop-header h2 { margin: 0; color: #f1c40f; font-size: 26px; }
+        .shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; flex: 1 1 auto; overflow-y: auto; align-content: start; padding-right: 10px; margin-bottom: 15px; }
+        .split-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; }
+        .split-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; overflow-y: auto; flex: 1; align-content: start; }
+        .shop-item-box { background: #2c3e50; padding: 15px; border-radius: 10px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; min-height: 165px; transition: 0.2s; }
+        .shop-item-box h3 { margin: 0 0 5px 0; font-size: 18px; color: #fff; }
+        .shop-item-box p { font-size: 13px; margin: 0 0 15px 0; color: #bdc3c7; line-height: 1.3; }
+        .btn-close-shop { flex: 0 0 auto; background: #7f8c8d; padding: 12px; font-size: 18px; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; width: 100%; touch-action: manipulation;}
+        @media (max-width: 600px) {
+            .game-modal { flex-direction: column; height: 85vh; }
+            .shop-sidebar { width: 100%; flex-direction: row; border-right: none; border-bottom: 2px solid #3498db; flex-shrink: 0; }
+            .shop-tab { flex: 1; padding: 12px 5px; font-size: 14px; white-space: nowrap; }
+            .shop-content { padding: 15px; }
+            .shop-grid { grid-template-columns: repeat(2, 1fr); } 
+            #storageModal .shop-content { flex-direction: column !important; overflow-y: auto; }
+            .split-panel { min-height: 250px; flex: none; margin-bottom: 10px; }
+        }
+        #customAlert { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(231, 76, 60, 0.95); color: white; border: 3px solid #c0392b; font-size: 22px; font-weight: bold; padding: 15px 40px; border-radius: 12px; z-index: 1000; display: none; pointer-events: none; }
+        #forceStartOverlay, #gameOverOverlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999999; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        #forceStartOverlay { background: rgba(11, 12, 16, 0.98); }
+        #gameOverOverlay { background: rgba(40, 40, 40, 0.92); backdrop-filter: grayscale(100%); z-index: 99999999;}
+        #death-screen { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(80, 80, 80, 0.85); z-index: 999999; justify-content: center; align-items: center; flex-direction: column; color: white; font-family: 'Segoe UI', sans-serif; }
+        #death-screen h1 { font-size: 50px; margin-bottom: 10px; text-shadow: 2px 2px 5px black; color: #fff; }
+        #death-screen p { font-size: 20px; color: #ccc; margin: 0; }
+        #respawn-timer { font-size: 100px; font-weight: bold; color: #ff4d4d; margin-top: 20px; text-shadow: 2px 2px 10px black; }
+
+        /* 📶 핑 표시 — 전장 인원 바로 옆 */
+        #pingDisplay { display: inline-block; vertical-align: middle; margin-left: 12px; font-size: 13px; font-weight: bold; color: #2ecc71; letter-spacing: 0.5px; }
+
+        /* ====================================================================
+           📜 퀘스트 배너 — 전장 인원 바로 밑에 작게 표시
+        ==================================================================== */
+        #questBanner {
+            position: absolute; top: 62px; left: 10px; z-index: 6;
+            background: rgba(0, 0, 0, 0.62);
+            border: 2px solid #f1c40f; border-radius: 8px;
+            color: #ffe680; font-weight: bold; font-size: 13px;
+            padding: 6px 12px; display: none; pointer-events: none;
+            max-width: 60vw; letter-spacing: 0.3px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+        }
+
+        /* ====================================================================
+           🎁 보상 획득 표시 — 화면 위쪽 가로로 긴 직사각형
+           (전장 인원 박스와 골드 박스 사이. 전리품 토스트와 같은 자리)
+        ==================================================================== */
+        #npcRewardBox {
+            position: fixed; top: 12px; left: 36%; width: 47%; z-index: 1001;
+            background: rgba(20, 22, 30, 0.92);
+            border: 3px solid #f1c40f; border-radius: 10px;
+            padding: 8px 14px; display: none; pointer-events: none;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+
+        /* ====================================================================
+           🗣️ NPC 대화창 — 반투명한 짙은 회색
+        ==================================================================== */
+        #npcDialogModal {
+            position: fixed; left: 50%; bottom: 6vh; transform: translateX(-50%);
+            width: 860px; max-width: 94vw;
+            background: rgba(48, 50, 56, 0.82);
+            border: 4px solid rgba(200, 205, 215, 0.55);
+            border-radius: 16px;
+            z-index: 500; display: none; flex-direction: column;
+            padding: 16px 20px 14px 20px;
+            box-shadow: 0 10px 34px rgba(0,0,0,0.7);
+            backdrop-filter: blur(3px);
+        }
+        #npcDialogName {
+            font-size: 20px; font-weight: bold; color: #ffd95e;
+            margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            flex: 0 0 auto;
+        }
+        #npcDialogText {
+            flex: 1 1 auto;
+            min-height: 92px;
+            font-size: 21px; font-weight: bold; color: #ffffff;
+            line-height: 1.45; text-align: left;
+            white-space: pre-wrap; word-break: break-word;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.95);
+            margin-bottom: 14px;
+        }
+        .npc-btn-row { display: flex; gap: 14px; flex: 0 0 auto; }
+        .npc-btn {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            padding: 13px 10px; border: none; border-radius: 10px;
+            font-size: 19px; font-weight: bold; color: #fff;
+            cursor: pointer; touch-action: manipulation;
+            opacity: 0.35; pointer-events: none;
+            transition: box-shadow 0.2s, opacity 0.2s, transform 0.1s;
+        }
+        .npc-btn:active { transform: scale(0.96); }
+        #npcBtnAgree { background: #27ae60; }
+        #npcBtnExit  { background: #c0392b; }
+        /* ✨ 대사가 다 끝나면 버튼이 빛난다 */
+        #npcBtnAgree.npc-btn-ready {
+            box-shadow: 0 0 20px 5px rgba(46, 204, 113, 0.95);
+            animation: npcGlowGreen 1s ease-in-out infinite;
+        }
+        #npcBtnExit.npc-btn-ready {
+            box-shadow: 0 0 20px 5px rgba(231, 76, 60, 0.95);
+            animation: npcGlowRed 1s ease-in-out infinite;
+        }
+        @keyframes npcGlowGreen {
+            0%, 100% { box-shadow: 0 0 12px 3px rgba(46, 204, 113, 0.7); }
+            50%      { box-shadow: 0 0 26px 8px rgba(46, 204, 113, 1); }
+        }
+        @keyframes npcGlowRed {
+            0%, 100% { box-shadow: 0 0 12px 3px rgba(231, 76, 60, 0.7); }
+            50%      { box-shadow: 0 0 26px 8px rgba(231, 76, 60, 1); }
+        }
+        @media (max-width: 600px) {
+            #npcDialogModal { bottom: 4vh; padding: 12px 14px 11px 14px; }
+            #npcDialogName { font-size: 16px; margin-bottom: 5px; }
+            #npcDialogText { font-size: 16px; min-height: 68px; margin-bottom: 10px; }
+            .npc-btn { font-size: 15px; padding: 10px 6px; }
+            #npcRewardBox { top: 8px; left: 33%; width: 50%; padding: 6px 10px; }
+            #goldenToast { top: 8px; left: 33%; width: 50%; font-size: 14px; padding: 7px 10px; }
+            #questBanner { font-size: 11px; top: 56px; padding: 5px 9px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="reconnectCheckScreen" class="screen-container">
+        <h1>얼굴 난투</h1>
+        <p style="color:#f1c40f;">서버에 연결 중...</p>
+    </div>
+
+    <div id="nicknameScreen" class="screen-container" style="display: none;">
+        <h1>얼굴 난투</h1>
+        <p>전장에 참가할 캐릭터와 닉네임을 선택하세요.</p>
+        
+        <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center;">
+            <label style="cursor: pointer; font-size: 20px; font-weight: bold; color: #fff;">
+                <input type="radio" name="charSelect" value="PARK" checked style="transform: scale(1.5); margin-right: 10px;"> 박인범
+            </label>
+            <label style="cursor: pointer; font-size: 20px; font-weight: bold; color: #f1c40f;">
+                <input type="radio" name="charSelect" value="BORSALINO" style="transform: scale(1.5); margin-right: 10px;"> 볼사리노
+            </label>
+            <label style="cursor: pointer; font-size: 20px; font-weight: bold; color: #3498db;">
+                <input type="radio" name="charSelect" value="KUZAN" style="transform: scale(1.5); margin-right: 10px;"> 쿠잔
+            </label>
+            <label style="cursor: pointer; font-size: 20px; font-weight: bold; color: #e74c3c;">
+                <input type="radio" name="charSelect" value="SAKAZUKI" style="transform: scale(1.5); margin-right: 10px;"> 사카즈키
+            </label>
+            <label style="cursor: pointer; font-size: 20px; font-weight: bold; color: #00bfff;">
+                <input type="radio" name="charSelect" value="ENEL" style="transform: scale(1.5); margin-right: 10px;"> 에넬
+            </label>
+            <!-- ⚡ 카시모 하지메 -->
+            <label style="cursor: pointer; font-size: 20px; font-weight: bold; color: #a855f7;">
+                <input type="radio" name="charSelect" value="KASHIMO" style="transform: scale(1.5); margin-right: 10px;"> 카시모 하지메
+            </label>
+            <!-- ⬛ 다부라 카라바 -->
+            <label style="cursor: pointer; font-size: 20px; font-weight: bold; color: #cbd5e1; text-shadow: 0 0 8px rgba(255,255,255,0.4);">
+                <input type="radio" name="charSelect" value="DABURA" style="transform: scale(1.5); margin-right: 10px;"> 다부라 카라바
+            </label>
+            <!-- ⚔️ 다이도 하가네 -->
+            <label style="cursor: pointer; font-size: 20px; font-weight: bold; color: #9fd8ff; text-shadow: 0 0 8px rgba(120,190,255,0.5);">
+                <input type="radio" name="charSelect" value="DAIDO" style="transform: scale(1.5); margin-right: 10px;"> 다이도 하가네
+            </label>
+            <!-- 🕊️ 쿠루스 하나 -->
+            <label style="cursor: pointer; font-size: 20px; font-weight: bold; color: #ffe27a; text-shadow: 0 0 8px rgba(255,210,60,0.55);">
+                <input type="radio" name="charSelect" value="KURUSU" style="transform: scale(1.5); margin-right: 10px;"> 쿠루스 하나
+            </label>
+        </div>
+
+        <input type="text" id="nicknameInput" maxlength="8" placeholder="이름 (최대 8자)" autocomplete="off">
+        <button class="btn-main" id="btn-confirm-name">대기실 입장</button>
+    </div>
+
+    <div id="lobbyScreen" class="screen-container" style="display: none;">
+        <div class="lobby-panel">
+            <div class="lobby-header"><h2>전장 대기실</h2><div class="player-count"><span id="pCountText">0</span> / 6명</div></div>
+            <div class="player-grid" id="playerGrid"></div>
+            <div class="lobby-footer">
+                <button class="btn-main btn-red" id="btn-start-battle">전투 시작 (방장 권한)</button>
+                <p id="waitMessage" style="color: #f1c40f; font-weight: bold; font-size: 16px; margin: 5px 0 0 0;">방장이 대전을 시작하기를 기다리는 중...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="forceStartOverlay">
+        <h1 style="color: #e74c3c; font-size: 40px; margin-bottom: 10px;">전투 임박!</h1>
+        <p style="color: #f1c40f; font-size: 16px; margin-bottom: 30px; text-align: center;">전체 화면 및 가로 모드 고정을 위해<br>아래 버튼을 터치해 주세요.</p>
+        <button class="btn-main btn-red" id="btn-enter-battlefield" style="padding: 20px; font-size: 24px; width: 80%; max-width: 400px;">전장 입장</button>
+    </div>
+
+    <div id="gameOverOverlay">
+        <h1 id="gameOverText" style="font-size: 55px; margin-bottom: 25px; text-shadow: 0 5px 15px rgba(0,0,0,0.8); font-weight: bold;"></h1>
+        <button class="btn-main" onclick="location.reload()" style="padding: 15px 35px; font-size: 22px; background: #34495e;">화면으로 돌아가기</button>
+    </div>
+
+    <div id="customAlert">알림 메시지</div>
+    <div id="goldenToast">황금 획득!</div>
+
+    <!-- 🎁 보상 획득 표시 (오른쪽 위) -->
+    <div id="npcRewardBox"></div>
+
+    <!-- 🗣️ NPC 대화창 (반투명 짙은 회색) -->
+    <div id="npcDialogModal">
+        <div id="npcDialogName">티치</div>
+        <div id="npcDialogText"></div>
+        <div class="npc-btn-row">
+            <button class="npc-btn" id="npcBtnAgree" onclick="window.npcAgree()">동의합니다</button>
+            <button class="npc-btn" id="npcBtnExit" onclick="window.npcExit()">나가기</button>
+        </div>
+    </div>
+
+    <div id="shopModal" class="game-modal">
+        <div class="shop-sidebar">
+            <div class="shop-tab active" id="tab-all" onclick="window.filterShop('all')">전체 아이템</div>
+            <div class="shop-tab" id="tab-attack" onclick="window.filterShop('attack')">공격 아이템</div>
+            <div class="shop-tab" id="tab-health" onclick="window.filterShop('health')">체력 아이템</div>
+            <div class="shop-tab" id="tab-util" onclick="window.filterShop('util')">기타 (이동)</div>
+        </div>
+        <div class="shop-content">
+            <div class="shop-header"><h2>기지 상점</h2><div style="color: #f1c40f; font-weight: bold; font-size: 18px;">내 골드: <span id="shopGoldDisplay">0</span> G</div></div>
+            <div class="shop-grid" id="shopGrid"></div>
+            <button class="btn-close-shop" onclick="window.closeShop()">상점 닫기</button>
+        </div>
+    </div>
+
+    <div id="storageModal" class="game-modal">
+        <div class="shop-content" style="flex-direction: row; gap: 15px; padding: 15px; flex: 1 1 auto;">
+            <div class="split-panel">
+                <div class="shop-header" style="margin-bottom:10px; padding-bottom:5px;">
+                    <h2 style="font-size: 20px;">내 장비</h2>
+                    <div style="color: #f1c40f; font-size: 12px; text-align: right;">아이템(10), 유물(3) 장착 한도</div>
+                </div>
+                <div class="split-grid" id="personalGrid"></div>
+            </div>
+            <div class="split-panel">
+                <div class="shop-header" style="margin-bottom:10px; padding-bottom:5px;">
+                    <h2 style="color:#2ecc71; font-size: 20px;">팀 보관함</h2>
+                    <div style="color: #ccc; font-size: 12px; text-align: right;">팀원들과 공유하는 금고</div>
+                </div>
+                <div class="split-grid" id="teamGrid"></div>
+            </div>
+        </div>
+        <button class="btn-close-shop" style="background:#27ae60; margin: 0 15px 15px 15px; width: calc(100% - 30px); flex: 0 0 auto;" onclick="window.closeStorage()">닫기</button>
+    </div>
+
+    <div id="chestModal" class="game-modal">
+        <div class="shop-content">
+            <div class="shop-header"><h2 style="color: #9b59b6;">유물 상자</h2><div style="color: #f1c40f; font-weight: bold; font-size: 18px;">획득 시 내 장비로 이동</div></div>
+            <div class="shop-grid" id="chestGrid"></div>
+            <button class="btn-close-shop" style="background:#8e44ad;" onclick="window.closeChest()">닫기</button>
+        </div>
+    </div>
+
+    <div id="smithModal" class="game-modal">
+        <div class="shop-content">
+            <div class="shop-header"><h2 style="color: #e67e22;">대장간</h2><div style="color: #f1c40f; font-weight: bold; font-size: 18px;">아이템 합성소</div></div>
+            <div class="shop-grid" id="smithGrid"></div>
+            <button class="btn-close-shop" style="background:#d35400;" onclick="window.closeSmith()">닫기</button>
+        </div>
+    </div>
+
+    <!-- 🛠️ 테스트 창고 모달 UI -->
+    <div id="testStorageModal" class="game-modal">
+        <div class="shop-content">
+            <div class="shop-header"><h2 style="color: #e84393;">테스트 창고</h2><div style="color: #f1c40f; font-weight: bold; font-size: 18px;">모든 아이템 무한 획득 가능</div></div>
+            <div class="shop-grid" id="testStorageGrid"></div>
+            <button class="btn-close-shop" style="background:#d63031;" onclick="window.closeTestStorage()">닫기</button>
+        </div>
+    </div>
+
+    <!-- 📶 전장 인원 옆에 핑 수치를 작게 표시한다 -->
+    <div class="top-ui" id="topUI"><h3 style="margin:0; color:#fff; display:inline-block; vertical-align:middle;" id="playerCount">전장 인원: 0명</h3><span id="pingDisplay">📶 --ms</span></div>
+    <!-- 📜 퀘스트 배너 (전장 인원 바로 밑) -->
+    <div id="questBanner"></div>
+    <div id="goldUI">💰 <span id="myGold">0</span> G</div>
+    
+    <div id="death-screen">
+        <h1>사망했습니다!</h1>
+        <p>기지에서 부활할 때까지 대기하세요.</p>
+        <div id="respawn-timer">15</div>
+    </div>
+
+    <div id="damage-vignette" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; box-shadow: inset 0 0 0px 0px rgba(231, 76, 60, 0); z-index: 99998;"></div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="mobile-controls" id="mobileControls">
+        <div id="unifiedActionBtn" class="action-open-btn">열기</div>
+        <div class="controls-left"><div class="joystick-container" id="joystickZone"><div class="joystick-knob" id="knob"></div></div></div>
+        <div class="controls-right-action">
+            <div class="btn action-jump" id="btn-jump">점프</div>
+            <div class="btn action-attack" id="btn-attack">공격</div>
+            <div class="btn action-skill1" id="btn-skill1">멀리뛰기<div class="cd-overlay"></div></div>
+            <div class="btn action-skill2" id="btn-skill2">50m<div class="cd-overlay"></div></div>
+            <div class="btn action-skill3" id="btn-skill3">디트로이트<div class="cd-overlay"></div></div>
+            <!-- 🗡️ [세계를 가르는 참격] — 아이템 장착 시에만 보인다 -->
+            <div class="btn action-skill4" id="btn-skill4">세계를<br>가르는<br>참격<div class="cd-overlay"></div></div>
+        </div>
+    </div>
+
+    <!-- ★ 캐시 갱신: v=100000012 → v=100000013
+         · 📷 바닥에서 점프 시 카메라가 돌발판과 동일하게 1:1 로 따라오도록 수정
+         · 🚀 점프 연타 시 렉 수정
+              - 조이스틱 backdrop-filter 제거 (index.html)
+              - FX 풀의 delete 제거 (core/gameState.js)
+              - 캔버스 alpha:false (core/main.js)
+         · 🔯 신규 신화 아이템 [법진] (새로운 생명 + 황금 10개)
+              - 적 처치 1회당 최대체력+20 / 초당회복+2 / 방어력+0.2% (최대 50회)
+         · ⚔️ 신규 전설 아이템 [퇴마의 검] (황금 15개)
+              - 몬스터에게 주는 모든 피해 +30%
+         · ⬛ 신규 캐릭터 [다부라 카라바] 추가
+           - 1번 [빛]           : 위로 솟구친 뒤 아래로 2초 연속폭발 (0.4초당 50 · 경직)
+           - 2번 [어둠]         : 어둠 구체 + 칼바람 소용돌이 (3초 흡인 후 300 폭발)
+           - 3번 [아광속 발차기] : 2초 응축 후 5초 활공 (적중 시 500 대폭발)
+         · ⬛ 신규 신화 아이템 [■] (어둠어둠열매 + 번쩍번쩍열매) -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="data.js?v=100000029"></script>
+    <script src="characters.js?v=100000029"></script>
+    <script src="skills.js?v=100000029"></script>
+    <script src="physics.js?v=100000029"></script>
+    <script type="module" src="renderer/renderEngine.js?v=100000029"></script>
+    <!-- 🎒 UI 모듈 — 반드시 아래 순서대로 로드해야 한다
+         uiItems  : 아이템 DB · 상점 · 보관함 · 대장간
+         uiNpc    : NPC 대화창 · 퀘스트 배너 · 보상 표시
+         uiHud    : 알림 · 쿨타임 오버레이 · 열매 배지 · 통합버튼 · 핑
+         uiSkill  : ⚡ 카시모 · ⬛ 다부라 스킬 버튼 상태 -->
+    <script src="ui/uiItems.js?v=100000029"></script>
+    <script src="ui/uiNpc.js?v=100000029"></script>
+    <script src="ui/uiHud.js?v=100000029"></script>
+    <script src="ui/uiSkillButtons.js?v=100000029"></script>
+    <script src="core/gameState.js?v=100000029"></script>
+
+    <!-- 🧩 네트워크 모듈 — netUtils 가 반드시 가장 먼저 로드되어야 한다.
+         이후 net*.js 들이 registerNetModule 로 자신을 등록하고,
+         마지막에 network.js 가 initNetwork 시점에 전부 실행한다. -->
+    <script src="core/netUtils.js?v=100000029"></script>
+    <script src="core/netLobby.js?v=100000029"></script>
+    <script src="core/netPlayer.js?v=100000029"></script>
+    <script src="core/netWorld.js?v=100000029"></script>
+    <script src="core/netBoss.js?v=100000029"></script>
+    <script src="core/netKashimo.js?v=100000029"></script>
+    <script src="core/netDabura.js?v=100000029"></script>
+    <script src="core/netNpc.js?v=100000029"></script>
+    <script src="core/netDomain.js?v=100000029"></script>
+    <script src="core/netSukuna.js?v=100000029"></script>
+    <script src="core/netDaido.js?v=100000029"></script>
+    <script src="core/netKurusu.js?v=100000029"></script>
+    <script src="core/netPing.js?v=100000029"></script>
+    <script src="core/network.js?v=100000029"></script>
+
+    <script src="core/input.js?v=100000029"></script>
+    <script src="core/main.js?v=100000029"></script>
+
+    <!-- ★ 2-C 수정: 게임을 켤 때마다 1.5초 뒤 화면을 멈추던 디버그 alert 블록을 제거하고
+         콘솔 출력으로 대체했습니다. (alert 은 메인 스레드를 완전히 정지시킴) -->
+    <script>
+        setTimeout(function () {
+            var g = window.GameData;
+            console.log('[BOOT]', {
+                GameData: !!g,
+                Map: !!(g && g.Map),
+                ENEL: !!(g && g.Characters && g.Characters.ENEL),
+                KASHIMO: !!(g && g.Characters && g.Characters.KASHIMO),
+                KASHIMO_SPEED: (g && g.Characters && g.Characters.KASHIMO) ? g.Characters.KASHIMO.speedMult : null,
+                // ⬛ 다부라 카라바
+                DABURA: !!(g && g.Characters && g.Characters.DABURA),
+                DABURA_SPEED: (g && g.Characters && g.Characters.DABURA) ? g.Characters.DABURA.speedMult : null,
+                DABURA_S1: !!(g && g.Skills && g.Skills.DABURA_S1),
+                DABURA_S2: !!(g && g.Skills && g.Skills.DABURA_S2),
+                DABURA_S3: !!(g && g.Skills && g.Skills.DABURA_S3),
+                LIGHT_RISE: (g && g.Skills && g.Skills.DABURA_S1) ? g.Skills.DABURA_S1.riseDist : null,
+                LIGHT_TICK: (g && g.Skills && g.Skills.DABURA_S1) ? g.Skills.DABURA_S1.tickDamage : null,
+                DARK_PULL: (g && g.Skills && g.Skills.DABURA_S2) ? g.Skills.DABURA_S2.pull : null,
+                DARK_BLAST: (g && g.Skills && g.Skills.DABURA_S2) ? g.Skills.DABURA_S2.blastDamage : null,
+                KICK_SPEED: (g && g.Skills && g.Skills.DABURA_S3) ? g.Skills.DABURA_S3.speedMult : null,
+                KICK_SQ_SPEED: (g && g.Skills && g.Skills.DABURA_S3) ? g.Skills.DABURA_S3.sqSpeedMult : null,
+                KICK_BLAST: (g && g.Skills && g.Skills.DABURA_S3) ? g.Skills.DABURA_S3.blastDamage : null,
+                // 🏵️🌩️⬛ 신규 아이템 등록 확인
+                ITEM_YEOUI: !!(window.GLOBAL_ITEM_DB && window.GLOBAL_ITEM_DB.yeoui),
+                ITEM_RAIJIN: !!(window.GLOBAL_ITEM_DB && window.GLOBAL_ITEM_DB.raijin),
+                ITEM_SQUARE: !!(window.GLOBAL_ITEM_DB && window.GLOBAL_ITEM_DB.black_square),
+                ITEM_CHERRY_PIE: !!(window.GLOBAL_ITEM_DB && window.GLOBAL_ITEM_DB.cherry_pie),
+                // 🗣️ NPC UI 확인
+                NPC_DIALOG_DOM: !!document.getElementById('npcDialogModal'),
+                QUEST_BANNER_DOM: !!document.getElementById('questBanner'),
+                openNpcDialog: typeof window.openNpcDialog,
+                setQuestText: typeof window.setQuestText,
+                // 🧩 네트워크 모듈 로드 확인
+                NetUtils: typeof window.NetUtils,
+                NET_MODULES: (window.NET_MODULES || []).length,
+                NET_LIST: (window.NET_MODULES || []).map(function (m) { return m.name; }).join(','),
+                renderGameFrame: typeof window.renderGameFrame,
+                initControls: typeof window.initControls,
+                initNetwork: typeof window.initNetwork,
+                updatePlayerPhysics: typeof window.updatePlayerPhysics,
+                applySkillNames: typeof window.applySkillNames,
+                clientWatchdog: typeof window.clientWatchdog,
+                releaseAllLocks: typeof window.releaseAllLocks,
+                refreshKashimoSkillLabel: typeof window.refreshKashimoSkillLabel,
+                refreshDaburaSkillLabel: typeof window.refreshDaburaSkillLabel,
+                updateKashimoSkillDim: typeof window.updateKashimoSkillDim,
+                updateDaburaSkillDim: typeof window.updateDaburaSkillDim
+            });
+        }, 1500);
+    </script>
+</body>
+</html>
