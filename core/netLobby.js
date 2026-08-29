@@ -11,15 +11,34 @@
 
 window.registerNetModule('lobby', function (socket, U) {
 
-    /** 캐릭터 타입 → 한글 이름 */
+    /**
+     * 캐릭터 타입 → 한글 이름
+     *
+     * ⚠️ [중요] 새 캐릭터를 추가하면 반드시 여기에도 넣어야 한다.
+     *    빠지면 대기실에서 전부 '박인범' 으로 보인다.
+     *    (다이도 · 쿠루스 · 마르코 · 키드가 실제로 이 문제를 겪었다)
+     */
+    const CHAR_NAMES = {
+        BORSALINO: '볼사리노',
+        KUZAN: '쿠잔(해군)',
+        KUZAN_P: '쿠잔(해적)',
+        SAKAZUKI: '사카즈키',
+        ENEL: '에넬',
+        KASHIMO: '카시모 하지메',
+        DABURA: '다부라 카라바',
+        DAIDO: '다이도 하가네',
+        KURUSU: '쿠루스 하나',
+        MARCO: '마르코',
+        KID: '유스타스 키드'
+    };
     const charName = (type) => {
-        if (type === 'BORSALINO') return '볼사리노';
-        if (type === 'KUZAN') return '쿠잔';
-        if (type === 'SAKAZUKI') return '사카즈키';
-        if (type === 'ENEL') return '에넬';
-        if (type === 'KASHIMO') return '카시모 하지메';
-        if (type === 'DABURA') return '다부라 카라바';
-        return '박인범';
+        // 먼저 표에서 찾고, 없으면 클라이언트 데이터에서 이름을 꺼내 본다
+        if (CHAR_NAMES[type]) return CHAR_NAMES[type];
+        const g = window.GameData;
+        if (g && g.Characters && g.Characters[type] && g.Characters[type].name) {
+            return g.Characters[type].name;
+        }
+        return type || '쿠잔(해군)';
     };
 
     // ── 🏠 대기실 갱신 ───────────────────────────────────────────────

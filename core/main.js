@@ -264,7 +264,7 @@ document.getElementById('btn-confirm-name').addEventListener('click', () => {
     if(!input) return; 
     window.myNickname = input; 
     let selectedCharEl = document.querySelector('input[name="charSelect"]:checked');
-    let selectedChar = selectedCharEl ? selectedCharEl.value : 'PARK';
+    let selectedChar = selectedCharEl ? selectedCharEl.value : 'BORSALINO';
     document.getElementById('nicknameScreen').style.display = 'none'; 
     document.getElementById('lobbyScreen').style.display = 'flex'; 
     
@@ -280,7 +280,8 @@ document.getElementById('btn-enter-battlefield').addEventListener('click', async
     
     canvas.style.display = 'block'; 
     document.getElementById('mobileControls').style.display = 'block'; 
-    document.getElementById('topUI').style.display = 'block'; 
+    document.getElementById('topUI').style.display = 'block';
+    if (typeof window.showMiniMap === 'function') window.showMiniMap(true);   // 🗺️ 미니맵
     document.getElementById('goldUI').style.display = 'block'; 
     
     window.players = window.pendingServerPlayers; 
@@ -429,6 +430,12 @@ setInterval(() => {
                     window.lastSentSkill3Dir = { x: aimX, y: aimY };
                     socket.emit('skill3Aim', { dirX: aimX, dirY: aimY });
                 }
+            }
+
+            // 🗺️ 미니맵 — 1초에 12번만 다시 그린다 (부담을 줄인다)
+            if (loopNow - (window._mmAt || 0) >= 80) {
+                window._mmAt = loopNow;
+                if (typeof window.drawMiniMap === 'function') window.drawMiniMap();
             }
 
             // ⏱️ 난투 시간 — 전투가 시작된 시각부터 흐른다

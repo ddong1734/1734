@@ -103,20 +103,34 @@ window.initControls = (socket) => {
         return false;
     };
 
+    // ❄️ 쿠잔(해적) : 결빙 · 돌진 중에는 조작이 봉인된다
+    const isKuzanPLocked = () => {
+        const n = Date.now(); const p = window.myPlayer;
+        if (p.kzDashCastEnd && n < p.kzDashCastEnd) return true;
+        if (p.kzDashEnd && n < p.kzDashEnd) return true;
+        return false;
+    };
+
     /** 🛟 모든 조작을 막아야 하는 상태인가 (공통 판정) */
     const isFullyLocked = () => isCrowsPulled() || isFruitLocked() || isSonicCharging()
                              || isSurgeLocked() || isNpcTalking()
                              || isDLight() || isDDark() || isDKickCharging()
                              || isCleaveCasting() || isYumCasting()
-                             || isDaidoLocked() || isMarcoLocked() || isKidLocked();
+                             || isDaidoLocked() || isMarcoLocked() || isKidLocked() || isKuzanPLocked();
 
     zone.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         if (window.myPlayer.isDead) return;
         if (isElThorLocked()) return;
-        // 💫 비행 중에는 조이스틱을 계속 써야 하므로 잠금에서 제외한다
-        if (isFullyLocked()) return;
-        activeId = e.pointerId; zone.setPointerCapture(e.pointerId); moveKnob(e);
+
+        // 🕹️ [수정] 차징·시전 중이라고 '다시 잡는 것' 까지 막으면 안 된다.
+        //    댐드 펑크처럼 조준이 필요한 스킬에서 손을 뗀 뒤 다시 잡을 수 없었다.
+        //    입력은 항상 받되, 잠금 상태면 이동만 하지 않는다(aimOnly).
+        const lockedNow = isFullyLocked()
+            || (window.myPlayer.isCasting && !isSkill3Aiming())
+            || window.myPlayer.skill1Dashing;
+
+        activeId = e.pointerId; zone.setPointerCapture(e.pointerId); moveKnob(e, lockedNow);
     });
 
     zone.addEventListener('pointermove', (e) => {
@@ -211,7 +225,7 @@ window.initControls = (socket) => {
         if (isFullyLocked()) return;
         if (isDKickFlying()) return;                  // 💫 활공 중에는 평타 불가
         
-        let charType = window.myPlayer.characterType || 'PARK';
+        let charType = window.myPlayer.characterType || 'BORSALINO';
 
         // ⚡🔮 환수호박 중이면 평타 대신 '전격 돌진'이 나간다.
         if (isAmber()) {
@@ -266,7 +280,7 @@ window.initControls = (socket) => {
                            : (charType === 'KID'
                               ? ((window.myPlayer.kidGolemEnd && Date.now() < window.myPlayer.kidGolemEnd)
                                  ? 'kid_golem_strike' : 'kid_strike')
-                              : 'punch')))))))));
+                              : (charType === 'KUZAN_P' ? 'kuzanp_strike' : 'punch'))))))))));
             
             if (charType === 'BORSALINO') {
                 let comboGap = now - window.borsLastComboTime;
@@ -338,7 +352,7 @@ window.initControls = (socket) => {
         if (isFullyLocked()) return;
         if (isDKickFlying()) return;                  // 💫 활공 중에는 스킬 불가
         
-        let charType = window.myPlayer.characterType || 'PARK';
+        let charType = window.myPlayer.characterType || 'BORSALINO';
 
         // ⚡🔮 환수호박 각성 : 1번 = 전자파
         if (isAmber()) {
@@ -351,7 +365,7 @@ window.initControls = (socket) => {
 
         window.myPlayer.cd1 = now + getSkill(charType, 1).cd; 
         
-        if (charType === 'PARK') {
+        if (charType === '__REMOVED_PARK__') {
             window.myPlayer.skill1Dashing = true;
             window.myPlayer.dashLockUntil = now + 3000;
             window.myPlayer.vy = -12 * window.ms; window.myPlayer.dashDir = window.myPlayer.lastFacing;
@@ -400,6 +414,12 @@ window.initControls = (socket) => {
         } else if (charType === 'MARCO') {
             // 🔥 [봉황인] 바라보는 방향(좌/우)으로만 불꽃 덩어리를 날린다
             socket.emit('useSkill', { type: 1, dir: window.myPlayer.lastFacing, x: window.myPlayer.x, y: window.myPlayer.y });
+        } else if (charType === 'KUZAN_P') {
+            // ❄️ [아이스 볼] 이동키 방향으로 얼음 구슬을 던진다
+            let bx = window.myPlayer.moveX || window.joyX || 0;
+            let by = window.myPlayer.moveY || window.joyY || 0;
+            if (Math.hypot(bx, by) < 0.05) { bx = window.myPlayer.lastFacing || 1; by = 0; }
+            socket.emit('useSkill', { type: 1, dir: window.myPlayer.lastFacing, dirX: bx, dirY: by, x: window.myPlayer.x, y: window.myPlayer.y });
         } else if (charType === 'KID') {
             // 🧲 [어사인] 주변 적에게 고철을 붙인다
             socket.emit('useSkill', { type: 1, dir: window.myPlayer.lastFacing, x: window.myPlayer.x, y: window.myPlayer.y });
@@ -409,7 +429,7 @@ window.initControls = (socket) => {
     // ── 2번 스킬 ────────────────────────────────────────────────────
     document.getElementById('btn-skill2').addEventListener('pointerdown', (e) => {
         e.preventDefault(); let now = Date.now();
-        let charType = window.myPlayer.characterType || 'PARK';
+        let charType = window.myPlayer.characterType || 'BORSALINO';
 
         if (isFullyLocked()) return;
         if (isDKickFlying()) return;                  // 💫 활공 중에는 스킬 불가
@@ -439,7 +459,7 @@ window.initControls = (socket) => {
 
         window.myPlayer.cd2 = now + getSkill(charType, 2).cd; 
 
-        if (charType === 'PARK') {
+        if (charType === '__REMOVED_PARK__') {
             window.myPlayer.skill2EndTime = now + getSkill(charType, 2).duration; 
             socket.emit('useSkill', { type: 2 });
         } else if (charType === 'KUZAN') {
@@ -470,6 +490,9 @@ window.initControls = (socket) => {
             clearInterval(window.autoAttackInterval);
             let knobEl = document.getElementById('knob');
             if (knobEl) knobEl.style.transform = 'translate(0px, 0px)';
+            socket.emit('useSkill', { type: 2, dir: window.myPlayer.lastFacing, x: window.myPlayer.x, y: window.myPlayer.y });
+        } else if (charType === 'KUZAN_P') {
+            // ❄️ [아이스 글러브] 6초간 냉기 주먹
             socket.emit('useSkill', { type: 2, dir: window.myPlayer.lastFacing, x: window.myPlayer.x, y: window.myPlayer.y });
         } else if (charType === 'KID') {
             // 🧲 [댐드 펑크] 3초 차징 후 4초 발사 — 그동안 이동만 막힌다
@@ -524,7 +547,7 @@ window.initControls = (socket) => {
     // ── 3번 스킬 ────────────────────────────────────────────────────
     document.getElementById('btn-skill3').addEventListener('pointerdown', (e) => {
         e.preventDefault(); let now = Date.now();
-        let charTypePre = window.myPlayer.characterType || 'PARK';
+        let charTypePre = window.myPlayer.characterType || 'BORSALINO';
 
         // ⚡🔮 환수호박 중에는 3번 스킬이 존재하지 않는다
         if (charTypePre === 'KASHIMO' && window.myPlayer.amberActive) return;
@@ -589,6 +612,18 @@ window.initControls = (socket) => {
             return;
         }
 
+        if (charType === 'KUZAN_P') {
+            // ❄️ [아이스 타임] 0.5초 결빙 후 이동키 방향으로 돌진
+            let dx3 = window.myPlayer.moveX || window.joyX || 0;
+            let dy3 = window.myPlayer.moveY || window.joyY || 0;
+            if (Math.hypot(dx3, dy3) < 0.05) { dx3 = window.myPlayer.lastFacing || 1; dy3 = 0; }
+            window.myPlayer.kzDashCastEnd = now + 500;
+            window.myPlayer.moveX = 0; window.myPlayer.moveY = 0;
+            clearInterval(window.autoAttackInterval);
+            socket.emit('useSkill', { type: 3, dir: window.myPlayer.lastFacing, dirX: dx3, dirY: dy3, x: window.myPlayer.x, y: window.myPlayer.y });
+            return;
+        }
+
         if (charType === 'KID') {
             // 🧲 [펑크 로튼] 5초 변신 후 20초 고철 골렘 — 변신 중 완전 고정
             window.myPlayer.kidGolemCastEnd = now + 5000;
@@ -642,7 +677,7 @@ window.initControls = (socket) => {
         setTimeout(() => { 
             endCast();
             window.myPlayer.skill3Active = false;
-            if (charType === 'PARK') {
+            if (charType === '__REMOVED_PARK__') {
                 window.serverShockwaves.push({ id: 'local_detroit', type: 'detroit', x: window.myPlayer.x + (window.myPlayer.lastFacing * 60), y: window.myPlayer.y - 70, dir: window.myPlayer.lastFacing, speed: 100, life: 60 });
             }
         }, castTime);

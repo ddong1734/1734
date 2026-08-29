@@ -205,11 +205,13 @@ window.visualFX.push = function(data) {
     }
 };
 
-let defaultParkHp = (window.GameData && window.GameData.Characters) ? window.GameData.Characters.PARK.hp : 3000;
+// 🛟 기본 체력 — 박인범이 삭제되어 볼사리노를 기준으로 삼는다
+let defaultParkHp = (window.GameData && window.GameData.Characters && window.GameData.Characters.BORSALINO)
+                  ? window.GameData.Characters.BORSALINO.hp : 3000;
 
 // 내 캐릭터 로컬 상태
 window.myPlayer = { 
-    id: '', nickname: '', characterType: 'PARK', x: 10800, y: 1955, moveX: 0, moveY: 0, vy: 0, jumpCount: 2, 
+    id: '', nickname: '', characterType: 'BORSALINO', x: 10800, y: 1955, moveX: 0, moveY: 0, vy: 0, jumpCount: 2, 
     level: 0, xp: 0, maxXp: 100, hp: defaultParkHp, maxHp: defaultParkHp, 
     color: '#3498db', team: 1, speedMult: 1.0, attackSpeedMult: 1.0, orbitSpheres: 0, orbitSpeedMult: 1.0,
     hasDetector: false, inventory: [], equippedUids: [], frozenUntil: 0, electrocutedUntil: 0, slowNerfUntil: 0,
@@ -303,6 +305,7 @@ window.applySkillNames = () => {
     let isKurusu = charType === 'KURUSU'; // 🕊️ 쿠루스 하나
     let isMarco = charType === 'MARCO';   // 🔥 마르코
     let isKid = charType === 'KID';       // 🧲 유스타스 키드
+    let isKuzanP = charType === 'KUZAN_P'; // ❄️ 쿠잔(해적)
     // 🕊️ 신성력이 가득 차면 2·3번 스킬 이름이 바뀐다
     let holyFull = isKurusu && (window.myPlayer.holyPower || 0) >= 50;
     let amber = isKashimo && !!window.myPlayer.amberActive;
@@ -315,7 +318,8 @@ window.applySkillNames = () => {
     };
 
     // ── 1번 ──────────────────────────────────────────────────────────
-    let s1 = isBors ? '광선'
+    let s1 = isKuzanP ? '아이스<br>볼'
+           : (isBors ? '광선'
            : (isKuzan ? '퍼잔트백'
            : (isSaka ? '명구'
            : (isEnel ? '엘 토르'
@@ -326,11 +330,12 @@ window.applySkillNames = () => {
            : (isDabura ? '빛'
            : (isKashimo ? (amber ? '전자파'
                                  : (window.kashimoSkyReady ? '대기를<br>가르는<br>번개' : '번개'))
-           : '멀리뛰기')))))))));
+           : '멀리뛰기'))))))))));
     setLabel('btn-skill1', s1);
 
     // ── 2번 ──────────────────────────────────────────────────────────
-    let s2 = isBors ? '야타의<br>거울'
+    let s2 = isKuzanP ? '아이스<br>글러브'
+           : (isBors ? '야타의<br>거울'
            : (isKuzan ? '파르티잔'
            : (isSaka ? '대분화'
            : (isEnel ? '만뢰'
@@ -340,11 +345,12 @@ window.applySkillNames = () => {
            : (isDaido ? '질풍참'
            : (isDabura ? '어둠'
            : (isKashimo ? (amber ? '음파' : '주력<br>방출')
-           : '50m')))))))));
+           : '50m'))))))))));
     setLabel('btn-skill2', s2);
 
     // ── 3번 ──────────────────────────────────────────────────────────
-    let s3 = isBors ? '팔척경<br>곡옥'
+    let s3 = isKuzanP ? '아이스<br>타임'
+           : (isBors ? '팔척경<br>곡옥'
            : (isKuzan ? '아이스<br>에이지'
            : (isSaka ? '유성<br>화산'
            : (isEnel ? '뇌영'
@@ -353,7 +359,7 @@ window.applySkillNames = () => {
            : (isKurusu ? (holyFull ? '최대출력<br>야곱의<br>사다리' : '야곱의<br>사다리')
            : (isDaido ? '일섬'
            : (isDabura ? '아광속<br>발차기'
-           : (isKashimo ? '환수<br>호박' : '디트로이트')))))))));
+           : (isKashimo ? '환수<br>호박' : '디트로이트'))))))))));
     setLabel('btn-skill3', s3);
 
     // ── 4번 : 🗡️ 세계를 가르는 참격 / 🌑 유명이경 역월 ──────────────

@@ -36,6 +36,47 @@ window.registerNetModule('player', function (socket, U) {
     });
 
     // ── 🔄 전체 동기화 ──────────────────────────────────────────────
+    const ENEMY_COPY = [
+        'hp','maxHp','skill2EndTime','isCasting','isDead','level','xp','maxXp',
+        'frozenUntil','electrocutedUntil','airFreezeUntil','raigoPullUntil',
+        'crowsPullUntil','yamiLockUntil','yamiBindUntil','guraChargeUntil','darkBanned',
+        'burningUntil','maguBombUntil','justiceBombUntil','characterType',
+        'hasJusticeCoat','hasPika','hasHie','hasMagu','hasKizaru','hasAokiji','hasAkainu',
+        'hasGoro','hasArkMaxim','hasGodEnel','hasGura','hasYami',
+        'hasSquare',
+        'elThorActive','yataActive',
+        // ⚡ 카시모
+        'kashimoCharge','kashimoChargeUntil',
+        'surgeActive','surgeEnd','surgeLockUntil',
+        'amberActive','sonicChargeUntil',
+        // ⬛ 다부라
+        'dLightActive','dLightEnd','dLightRiseUntil',
+        'dDarkActive','dDarkEnd',
+        'dKickCharging','dKickChargeEnd','dKickFlying','dKickFlyEnd',
+        // 🗣️ NPC 대화 / 퀘스트 (원격 표시용)
+        'npcTalking','tichStage',
+        // ⚠️ [중요] 여기 빠진 필드는 '남의 화면에서만' 안 보인다.
+        //    새 캐릭터를 추가할 때마다 반드시 이 목록에도 넣어야 한다.
+        // ⚔️ 다이도
+        'stunUntil','bleedUntil',
+        'daidoFury','daidoFuryEnd','daidoRush','daidoRushEnd','daidoIaiAt',
+        // 🕊️ 쿠루스
+        'holyPower','extraLives','kurusuGliding','ladderLockUntil',
+        'ladderCastEnd','ladderBeamEnd','ladderCharged',
+        // 🔥 마르코
+        'marcoGauge','marcoRegenUntil','marcoCastEnd','marcoInvUntil',
+        'marcoShieldEnd','marcoShieldX','marcoShieldY',
+        'marcoShieldDX','marcoShieldDY','marcoShieldRY',
+        // 🧲 키드
+        'kidStack','kidSlow','kidJumpCut','kidHoldUntil','kidFieldUntil',
+        'kidLaserCastEnd','kidLaserFireEnd','kidLaserAngle','kidLaserX','kidLaserY',
+        'kidGolemCastEnd','kidGolemEnd','kidSwingAt',
+        // 🌀 포탈 대기 카운트다운 · ⚡ 빛 돌진
+        'portalDwellUntil','darkDwellUntil','curseDwellUntil','lightDashUntil','lightDashDir',
+        // ❄️ 쿠잔(해적)
+        'kzGloveEnd','kzDashCastEnd','kzDashEnd','kzDashDX','kzDashDY'
+    ];
+
     socket.on('syncPlayerFull', (data) => {
         if (!data) return;
 
@@ -168,6 +209,13 @@ window.registerNetModule('player', function (socket, U) {
         t.justiceBombUntil = data.justiceBombUntil;
         t.characterType = data.characterType || t.characterType;
 
+        // ⚠️ [중요] 여기 빠진 필드는 남의 화면에서만 안 보인다.
+        //    ENEMY_COPY 와 함께 두 곳 모두에 넣어야 한다.
+        //    (어사인 고철 · 신성력 · 마르코 게이지 등이 실제로 이 문제를 겪었다)
+        for (const k of ENEMY_COPY) {
+            if (data[k] !== undefined) t[k] = data[k];
+        }
+
         t.hasJusticeCoat = data.hasJusticeCoat;
         t.hasPika = data.hasPika; t.hasHie = data.hasHie; t.hasMagu = data.hasMagu;
         t.hasKizaru = data.hasKizaru; t.hasAokiji = data.hasAokiji; t.hasAkainu = data.hasAkainu;
@@ -217,42 +265,6 @@ window.registerNetModule('player', function (socket, U) {
     });
 
     // ── 🔄 원격 캐릭터 델타 동기화 ──────────────────────────────────
-    const ENEMY_COPY = [
-        'hp','maxHp','skill2EndTime','isCasting','isDead','level','xp','maxXp',
-        'frozenUntil','electrocutedUntil','airFreezeUntil','raigoPullUntil',
-        'crowsPullUntil','yamiLockUntil','yamiBindUntil','guraChargeUntil','darkBanned',
-        'burningUntil','maguBombUntil','justiceBombUntil','characterType',
-        'hasJusticeCoat','hasPika','hasHie','hasMagu','hasKizaru','hasAokiji','hasAkainu',
-        'hasGoro','hasArkMaxim','hasGodEnel','hasGura','hasYami',
-        'hasSquare',
-        'elThorActive','yataActive',
-        // ⚡ 카시모
-        'kashimoCharge','kashimoChargeUntil',
-        'surgeActive','surgeEnd','surgeLockUntil',
-        'amberActive','sonicChargeUntil',
-        // ⬛ 다부라
-        'dLightActive','dLightEnd','dLightRiseUntil',
-        'dDarkActive','dDarkEnd',
-        'dKickCharging','dKickChargeEnd','dKickFlying','dKickFlyEnd',
-        // 🗣️ NPC 대화 / 퀘스트 (원격 표시용)
-        'npcTalking','tichStage',
-        // ⚠️ [중요] 여기 빠진 필드는 '남의 화면에서만' 안 보인다.
-        //    새 캐릭터를 추가할 때마다 반드시 이 목록에도 넣어야 한다.
-        // ⚔️ 다이도
-        'stunUntil','bleedUntil',
-        'daidoFury','daidoFuryEnd','daidoRush','daidoRushEnd','daidoIaiAt',
-        // 🕊️ 쿠루스
-        'holyPower','extraLives','kurusuGliding','ladderLockUntil',
-        'ladderCastEnd','ladderBeamEnd','ladderCharged',
-        // 🔥 마르코
-        'marcoGauge','marcoRegenUntil','marcoCastEnd','marcoInvUntil',
-        'marcoShieldEnd','marcoShieldX','marcoShieldY',
-        'marcoShieldDX','marcoShieldDY','marcoShieldRY',
-        // 🧲 키드
-        'kidStack','kidSlow','kidJumpCut','kidHoldUntil','kidFieldUntil',
-        'kidLaserCastEnd','kidLaserFireEnd','kidLaserAngle','kidLaserX','kidLaserY',
-        'kidGolemCastEnd','kidGolemEnd','kidSwingAt'
-    ];
 
     socket.on('enemyUpdate', (delta) => {
         if (!delta) return;
