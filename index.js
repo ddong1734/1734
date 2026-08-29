@@ -41,7 +41,6 @@ const Characters = require('./characters.js');
 const Skills = require('./skills.js');
 const Items = require('./items.js');
 const CharLogic = {
-    'PARK': require('./charLogic/park.js'),
     'BORSALINO': require('./charLogic/borsalino.js'),
     'KUZAN': require('./charLogic/kuzan.js'),
     'SAKAZUKI': require('./charLogic/sakazuki.js'),
@@ -51,7 +50,8 @@ const CharLogic = {
     'DAIDO': require('./charLogic/daido.js'),         // ⚔️ 다이도 하가네
     'KURUSU': require('./charLogic/kurusu.js'),       // 🕊️ 쿠루스 하나
     'MARCO': require('./charLogic/marco.js'),         // 🔥 마르코
-    'KID': require('./charLogic/kid.js')              // 🧲 유스타스 키드
+    'KID': require('./charLogic/kid.js'),             // 🧲 유스타스 키드
+    'KUZAN_P': require('./charLogic/kuzanp.js')       // ❄️ 쿠잔(해적)
 };
 
 const ShopManager = require('./shopManager.js');
@@ -234,6 +234,11 @@ const serverContext = Object.assign({
     marcoProcessAll: (now) => CharLogic.MARCO.processAll(now, serverContext),
     // 🧲 키드 — 어사인 · 레이저 · 골렘
     kidProcessAll: (now) => CharLogic.KID.processAll(now, serverContext),
+    // ❄️ 쿠잔(해적)
+    kuzanpProcessAll: (now) => CharLogic.KUZAN_P.processAll(now, serverContext),
+    // ❄️ 평타 적중 시 냉기 폭발 (아이스 글러브)
+    kuzanpBasicHit: (p, tx, ty) => CharLogic.KUZAN_P.onBasicHit(p, tx, ty, serverContext),
+    shieldAt: (x, y, team) => S.shieldAt(x, y, team),
     // 🛡️ 보호막 밖으로 밀어내기
     pushOutOfShield: (o, team) => S.pushOutOfShield(o, team),
     // 🛡️ [마르코] 불꽃 보호막에 막히는가 — 체력을 직접 깎는 스킬들이 쓴다

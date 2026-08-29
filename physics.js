@@ -217,6 +217,17 @@ window.updatePlayerPhysics = (p, slowUntil, loopNow, visualFX) => {
         p.moveX = 0; p.moveY = 0; p.vy = 0; p.knockbackForce = 0;
         return;
     }
+    // ❄️ [쿠잔(해적)] 결빙(0.5초) 중에는 그 자리에 굳는다.
+    //    돌진 중에는 서버가 좌표를 몰기 때문에 클라 물리를 건드리지 않는다.
+    if (p.kzDashCastEnd && loopNow < p.kzDashCastEnd) {
+        p.moveX = 0; p.moveY = 0; p.vy = 0; p.knockbackForce = 0;
+        return;
+    }
+    if (p.kzDashEnd && loopNow < p.kzDashEnd) {
+        p.moveX = 0; p.moveY = 0; p.vy = 0; p.knockbackForce = 0;
+        return;
+    }
+
     // 🧲 [키드] 차징 · 발사 · 변신 · 고철 고정 중에는 공중에서도 완전히 멈춘다
     if ((p.kidLaserCastEnd && loopNow < p.kidLaserCastEnd) ||
         (p.kidLaserFireEnd && loopNow < p.kidLaserFireEnd) ||
@@ -551,8 +562,10 @@ window.updatePlayerPhysics = (p, slowUntil, loopNow, visualFX) => {
     if (p.kidGolemEnd && loopNow < p.kidGolemEnd) speed *= 1.5;
     // 🦾 [기계 의수] 자기장 안에서는 이동속도 절반
     if (p.kidFieldUntil && loopNow < p.kidFieldUntil) speed *= 0.5;
+    // ❄️ [아이스 글러브] 착용 중에는 이동속도 +35%
+    if (p.kzGloveEnd && loopNow < p.kzGloveEnd) speed *= 1.35;
     
-    let charType = p.characterType || 'PARK';
+    let charType = p.characterType || 'BORSALINO';
     let skillId2 = (charType === 'BORSALINO') ? 'BORSALINO_S2' : 'PARK_S2';
     
     if (loopNow < p.skill2EndTime) {

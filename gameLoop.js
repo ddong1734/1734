@@ -199,6 +199,7 @@ module.exports = {
         safe('kurusu', () => { if (typeof ctx.kurusuProcessAll === 'function') ctx.kurusuProcessAll(now); });   // 🕊️ 쿠루스
         safe('marco', () => { if (typeof ctx.marcoProcessAll === 'function') ctx.marcoProcessAll(now); });      // 🔥 마르코
         safe('kid', () => { if (typeof ctx.kidProcessAll === 'function') ctx.kidProcessAll(now); });            // 🧲 키드
+        safe('kuzanp', () => { if (typeof ctx.kuzanpProcessAll === 'function') ctx.kuzanpProcessAll(now); });     // ❄️ 쿠잔(해적)
         safe('blackMarket', () => { require('./server/blackMarket.js').process(now, io); });                       // 🕶️ 암매상
         safe('portals', () => Portals.update(ctx, now));
 

@@ -5,12 +5,6 @@ window.GameData = {
         MOVEMENT_SPEED: 1.5
     },
     Characters: {
-        PARK: {
-            hp: 3000, baseDamage: 50, attackCooldown: 600, speedMult: 1.0,
-            attackEffect: "punch", attackKnockback: 15, attackSlowDuration: 250,
-            themeColor: "#000", castColor: "rgba(255, 255, 255, 0.3)",
-            skillIds: ["PARK_S1", "PARK_S2", "PARK_S3"]
-        },
         BORSALINO: {
             hp: 2500, baseDamage: 40, attackCooldown: 250, speedMult: 1.2,
             attackEffect: "ama_no_murakumo", attackKnockback: 0, attackSlowDuration: 150,
@@ -78,6 +72,13 @@ window.GameData = {
             attackEffect: "kid_strike", attackKnockback: 12, attackSlowDuration: 200,
             themeColor: "#d63cf0", castColor: "rgba(214, 60, 240, 0.30)",
             skillIds: ["KID_S1", "KID_S2", "KID_S3"]
+        },
+        // ❄️ [신규] 쿠잔(해적) — characters.js 와 반드시 같은 값이어야 한다
+        KUZAN_P: {
+            hp: 2600, baseDamage: 58, attackCooldown: 500, speedMult: 1.0,
+            attackEffect: "kuzanp_strike", attackKnockback: 10, attackSlowDuration: 260,
+            themeColor: "#4dd8ff", castColor: "rgba(77, 216, 255, 0.30)",
+            skillIds: ["KUZANP_S1", "KUZANP_S2", "KUZANP_S3"]
         }
     },
     Skills: {
@@ -224,6 +225,27 @@ window.GameData = {
             radius: 520, duration: 5000, tickInterval: 1000, healPerTick: 200,
             effect: 'kurusu_bless'
         },
+        // ❄️ [신규] 쿠잔(해적) — skills.js 와 반드시 같은 값이어야 한다
+        'KUZANP_S1': {
+            type: 'kuzanp_ball', cd: 25000,
+            speed: 26, radius: 60, range: 1500,
+            damage: 200, blastRadius: 330, freezeTime: 2000,
+            effect: 'kuzanp_ball'
+        },
+        'KUZANP_S2': {
+            type: 'kuzanp_glove', cd: 35000,
+            duration: 6000, speedBonus: 0.35,
+            blastDamage: 50, blastRadius: 190, freezeTime: 300,
+            trailMs: 1000,
+            effect: 'kuzanp_glove'
+        },
+        'KUZANP_S3': {
+            type: 'kuzanp_dash', cd: 45000,
+            castTime: 500, dashSpeed: 42, dashTime: 900,
+            damage: 400, hitRadius: 200, freezeRadius: 380, freezeTime: 5000,
+            effect: 'kuzanp_dash'
+        },
+
         // 🧲 [신규] 유스타스 키드 — skills.js 와 반드시 같은 값이어야 한다
         'KID_S1': {
             type: 'kid_assign', cd: 25000,

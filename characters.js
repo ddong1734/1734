@@ -1,11 +1,4 @@
 const CharactersData = {
-    PARK: {
-        name: "박인범",
-        hp: 3000, baseDamage: 50, attackCooldown: 600, speedMult: 1.0,
-        attackEffect: "punch", attackKnockback: 15, attackSlowDuration: 250,
-        themeColor: "#000", castMessage: "🌀 기절 (공기 모으는 중)", castColor: "rgba(255, 255, 255, 0.3)",
-        skillIds: ["PARK_S1", "PARK_S2", "PARK_S3"]
-    },
     BORSALINO: {
         name: "볼사리노", hp: 2500, baseDamage: 40, attackCooldown: 250, speedMult: 1.2,
         attackEffect: "ama_no_murakumo", attackKnockback: 0, attackSlowDuration: 150,
@@ -13,7 +6,7 @@ const CharactersData = {
         skillIds: ["BORSALINO_S1", "BORSALINO_S2", "BORSALINO_S3"]
     },
     KUZAN: {
-        name: "쿠잔", hp: 2800, baseDamage: 45, attackCooldown: 500, speedMult: 1.05,
+        name: "쿠잔(해군)", hp: 2800, baseDamage: 45, attackCooldown: 500, speedMult: 1.05,
         attackEffect: "ice_glove", attackKnockback: 0, attackSlowDuration: 300,
         themeColor: "#3498db", castMessage: "❄️ 냉기 방출 중", castColor: "rgba(52, 152, 219, 0.3)",
         skillIds: ["KUZAN_S1", "KUZAN_S2", "KUZAN_S3"]
@@ -96,6 +89,17 @@ const CharactersData = {
         attackEffect: "kid_strike", attackKnockback: 12, attackSlowDuration: 200,
         themeColor: "#d63cf0", castMessage: "🧲 자기력을 모으는 중", castColor: "rgba(214, 60, 240, 0.30)",
         skillIds: ["KID_S1", "KID_S2", "KID_S3"]
+    },
+
+    // ❄️ [신규] 쿠잔(해적) — 얼음을 다루는 전 해군 대장
+    //    · 1번 [아이스 볼]   : 관통 불가 얼음 구슬 → 착탄 시 광역 동결
+    //    · 2번 [아이스 글러브]: 6초간 이동 +35% · 평타에 냉기 폭발
+    //    · 3번 [아이스 타임] : 0.5초 결빙 후 직선 돌진 → 5초 동결
+    KUZAN_P: {
+        name: "쿠잔(해적)", hp: 2600, baseDamage: 58, attackCooldown: 500, speedMult: 1.0,
+        attackEffect: "kuzanp_strike", attackKnockback: 10, attackSlowDuration: 260,
+        themeColor: "#4dd8ff", castMessage: "❄️ 냉기를 모으는 중", castColor: "rgba(77, 216, 255, 0.30)",
+        skillIds: ["KUZANP_S1", "KUZANP_S2", "KUZANP_S3"]
     }
 };
 

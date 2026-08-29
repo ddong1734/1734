@@ -179,6 +179,35 @@ const SkillsData = {
     // 🧲 유스타스 키드 — 자기력과 고철
     // ══════════════════════════════════════════════════════════════════
 
+    // ══════════════════════════════════════════════════════════════════
+    // ❄️ 쿠잔(해적) — 얼음과 냉기
+    // ══════════════════════════════════════════════════════════════════
+
+    // 1번 [아이스 볼] — 관통 불가. 맞은 자리에 냉기 폭발 + 2초 동결
+    'KUZANP_S1': {
+        type: 'kuzanp_ball', cd: 25000,
+        speed: 26, radius: 60, range: 1500,
+        damage: 200, blastRadius: 330, freezeTime: 2000,
+        effect: 'kuzanp_ball'
+    },
+
+    // 2번 [아이스 글러브] — 6초간 이동 +35% · 평타에 냉기 폭발
+    'KUZANP_S2': {
+        type: 'kuzanp_glove', cd: 35000,
+        duration: 6000, speedBonus: 0.35,
+        blastDamage: 50, blastRadius: 190, freezeTime: 300,
+        trailMs: 1000,
+        effect: 'kuzanp_glove'
+    },
+
+    // 3번 [아이스 타임] — 0.5초 결빙 후 직선 돌진 · 5초 동결
+    'KUZANP_S3': {
+        type: 'kuzanp_dash', cd: 45000,
+        castTime: 500, dashSpeed: 42, dashTime: 900,
+        damage: 400, hitRadius: 200, freezeRadius: 380, freezeTime: 5000,
+        effect: 'kuzanp_dash'
+    },
+
     // 1번 [어사인] — 좁은 반경의 적에게 고철을 붙인다
     //    3초간 쌓임(0.5초마다 20 · 점점 느려짐) → 1초 완전 고정 → 폭발 200
     'KID_S1': {
