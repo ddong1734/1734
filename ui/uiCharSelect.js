@@ -11,51 +11,52 @@
 (function () {
     // 캐릭터별 표시 정보 (색 · 한 줄 소개 · 스킬 설명)
     const CHAR_INFO = {
-        PARK: {
-            name: '박인범', color: '#ffffff', tag: '균형 잡힌 기본 전사',
-            skills: [
-                ['멀리뛰기', '앞으로 크게 도약하며 착지 지점에 광역 피해를 준다.'],
-                ['50m', '짧은 거리를 순간적으로 내달린다.'],
-                ['디트로이트', '강력한 한 방을 내리꽂아 넓은 범위를 타격한다.']
-            ]
-        },
         BORSALINO: {
             name: '볼사리노', color: '#f1c40f', tag: '빛의 속도로 싸우는 대장',
             skills: [
-                ['야타의 거울', '빛이 되어 지정 경로를 따라 순간이동한다.'],
-                ['천총운검', '빛의 검을 휘둘러 전방을 관통한다.'],
+                ['광선', '손끝에서 빛의 광선을 쏘아 관통시킨다.'],
+                ['야타의 거울', '빛이 되어 지정한 경로를 따라 순간이동하며 지나간 길의 적을 벤다.'],
                 ['팔척경곡옥', '거대한 빛 구슬을 떨어뜨려 폭발시킨다.']
             ]
         },
         KUZAN: {
-            name: '쿠잔', color: '#3498db', tag: '얼려붙이는 얼음의 대장',
+            name: '쿠잔(해군)', color: '#3498db', tag: '얼려붙이는 얼음의 대장',
             skills: [
-                ['아이스 타임', '닿은 대상을 얼려 움직이지 못하게 한다.'],
-                ['빙결 파도', '얼음 파도를 전방으로 밀어낸다.'],
+                ['퍼잔트백', '얼음 창을 던져 꿰뚫는다.'],
+                ['파르티잔', '거대한 얼음 창을 만들어 내리꽂는다.'],
                 ['아이스 에이지', '넓은 범위를 통째로 얼려버린다.']
             ]
+        },
+        KUZAN_P: {
+            name: '쿠잔(해적)', color: '#4dd8ff', tag: '얼음을 다루는 전 해군 대장',
+            skills: [
+                ['아이스 볼', '이동키 방향으로 얼음 구슬을 빠르게 던진다. 관통하지 않으며, 맞은 자리에 냉기가 터져 200 피해와 함께 주변을 2초간 얼린다.'],
+                ['아이스 글러브', '6초간 주먹에 얼음 장갑을 두른다. 이동속도 +35%, 평타가 맞을 때마다 냉기가 터져 50 피해와 0.3초 동결을 추가로 준다. 지나간 자리에 서리가 남는다.'],
+                ['아이스 타임', '0.5초간 몸이 얼음으로 뒤덮인 뒤 이동키 방향으로 곧게 돌진한다. 맞은 대상과 그 주변이 5초간 얼며 400 피해를 입는다.']
+            ],
+            note: '돌진은 방향을 바꿀 수 없고, 처음 맞은 대상에서 멈춘다. 가로 발판은 통과한다.'
         },
         SAKAZUKI: {
             name: '사카즈키', color: '#e74c3c', tag: '모든 것을 태우는 마그마',
             skills: [
-                ['대분화', '마그마 주먹으로 지면을 터뜨린다.'],
-                ['명견', '마그마 덩어리를 날려 화상을 입힌다.'],
-                ['유성 화산', '하늘에서 마그마 유성을 떨어뜨린다.']
+                ['명구', '마그마 주먹을 날려 화상을 입힌다.'],
+                ['대분화', '마그마 주먹으로 지면을 크게 터뜨린다.'],
+                ['유성 화산', '하늘에서 마그마 유성을 쏟아붓는다.']
             ]
         },
         ENEL: {
             name: '에넬', color: '#00bfff', tag: '번개를 다루는 신',
             skills: [
-                ['이카즈치', '번개를 내리쳐 감전시킨다.'],
                 ['엘 토르', '거대한 번개 기둥을 떨어뜨린다.'],
+                ['만뢰', '주변에 번개를 흩뿌려 광범위하게 감전시킨다.'],
                 ['뇌영', '적을 지면으로 끌어내려 벼락을 꽂는다.']
             ]
         },
         KASHIMO: {
             name: '카시모 하지메', color: '#a855f7', tag: '전하를 쌓아 폭발시키는 격투가',
             skills: [
-                ['전격 돌진', '전하를 두르고 돌진한다.'],
-                ['방전', '쌓인 전하를 주변에 터뜨린다.'],
+                ['전자파', '전하를 실은 파동을 쏜다.'],
+                ['음파', '쌓인 전하를 음파로 터뜨린다.'],
                 ['환수 호박', '모습을 바꿔 강화된 전용 기술을 쓴다.']
             ]
         },
@@ -64,7 +65,7 @@
             skills: [
                 ['빛', '위로 솟구친 뒤 아래로 2초간 연속 폭발한다.'],
                 ['어둠', '어둠 구체로 3초간 빨아들인 뒤 크게 터뜨린다.'],
-                ['아광속 발차기', '2초 응축 후 5초간 활공하며 적중 시 대폭발.']
+                ['아광속 발차기', '2초 응축 후 5초간 활공하며, 적중 시 대폭발한다.']
             ]
         },
         DAIDO: {
@@ -106,8 +107,14 @@
         }
     };
 
-    const ORDER = ['PARK', 'BORSALINO', 'KUZAN', 'SAKAZUKI', 'ENEL', 'KASHIMO', 'DABURA', 'DAIDO', 'KURUSU', 'MARCO', 'KID'];
-    let picked = 'PARK';
+    // 🏷️ 진영별 분류 — 화면에 이 순서·묶음대로 보여 준다
+    const CATEGORIES = [
+        { name: '해군', color: '#5dade2', ids: ['BORSALINO', 'KUZAN', 'SAKAZUKI'] },
+        { name: '해적', color: '#e67e22', ids: ['KUZAN_P', 'KID', 'MARCO', 'ENEL'] },
+        { name: '주술', color: '#a569bd', ids: ['KASHIMO', 'DABURA', 'DAIDO', 'KURUSU'] }
+    ];
+    const ORDER = CATEGORIES.reduce((a, c) => a.concat(c.ids), []);
+    let picked = ORDER[0];
 
     /** 선택 상태를 화면에 반영한다 */
     function refresh() {
@@ -178,7 +185,7 @@
         document.getElementById('ciBody').innerHTML = h;
         const pick = document.getElementById('ciPick');
         pick.style.background = info.color;
-        pick.style.color = (id === 'PARK' || id === 'DABURA' || id === 'KURUSU' || id === 'MARCO' || id === 'DAIDO') ? '#101520' : '#fff';
+        pick.style.color = (id === 'DABURA' || id === 'KURUSU' || id === 'MARCO' || id === 'DAIDO') ? '#101520' : '#fff';
         pick.onclick = function () { window.pickChar(id); window.closeCharInfo(); };
         document.getElementById('charInfoModal').style.display = 'flex';
     };
@@ -194,32 +201,49 @@
              + '<div style="color:' + col + '; font-size:18px; font-weight:bold;">' + val + '</div></div>';
     }
 
-    /** 카드 목록을 만든다 */
+    /** 카드 목록을 만든다 — 진영(해군 · 해적 · 주술)별로 묶어 보여 준다 */
     function build() {
         const grid = document.getElementById('charSelectGrid');
         if (!grid) return;
         grid.innerHTML = '';
-        ORDER.forEach(id => {
-            const info = CHAR_INFO[id];
-            const wrap = document.createElement('div');
-            wrap.id = 'cc_' + id;
-            // 한 줄에 2~3개가 들어가도록 폭을 고정한다
-            wrap.style.cssText = 'position:relative; background:#1a1e29; border:2px solid #39424f; border-radius:10px;'
-                               + 'padding:7px 9px 7px 9px; width:158px; cursor:pointer; transition:0.15s; touch-action:manipulation;';
-            wrap.innerHTML =
-                '<input type="radio" name="charSelect" id="cr_' + id + '" value="' + id + '" style="display:none;">'
-              + '<div style="color:' + info.color + '; font-size:13px; font-weight:bold; margin-bottom:1px; padding-right:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + info.name + '</div>'
-              + '<div style="color:#8fa3b8; font-size:9px; line-height:1.25; height:23px; overflow:hidden;">' + info.tag + '</div>'
-              + '<div style="position:absolute; top:4px; right:4px; width:19px; height:19px; border-radius:50%;'
-              + 'background:#2c3e50; color:#dfe6ec; font-size:12px; font-weight:bold; line-height:19px; text-align:center;">i</div>';
+        // 세로로 쌓되, 각 진영 안에서는 카드가 가로로 흐른다
+        grid.style.flexDirection = 'column';
+        grid.style.gap = '6px';
 
-            wrap.addEventListener('click', function (e) {
-                const r = wrap.getBoundingClientRect();
-                // 오른쪽 위 ⓘ 영역을 누르면 상세보기
-                if (e.clientX > r.right - 28 && e.clientY < r.top + 28) window.openCharInfo(id);
-                else window.pickChar(id);
+        CATEGORIES.forEach(cat => {
+            // ── 진영 이름표 ────────────────────────────────
+            const head = document.createElement('div');
+            head.style.cssText = 'display:flex; align-items:center; gap:7px; width:100%; margin-top:2px;';
+            head.innerHTML =
+                '<span style="color:' + cat.color + '; font-size:12px; font-weight:bold; letter-spacing:1px;">'
+              + cat.name + '</span>'
+              + '<span style="flex:1; height:1px; background:' + cat.color + '55;"></span>';
+            grid.appendChild(head);
+
+            // ── 그 진영의 카드들 ───────────────────────────
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px; justify-content:center; width:100%;';
+            cat.ids.forEach(id => {
+                const info = CHAR_INFO[id];
+                if (!info) return;
+                const wrap = document.createElement('div');
+                wrap.id = 'cc_' + id;
+                wrap.style.cssText = 'position:relative; background:#1a1e29; border:2px solid #39424f; border-radius:10px;'
+                                   + 'padding:6px 8px; width:152px; cursor:pointer; transition:0.15s; touch-action:manipulation;';
+                wrap.innerHTML =
+                    '<input type="radio" name="charSelect" id="cr_' + id + '" value="' + id + '" style="display:none;">'
+                  + '<div style="color:' + info.color + '; font-size:12.5px; font-weight:bold; margin-bottom:1px; padding-right:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + info.name + '</div>'
+                  + '<div style="color:#8fa3b8; font-size:9px; line-height:1.25; height:22px; overflow:hidden;">' + info.tag + '</div>'
+                  + '<div style="position:absolute; top:4px; right:4px; width:18px; height:18px; border-radius:50%;'
+                  + 'background:#2c3e50; color:#dfe6ec; font-size:11px; font-weight:bold; line-height:18px; text-align:center;">i</div>';
+                wrap.addEventListener('click', function (e) {
+                    const r = wrap.getBoundingClientRect();
+                    if (e.clientX > r.right - 27 && e.clientY < r.top + 27) window.openCharInfo(id);
+                    else window.pickChar(id);
+                });
+                row.appendChild(wrap);
             });
-            grid.appendChild(wrap);
+            grid.appendChild(row);
         });
         refresh();
     }
