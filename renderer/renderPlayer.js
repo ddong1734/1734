@@ -121,7 +121,7 @@ export function drawPlayers(ctx, state, z) {
                 ctx.lineWidth = 3; ctx.stroke();
             }
 
-            let ctype = p.characterType || 'PARK';
+            let ctype = p.characterType || 'BORSALINO';
             let currentMaxHp = p.maxHp || (window.Characters && window.Characters[ctype] ? window.Characters[ctype].hp : 3000);
             ctx.fillStyle = "#2ecc71"; ctx.fillRect(p.x - 39, p.y - 69, 78 * (Math.max(0, p.hp) / currentMaxHp), 6); 
             drawHpTicks(ctx, p.x - 39, p.y - 69, 78, 6, currentMaxHp);

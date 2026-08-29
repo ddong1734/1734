@@ -34,6 +34,7 @@ import './fxdaido.js';           // ⚔️ [신규] 다이도 하가네 (검 이
 import './fxkurusu.js';          // 🕊️ [신규] 쿠루스 하나 (신성력 이펙트)
 import './fxmarco.js';           // 🔥 [신규] 마르코 (푸른 불꽃 이펙트)
 import './fxkid.js';             // 🧲 [신규] 유스타스 키드 (자기력 · 고철)
+import './fxkuzanp.js';          // ❄️ [신규] 쿠잔(해적) (얼음 · 냉기)
 import { drawSukunaFires } from './fxsukuna.js';
 import { drawDomain, domainFadeAlpha } from './fxdomain.js';
 
