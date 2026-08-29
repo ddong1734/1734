@@ -71,10 +71,21 @@ function killByKind(t, attackerId, ctx) {
     } catch (e) { console.error('[KUZANP KILL]', e); }
 }
 
+/** ❄️ 동결 시간 보정 — ⚖️ 한껏 해이해진 정의는 +1초 */
+function freezeMs(p, base) {
+    return base + ((p && p.hasLazyJustice) ? 1000 : 0);
+}
+
 /** ❄️ 대상을 얼린다 */
 function freeze(o, ms) {
     if (!o) return;
     o.frozenUntil = Math.max(o.frozenUntil || 0, Date.now() + ms);
+}
+
+/** 🔒 [얼음 의족] 5초간 모든 스킬을 봉인한다 */
+function sealSkills(o) {
+    if (!o) return;
+    o.skillFreezeUntil = Math.max(o.skillFreezeUntil || 0, Date.now() + 5000);
 }
 
 /** ❄️ 원형 범위를 얼리고 피해를 준다 */
@@ -96,11 +107,9 @@ function useBall(p, data, ctx) {
     const S1 = ctx.Skills.KUZANP_S1;
     const dir = (data && data.dir === -1) ? -1 : 1;
 
-    let dx = Number(data && data.dirX), dy = Number(data && data.dirY);
-    if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) {
-        dx = dir; dy = 0;
-    }
-    const len = Math.hypot(dx, dy) || 1;
+    // 🧭 [수정] 이동키가 아니라 '바라보는 방향' 으로만 던진다 (좌 / 우)
+    const dx = dir, dy = 0;
+    const len = 1;
 
     // 🛟 상한 — 비정상 상황에서 무한히 쌓이지 않게 한다
     if (ctx.State.kuzanpBalls.length >= 24) ctx.State.kuzanpBalls.shift();
@@ -111,10 +120,12 @@ function useBall(p, data, ctx) {
         traveled: 0
     });
 
+    // 🧊 빙빙열매 : 구슬이 커지고 판정도 함께 커진다
+    const R1 = p.hasHie ? Math.round(S1.radius * 1.6) : S1.radius;
     ctx.io.emit('kuzanpBall', {
         id: p.id, x: p.x, y: p.y,
         dirX: dx / len, dirY: dy / len,
-        speed: S1.speed, range: S1.range, radius: S1.radius
+        speed: S1.speed, range: S1.range, radius: R1
     });
 }
 
@@ -146,17 +157,19 @@ function processBalls(now, ctx) {
         let hit = null;
         const forEach = ctx.forEachTarget;
         if (typeof forEach === 'function') {
-            const near = (o, r) => Math.hypot(b.x - o.x, b.y - o.y) < S1.radius + (r || 0);
+            // 🧊 빙빙열매 : 판정 반경도 커진다
+            const BR = owner.hasHie ? S1.radius * 1.6 : S1.radius;
+            const near = (o, r) => Math.hypot(b.x - o.x, b.y - o.y) < BR + (r || 0);
             forEach(owner, near, (t) => { if (!hit && t.kind !== 'base') hit = t; });
         }
         if (!hit) continue;
 
-        ctx.io.emit('kuzanpBallBlast', {
-            x: b.x, y: b.y, radius: S1.blastRadius, freezeMs: S1.freezeTime
-        });
-        // 💥 냉기 폭발 — 반경 안 전부에 피해 + 2초 동결
+        // 🧊 빙빙열매 : 폭발 범위가 커지고 동결이 2초 → 3초
+        const BLR = owner.hasHie ? Math.round(S1.blastRadius * 1.45) : S1.blastRadius;
+        const FZ = freezeMs(owner, owner.hasHie ? 3000 : S1.freezeTime);
+        ctx.io.emit('kuzanpBallBlast', { x: b.x, y: b.y, radius: BLR, freezeMs: FZ });
         const dmg = S1.damage + Math.round((owner.bonusDamage || 0) * 1.0);
-        iceBurst(owner, b.x, b.y, S1.blastRadius, dmg, S1.freezeTime, ctx);
+        iceBurst(owner, b.x, b.y, BLR, dmg, FZ, ctx);
         State.kuzanpBalls.splice(i, 1);
     }
 }
@@ -180,9 +193,13 @@ function useGlove(p, ctx) {
 function onBasicHit(p, tx, ty, ctx) {
     if (!p || !p.kzGloveEnd || Date.now() >= p.kzGloveEnd) return;
     const S2 = ctx.Skills.KUZANP_S2;
-    ctx.io.emit('kuzanpFrostBurst', { x: tx, y: ty, radius: S2.blastRadius });
-    // 평타 피해와 별개로 50 + 0.3초 동결
-    iceBurst(p, tx, ty, S2.blastRadius, S2.blastDamage, S2.freezeTime, ctx);
+    // 🦿 얼음 의족 : 범위 1.5배 · 피해 2배
+    const R2 = p.hasIceLeg ? Math.round(S2.blastRadius * 1.5) : S2.blastRadius;
+    const D2 = p.hasIceLeg ? S2.blastDamage * 2 : S2.blastDamage;
+    const F2 = freezeMs(p, S2.freezeTime);
+    ctx.io.emit('kuzanpFrostBurst', { x: tx, y: ty, radius: R2 });
+    // 평타 피해와 별개
+    iceBurst(p, tx, ty, R2, D2, F2, ctx);
 }
 
 /** ❄️ 매 프레임 : 글러브 유지 · 서리 자국 */
@@ -299,11 +316,22 @@ function processDash(now, ctx) {
         }
         if (hit) {
             p.kzDashHit = true;
+            const F3 = freezeMs(p, S3.freezeTime);
             ctx.io.emit('kuzanpDashBlast', {
-                x: p.x, y: p.y, radius: S3.freezeRadius, freezeMs: S3.freezeTime
+                x: p.x, y: p.y, radius: S3.freezeRadius, freezeMs: F3,
+                seal: !!p.hasIceLeg
             });
             const dmg = S3.damage + Math.round((p.bonusDamage || 0) * 1.0);
-            iceBurst(p, p.x, p.y, S3.freezeRadius, dmg, S3.freezeTime, ctx);
+            iceBurst(p, p.x, p.y, S3.freezeRadius, dmg, F3, ctx);
+            // 🦿 얼음 의족 : 맞은 대상의 모든 스킬을 5초간 봉인한다
+            if (p.hasIceLeg && typeof ctx.forEachTarget === 'function') {
+                const inR = (o, r) => Math.hypot(p.x - o.x, p.y - o.y) < S3.freezeRadius + (r || 0);
+                ctx.forEachTarget(p, inR, (t) => {
+                    if (t.kind !== 'player') return;
+                    sealSkills(t.obj);
+                    ctx.io.emit('syncPlayerFull', t.obj);
+                });
+            }
         }
         ctx.io.emit('syncPlayerFull', p);
     }
