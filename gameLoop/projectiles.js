@@ -308,10 +308,25 @@ module.exports = {
                 let d = Math.hypot(ok.x - turret.x, ok.y - turret.y);
                 if (d < minDist) { minDist = d; target = ok; }
             });
-            // 🛡️ [마르코] 보호막 안에 숨은 대상은 포탑이 쏘지 못한다
+            // 🛡️ [마르코] 보호막 안에 숨은 대상은 맞힐 수 없다.
+            //    ⚠️ 예전에는 target 을 비워 포탑이 아예 멈춰 버렸다.
+            //       이제는 그 대상만 건너뛰고 '다음으로 가까운 적' 을 다시 찾아 계속 쏜다.
             if (target && SB.shieldAt && SB.shieldAt(target.x, target.y, turret.team)) {
-                io.emit('marcoShieldHit', { x: target.x, y: target.y });
-                target = null;
+                const blocked = target;
+                target = null; minDist = turret.range;   // 사거리 안에서 다시 찾는다
+                for (let tid in players) {
+                    const t2 = players[tid];
+                    if (!t2 || t2.isDead || t2.team === turret.team || t2 === blocked) continue;
+                    if (SB.shieldAt && SB.shieldAt(t2.x, t2.y, turret.team)) continue;
+                    const d2 = Math.hypot(t2.x - turret.x, t2.y - turret.y);
+                    if (d2 < minDist) { minDist = d2; target = t2; }
+                }
+                okras.forEach(ok => {
+                    if (ok.hp <= 0) return;
+                    if (SB.shieldAt && SB.shieldAt(ok.x, ok.y, turret.team)) return;
+                    const d2 = Math.hypot(ok.x - turret.x, ok.y - turret.y);
+                    if (d2 < minDist) { minDist = d2; target = ok; }
+                });
             }
             if (!target) return;
 
@@ -341,8 +356,10 @@ module.exports = {
             // 🛡️ [마르코 · 불사 엉겅퀴] 보호벽에 닿은 투사체는 그 자리에서 막힌다.
             //    · 대상만 제외하면 투사체가 벽을 뚫고 지나가는 것처럼 보였다
             //    · 이제 벽에 부딪히는 순간 사라지고 차단 이펙트가 뜬다
-            if (SB.shieldAt && SB.shieldAt(p.x, p.y, p.team)) {
+            const _sp = SB.shieldAt && SB.shieldAt(p.x, p.y, p.team);
+            if (_sp) {
                 io.emit('marcoShieldHit', { x: p.x, y: p.y });
+                if (SB.shieldAbsorb) SB.shieldAbsorb(_sp, p.damage || 0, io);   // 💚 막은 만큼 회복
                 projectiles.splice(i, 1);
                 projUpdated = true;
                 continue;
@@ -494,8 +511,10 @@ module.exports = {
                 if (sw.hitIds.includes(key)) continue;
 
                 // 🛡️ [마르코] 불꽃 보호막 안이면 충격파가 막힌다 (할배새끼 충격파 포함)
-                if (SB.shieldAt && SB.shieldAt(obj.x, obj.y)) {
+                const _sp2 = SB.shieldAt && SB.shieldAt(obj.x, obj.y);
+                if (_sp2) {
                     io.emit('marcoShieldHit', { x: obj.x, y: obj.y });
+                    if (SB.shieldAbsorb) SB.shieldAbsorb(_sp2, sw.damage || 0, io);
                     continue;
                 }
 
