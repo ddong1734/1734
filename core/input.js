@@ -264,6 +264,14 @@ window.initControls = (socket) => {
         if (now - window.lastAttackTime >= cool) { 
             window.lastAttackTime = now; if (window.myPlayer.vy === 0) window.slowUntil = now + sd; 
             
+            // ❄️ [아이스 글러브] 빗나가도 주먹 앞에서 냉기가 터진다
+            if (charType === 'KUZAN_P' && window.myPlayer.kzGloveEnd && now < window.myPlayer.kzGloveEnd) {
+                socket.emit('kuzanpSwing', {
+                    x: window.myPlayer.x + (window.myPlayer.lastFacing || 1) * 60,
+                    y: window.myPlayer.y
+                });
+            }
+
             // 🗿 [키드] 골렘 상태면 평타 순간을 기록해 팔을 휘두르게 한다
             if (charType === 'KID' && window.myPlayer.kidGolemEnd && now < window.myPlayer.kidGolemEnd) {
                 window.myPlayer.kidSwingAt = Date.now();
@@ -337,7 +345,12 @@ window.initControls = (socket) => {
 
     const getSkill = (charType, slot) => {
         let ids = window.GameData.Characters[charType].skillIds;
-        return window.GameData.Skills[ids[slot - 1]] || {};
+        const raw = window.GameData.Skills[ids[slot - 1]] || {};
+        // ⚡ 키자루 : 모든 스킬 쿨타임 3초 감소
+        if (window.myPlayer && window.myPlayer.hasKizaru && raw.cd) {
+            return Object.assign({}, raw, { cd: Math.max(1000, raw.cd - 3000) });
+        }
+        return raw;
     };
     /** ⚡🔮 환수호박 전용 스킬 데이터 */
     const getAmberSkill = (slot) => {
@@ -415,11 +428,8 @@ window.initControls = (socket) => {
             // 🔥 [봉황인] 바라보는 방향(좌/우)으로만 불꽃 덩어리를 날린다
             socket.emit('useSkill', { type: 1, dir: window.myPlayer.lastFacing, x: window.myPlayer.x, y: window.myPlayer.y });
         } else if (charType === 'KUZAN_P') {
-            // ❄️ [아이스 볼] 이동키 방향으로 얼음 구슬을 던진다
-            let bx = window.myPlayer.moveX || window.joyX || 0;
-            let by = window.myPlayer.moveY || window.joyY || 0;
-            if (Math.hypot(bx, by) < 0.05) { bx = window.myPlayer.lastFacing || 1; by = 0; }
-            socket.emit('useSkill', { type: 1, dir: window.myPlayer.lastFacing, dirX: bx, dirY: by, x: window.myPlayer.x, y: window.myPlayer.y });
+            // ❄️ [아이스 볼] 바라보는 방향(좌/우)으로만 얼음 구슬을 던진다
+            socket.emit('useSkill', { type: 1, dir: window.myPlayer.lastFacing, x: window.myPlayer.x, y: window.myPlayer.y });
         } else if (charType === 'KID') {
             // 🧲 [어사인] 주변 적에게 고철을 붙인다
             socket.emit('useSkill', { type: 1, dir: window.myPlayer.lastFacing, x: window.myPlayer.x, y: window.myPlayer.y });
@@ -561,7 +571,7 @@ window.initControls = (socket) => {
         let sk = getSkill(charType, 3);
         let castTime = sk.castTime;
 
-        window.myPlayer.cd3 = now + sk.cd; 
+        window.myPlayer.cd3 = now + (window.myPlayer.hasKizaru ? Math.max(1000, sk.cd - 3000) : sk.cd); 
         
         let dirX = window.myPlayer.moveX || window.myPlayer.lastFacing;
         let dirY = window.myPlayer.moveY || 0;

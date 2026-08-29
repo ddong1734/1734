@@ -89,10 +89,13 @@ window.registerNetModule('player', function (socket, U) {
             //    이때만큼은 로컬 좌표를 보존하지 않고 서버 값을 그대로 받아야
             //    시전자 화면에서도 돌진·고정이 제대로 보인다.
             const nowMs = Date.now();
+            //    ❄️ 쿠잔(해적) 아이스 타임도 마찬가지다. 서버가 돌진 좌표를 몰기 때문에
+            //       이때 로컬 좌표를 지키면 '얼기만 하고 안 나가는' 것처럼 보인다.
             const daidoDriven =
                 (data.daidoFury && nowMs < (data.daidoFuryEnd || 0)) ||
                 (data.daidoRush && nowMs < (data.daidoRushEnd || 0)) ||
-                (data.daidoIaiAt && nowMs < data.daidoIaiAt);
+                (data.daidoIaiAt && nowMs < data.daidoIaiAt) ||
+                (data.kzDashEnd && nowMs < data.kzDashEnd);
 
             // 🛟 로컬이 관리해야 하는 값은 서버 값으로 덮이지 않게 보존한다
             let localState = {
