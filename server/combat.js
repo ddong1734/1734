@@ -361,6 +361,11 @@ function handleBasicAttack(socket, attacker, actionData) {
         emitDamageText(t.x, t.y, actual);
 
         if (isKashimo) Kashimo.addCharge(t, 'player', tid, serverContext);
+        // ❄️ [아이스 글러브] 평타가 맞으면 냉기가 터진다 (평타 피해와 별개)
+        if (attacker.kzGloveEnd && Date.now() < attacker.kzGloveEnd &&
+            typeof serverContext.kuzanpBasicHit === 'function') {
+            serverContext.kuzanpBasicHit(attacker, t.x, t.y);
+        }
 
         if (t.hp <= 0) { checkPlayerDeath(t, socket.id); continue; }
         io.to(tid).emit('takeDamage', actual);
@@ -389,6 +394,11 @@ function handleBasicAttack(socket, attacker, actionData) {
             onMobExtra: (o, kind, id) => {
                 rollFreeze(o);
                 if (isKashimo) Kashimo.addCharge(o, kind, id, serverContext);
+                // ❄️ [아이스 글러브] 몬스터에게도 냉기가 터진다
+                if (attacker.kzGloveEnd && Date.now() < attacker.kzGloveEnd &&
+                    typeof serverContext.kuzanpBasicHit === 'function') {
+                    serverContext.kuzanpBasicHit(attacker, o.x, o.y);
+                }
                 if (isSaka) {
                     let key = (kind === 'minion') ? ('minion_' + id) : (kind === 'okra') ? ('okra_' + id) : kind;
                     addBurn(key, o, 20, 2000, attacker.id);

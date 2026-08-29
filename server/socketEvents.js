@@ -183,7 +183,7 @@ io.on('connection', (socket) => {
 
     socket.on('joinLobby', (data) => {
         let nick = typeof data === 'string' ? data : data.nickname;
-        let charType = typeof data === 'string' ? 'PARK' : (data.character || 'PARK');
+        let charType = typeof data === 'string' ? 'BORSALINO' : (data.character || 'BORSALINO');
         let sessionId = (data && data.sessionId) ? data.sessionId : null;
 
         if (State.gameStarted) {
@@ -272,6 +272,9 @@ io.on('connection', (socket) => {
         if (p.kidLaserFireEnd && now < p.kidLaserFireEnd) return;
         if (p.kidGolemCastEnd && now < p.kidGolemCastEnd) return;
         if (p.kidHoldUntil && now < p.kidHoldUntil) return;
+        // ❄️ 쿠잔(해적) : 결빙 · 돌진 중에는 서버가 좌표를 몬다
+        if (p.kzDashCastEnd && now < p.kzDashCastEnd) return;
+        if (p.kzDashEnd && now < p.kzDashEnd) return;
         // 🛡️ 남의 보호막(적) 안으로는 들어갈 수 없다 — 서버가 최종 판정한다
         for (const sid in State.players) {
             const sp = State.players[sid];

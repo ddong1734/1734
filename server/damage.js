@@ -108,6 +108,8 @@ module.exports = (deps) => {
                 const R = 210;                                     // MARCO_S3.shieldRadius
                 if (Math.hypot(obj.x - sp.marcoShieldX, obj.y - sp.marcoShieldY) <= R) {
                     io.emit('marcoShieldHit', { x: obj.x, y: obj.y, sx: sp.marcoShieldX, sy: sp.marcoShieldY });
+                    // 💚 막아낸 피해만큼 시전자가 회복한다
+                    if (S.shieldAbsorb) S.shieldAbsorb(sp, damage, io);
                     return;                                        // 🛡️ 완전히 막혔다
                 }
             }

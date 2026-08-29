@@ -20,6 +20,10 @@ const PLAYER_DELTA_FIELDS = [
     'kidStack', 'kidSlow', 'kidJumpCut', 'kidHoldUntil', 'kidFieldUntil',
     'kidLaserCastEnd', 'kidLaserFireEnd', 'kidLaserAngle', 'kidLaserX', 'kidLaserY',
     'kidGolemCastEnd', 'kidGolemEnd',
+    // ❄️ 쿠잔(해적) — 남의 화면에도 보여야 한다
+    'kzGloveEnd', 'kzDashCastEnd', 'kzDashEnd', 'kzDashDX', 'kzDashDY',
+    // 🌀 포탈 대기 카운트다운 — 남의 화면에도 보여야 한다
+    'portalDwellUntil', 'darkDwellUntil', 'curseDwellUntil', 'lightDashUntil', 'lightDashDir',
     'ladderCastEnd', 'ladderBeamEnd', 'ladderCharged',
     'skill2EndTime', 'characterType',
     'hasJusticeCoat', 'hasPika', 'hasHie', 'hasMagu', 'hasKizaru', 'hasAokiji', 'hasAkainu',
@@ -224,6 +228,21 @@ function shieldAt(x, y, team) {
     return null;
 }
 
+/**
+ * 💚 [불사 엉겅퀴] 막아낸 피해만큼 마르코의 체력을 돌려준다.
+ *    보호벽이 흡수한 공격이 곧 시전자의 회복이 된다.
+ */
+function shieldAbsorb(sp, dmg, io) {
+    if (!sp || !(dmg > 0)) return;
+    const before = sp.hp;
+    sp.hp = Math.min(sp.maxHp, sp.hp + dmg);
+    const gained = sp.hp - before;
+    if (gained > 0 && io) {
+        io.to(sp.id).emit('heal', Math.round(gained));
+        io.emit('syncPlayerFull', sp);
+    }
+}
+
 /** 🛡️ 보호막 밖으로 밀어낸다 (겹쳐 있으면 표면으로 튕겨낸다) */
 function pushOutOfShield(o, team) {
     const sp = shieldAt(o.x, o.y, team);
@@ -267,9 +286,12 @@ function makeTurrets() {
 /** 새 플레이어 객체 */
 function makePlayer(opts) {
     const Characters = opts.Characters;
-    const ch = Characters[opts.charType] || Characters.PARK;
+    // 🛟 [안전장치] 캐릭터가 없거나 알 수 없는 값이면 기본 캐릭터로 되돌린다.
+    //    (박인범을 지운 뒤 폴백이 사라져 크래시가 났다)
+    const charType = (opts.charType && Characters[opts.charType]) ? opts.charType : 'BORSALINO';
+    const ch = Characters[charType];
     return Object.assign({
-        id: opts.id, nickname: opts.nick, characterType: opts.charType, team: opts.team,
+        id: opts.id, nickname: opts.nick, characterType: charType, team: opts.team,
         sessionId: opts.sessionId, disconnected: false,
         x: opts.team === 1 ? 12800 : 19200, y: 1955,
         hp: ch.hp, maxHp: ch.hp, gold: 100000,
@@ -323,6 +345,10 @@ function makePlayer(opts) {
         kidLaserCastEnd: 0, kidLaserFireEnd: 0, kidLaserNextTick: 0,
         kidLaserAngle: 0, kidLaserX: 0, kidLaserY: 0,
         kidGolemCastEnd: 0, kidGolemEnd: 0,
+        // ❄️ 쿠잔(해적) — 아이스 볼 · 글러브 · 아이스 타임
+        kzS1CdEnd: 0, kzS2CdEnd: 0, kzS3CdEnd: 0,
+        kzGloveEnd: 0, kzTrailAt: 0,
+        kzDashCastEnd: 0, kzDashEnd: 0, kzDashDX: 1, kzDashDY: 0, kzDashHit: false,
         guraCdEnd: 0, yamiCdEnd: 0, yamiLockUntil: 0, yamiBindUntil: 0, guraChargeUntil: 0, _castStuckSince: 0,
         inventory: [], equippedUids: [], seolgonnyakCount: 0,
         orbitSpheres: 0, orbitSpeedMult: 1.0,
@@ -409,6 +435,8 @@ const State = {
     marcoBalls: [], marcoFields: [],
     // 🧲 키드 — 고철이 붙은 대상 목록
     kidMarks: [],
+    // ❄️ 쿠잔(해적) — 날아가는 얼음 구슬
+    kuzanpBalls: [],
     // 🕶️ 암매상 — 아이템별 할인율(%) 과 다음 갱신 시각
     blackMarket: { discounts: {}, nextRollAt: 0 },
     sukunaSlashes: [],   // 예고 중인 참격 { x, y, w, h, fireAt, done }
@@ -505,7 +533,7 @@ function toemaDmgById(attackerId, damage) {
 }
 
 module.exports = {
-    shieldAt, pushOutOfShield,
+    shieldAt, pushOutOfShield, shieldAbsorb,
     State, compressors, DeltaCompressor,
     makeMonster, makeHinbeom, makeBlackbeard, makeBurgess, makeBases, makeTurrets, makePlayer, makeNpcs, baseStatus,
     makeSukuna,

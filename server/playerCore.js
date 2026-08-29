@@ -92,8 +92,8 @@ function clampSpecialArea(p, nx, ny) {
 }
 
 function recalcStats(p) {
-    let charType = p.characterType || 'PARK';
-    let char = Characters[charType] || Characters.PARK;
+    let charType = p.characterType || 'BORSALINO';
+    let char = Characters[charType] || Characters.BORSALINO;
     let oldMax = p.maxHp || char.hp;
 
     p.maxHp = char.hp + ((p.level || 0) * 300);
@@ -236,6 +236,8 @@ const LOCK_FIELDS_RESET = {
     // 🧲 키드 : 진행 중인 연출을 끈다 (고철 표시도 지운다)
     kidLaserCastEnd: 0, kidLaserFireEnd: 0, kidGolemCastEnd: 0, kidGolemEnd: 0,
     kidStack: 0, kidSlow: 1, kidHoldUntil: 0,
+    // ❄️ 쿠잔(해적)
+    kzGloveEnd: 0, kzDashCastEnd: 0, kzDashEnd: 0, kzDashHit: false,
     // 🗣️ NPC 대화 상태도 함께 정리한다
     npcTalking: null, npcMode: null, npcLine: 0, npcNoExit: false,
     _castStuckSince: 0
