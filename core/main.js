@@ -432,6 +432,13 @@ setInterval(() => {
                 }
             }
 
+            // 🏛️ 세계정부 웹이 열려 있으면 골드 표시를 갱신한다
+            const _gv = document.getElementById('govModal');
+            if (_gv && _gv.style.display === 'flex') {
+                const _gg = document.getElementById('govGold');
+                if (_gg) _gg.textContent = (pObj.gold || 0).toLocaleString();
+            }
+
             // 🗺️ 미니맵 — 1초에 12번만 다시 그린다 (부담을 줄인다)
             if (loopNow - (window._mmAt || 0) >= 80) {
                 window._mmAt = loopNow;
@@ -602,6 +609,17 @@ setInterval(() => {
         let myD = window.serverDetectors.find(d => d.ownerId === window.myId);
         if (!pObj.isDead && myD && Math.hypot(pObj.x - (myD.x + 90), pObj.y - (window.GROUND_Y - 22.5)) < 180) nearChest = true;
 
+        // 🏛️ 세계정부(우리 팀 넥서스) 근처인가
+        let nearGov = false;
+        if (!pObj.isDead && window.govState && window.serverBases) {
+            const tm = pObj.team;
+            const g = window.govState.gov || {};
+            if (g[tm] === 'wg' && window.serverBases[tm]) {
+                const b = window.serverBases[tm];
+                nearGov = Math.hypot(pObj.x - b.x, pObj.y - b.y) < 280;
+            }
+        }
+
         // 🕶️ 암매상 근처인가
         let nearBM = false;
         if (!pObj.isDead && window.blackMarket) {
@@ -613,6 +631,7 @@ setInterval(() => {
             if (pObj.npcTalking) window.hideUnifiedBtn();
             else if (nearNpc) window.setUnifiedBtn('대화<br><span style="font-size:12px;">(' + (nearNpc.name || 'NPC') + ')</span>', '1.0', window.interactNpc);
             else if (nearBM) window.setUnifiedBtn('거래<br><span style="font-size:12px;">(암매상)</span>', '1.0', window.openBlackMarket);
+            else if (nearGov) window.setUnifiedBtn('열기<br><span style="font-size:12px;">(세계정부)</span>', '1.0', window.openGovTree);
             else if (inShop) window.setUnifiedBtn('열기', '1.0', window.openShop); 
             else if (inSmith) window.setUnifiedBtn('열기', '1.0', window.openSmith); 
             else if (inStorage) window.setUnifiedBtn('열기', '1.0', window.openStorage); 
@@ -633,6 +652,8 @@ setInterval(() => {
                 if(md.chest && md.chest.style.display === 'flex' && typeof window.closeChest === 'function') window.closeChest(); 
                 const bmEl = document.getElementById('blackMarketModal');
                 if (bmEl && bmEl.style.display === 'flex' && typeof window.closeBlackMarket === 'function') window.closeBlackMarket();
+                const gvEl = document.getElementById('govModal');
+                if (gvEl && gvEl.style.display === 'flex' && typeof window.closeGovTree === 'function') window.closeGovTree();
                 if(md.test && md.test.style.display === 'flex' && typeof window.closeTestStorage === 'function') window.closeTestStorage();
             }
         } else if (typeof window.hideUnifiedBtn === 'function') { 

@@ -627,7 +627,7 @@ window.initControls = (socket) => {
             let dx3 = window.myPlayer.moveX || window.joyX || 0;
             let dy3 = window.myPlayer.moveY || window.joyY || 0;
             if (Math.hypot(dx3, dy3) < 0.05) { dx3 = window.myPlayer.lastFacing || 1; dy3 = 0; }
-            window.myPlayer.kzDashCastEnd = now + 500;
+            window.myPlayer.kzDashEnd = now + 450;   // ⚡ 대기 없이 바로 돌진
             window.myPlayer.moveX = 0; window.myPlayer.moveY = 0;
             clearInterval(window.autoAttackInterval);
             socket.emit('useSkill', { type: 3, dir: window.myPlayer.lastFacing, dirX: dx3, dirY: dy3, x: window.myPlayer.x, y: window.myPlayer.y });

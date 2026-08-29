@@ -17,6 +17,21 @@
 
 window.registerNetModule('world', function (socket, U) {
 
+    // 🏛️ [세계정부] 진영 · 스킬 웹 상태
+    socket.on('govSync', (d) => {
+        if (!d) return;
+        window.govState = { gov: d.gov || {}, tree: d.tree || {} };
+        // 넥서스 렌더링이 govType 을 보므로 함께 갱신한다
+        if (window.serverBases) {
+            if (window.serverBases[1]) window.serverBases[1].govType = (d.gov && d.gov[1]) || 'none';
+            if (window.serverBases[2]) window.serverBases[2].govType = (d.gov && d.gov[2]) || 'none';
+        }
+        const m = document.getElementById('govModal');
+        if (m && m.style.display === 'flex' && typeof window.renderGovTree === 'function') {
+            window.renderGovTree();
+        }
+    });
+
     // 🕶️ [암매상] 위치 · 할인율 · 다음 갱신 시각
     socket.on('blackMarketSync', (d) => {
         if (!d) return;
