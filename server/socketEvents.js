@@ -702,6 +702,21 @@ io.on('connection', (socket) => {
         io.emit('syncPlayerFull', p);
     });
 
+    // ❄️ [아이스 글러브] 평타를 휘두를 때마다 냉기 폭발 (적중 여부 무관)
+    socket.on('kuzanpSwing', (d) => {
+        let p = State.players[socket.id];
+        if (!p || p.isDead) return;
+        if (p.characterType !== 'KUZAN_P') return;
+        if (!p.kzGloveEnd || Date.now() >= p.kzGloveEnd) return;
+        const tx = Number(d && d.x), ty = Number(d && d.y);
+        if (!Number.isFinite(tx) || !Number.isFinite(ty)) return;
+        // 너무 먼 좌표는 무시한다 (조작 방지)
+        if (Math.hypot(tx - p.x, ty - p.y) > 260) return;
+        if (typeof serverContext.kuzanpBasicHit === 'function') {
+            serverContext.kuzanpBasicHit(p, tx, ty);
+        }
+    });
+
     socket.on('disconnect', () => {
         let dp = State.players[socket.id];
         if (dp && dp.surgeActive) {

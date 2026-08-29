@@ -130,6 +130,8 @@ function recalcStats(p) {
     p.hasPhoenixFruit = false; p.hasGoldenBelt = false; p.hasPhoenixMarco = false;
     // 🧲 키드 전용 : 자기자기열매 · 기계 의수 · 각성
     p.hasMagnetFruit = false; p.hasMechArm = false; p.hasMagnetAwake = false;
+    // ❄️ 쿠잔(해적) 전용 : 얼음 의족 · 한껏 해이해진 정의
+    p.hasIceLeg = false; p.hasLazyJustice = false;
 
     const FLAGS = ['hasJokbal','hasDaluFengwei','hasJadam','hasPepsiArt','hasPika','hasHie','hasMagu',
                    'hasJusticeCoat','hasKizaru','hasAokiji','hasAkainu','hasGoro','hasArkMaxim','hasGodEnel',
@@ -141,7 +143,8 @@ function recalcStats(p) {
                    'hasJapgeom', 'hasDojwama', 'hasYonggol', 'hasSeokhondo',
                    'hasTacheon', 'hasAngelWing', 'hasAngel',
                    'hasPhoenixFruit', 'hasGoldenBelt', 'hasPhoenixMarco',
-                   'hasMagnetFruit', 'hasMechArm', 'hasMagnetAwake'];
+                   'hasMagnetFruit', 'hasMechArm', 'hasMagnetAwake',
+                   'hasIceLeg', 'hasLazyJustice'];
     const NUMS = { maxHp: 1, speedMult: 1, bonusDamage: 1, defense: 1, hpRegen: 1, attackSpeedMult: 1, orbitSpheres: 1, dmgPct: 1 };
 
     p.equippedUids.forEach(uid => {

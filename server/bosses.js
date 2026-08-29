@@ -417,7 +417,7 @@ module.exports = (deps) => {
         }
         // 💎 황금 오크라로 정해지면 20% 확률로 '해루석 오크라' 로 변형된다.
         //    체력과 공격력이 황금의 2배다. (청록색)
-        if (ok.isGolden && Math.random() < 0.20) {
+        if (ok.isGolden && Math.random() < 0.15) {
             ok.isHaeru = true;
             ok.maxHp = 4000;              // 황금 2000 의 2배
             ok.atk = 120;                 // 황금 60(기본 30x2) 의 2배

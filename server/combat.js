@@ -330,13 +330,17 @@ function handleBasicAttack(socket, attacker, actionData) {
     }
 
     let freezeChance = (isKuzan ? 0.06 : 0) + (attacker.hasJokbal ? 0.06 : 0);
+    // 🧊 아오키지 : 동결 시간 +1초
+    const freezeBonus = attacker.hasAokiji ? 1000 : 0;
     const rollFreeze = (o) => {
         if (freezeChance > 0 && Math.random() < freezeChance) {
-            o.frozenUntil = Math.max(o.frozenUntil || 0, now + 1000);
+            o.frozenUntil = Math.max(o.frozenUntil || 0, now + 1000 + freezeBonus);
             return true;
         }
         return false;
     };
+    // 🔥 아카이누 : 화상 지속 +2초
+    const burnMs = 2000 + (attacker.hasAkainu ? 2000 : 0);
 
     let counterFired = false;
     const tryCounter = (victim) => {
@@ -361,15 +365,9 @@ function handleBasicAttack(socket, attacker, actionData) {
         emitDamageText(t.x, t.y, actual);
 
         if (isKashimo) Kashimo.addCharge(t, 'player', tid, serverContext);
-        // ❄️ [아이스 글러브] 평타가 맞으면 냉기가 터진다 (평타 피해와 별개)
-        if (attacker.kzGloveEnd && Date.now() < attacker.kzGloveEnd &&
-            typeof serverContext.kuzanpBasicHit === 'function') {
-            serverContext.kuzanpBasicHit(attacker, t.x, t.y);
-        }
-
         if (t.hp <= 0) { checkPlayerDeath(t, socket.id); continue; }
         io.to(tid).emit('takeDamage', actual);
-        if (isSaka) addBurn(tid, t, 20, 2000, attacker.id);
+        if (isSaka) addBurn(tid, t, 20, burnMs, attacker.id);
         if (rollFreeze(t)) io.emit('syncPlayerFull', t);
 
         tryCounter(t);
@@ -394,14 +392,9 @@ function handleBasicAttack(socket, attacker, actionData) {
             onMobExtra: (o, kind, id) => {
                 rollFreeze(o);
                 if (isKashimo) Kashimo.addCharge(o, kind, id, serverContext);
-                // ❄️ [아이스 글러브] 몬스터에게도 냉기가 터진다
-                if (attacker.kzGloveEnd && Date.now() < attacker.kzGloveEnd &&
-                    typeof serverContext.kuzanpBasicHit === 'function') {
-                    serverContext.kuzanpBasicHit(attacker, o.x, o.y);
-                }
                 if (isSaka) {
                     let key = (kind === 'minion') ? ('minion_' + id) : (kind === 'okra') ? ('okra_' + id) : kind;
-                    addBurn(key, o, 20, 2000, attacker.id);
+                    addBurn(key, o, 20, burnMs, attacker.id);
                 }
             }
         });

@@ -193,6 +193,8 @@ module.exports = (deps) => {
     function applyIceAge(attacker, cx, cy, radius, damage, freezeDuration) {
         let now = Date.now();
         let hasAokiji = attacker.hasAokiji;
+        // 🧊 아오키지 : 모든 스킬 동결 시간 +1초
+        if (hasAokiji) freezeDuration += 1000;
 
         let enemyBase = State.bases[attacker.team === 1 ? 2 : 1];
         if (enemyBase && enemyBase.hp > 0 && Math.hypot(cx - enemyBase.x, cy - enemyBase.y) < radius + 150) {
