@@ -11,18 +11,10 @@
 (function () {
     let cv = null, ctx = null;
 
-    // 🗺️ 표시 범위 — 양쪽 정글 끝까지 넉넉히 담는다
-    const MAP_X0 = 11000, MAP_X1 = 21000;
+    // 🗺️ 표시 범위 — 양쪽 정글 끝(세로벽 11560 / 20400)을 넉넉히 감싼다
+    const MAP_X0 = 10900, MAP_X1 = 21100;
     // 세로는 박힌범 바구니(y ≈ -2400) 부터 지면(y = 2000) 까지
     const MAP_Y0 = -2500, MAP_Y1 = 2100;
-
-    // 🧱 세로벽 (index.js 의 SOLID_WALLS 와 같은 값)
-    const WALLS = [
-        { x: 11560, y: -900,  w: 40, h: 900 },
-        { x: 20400, y: -900,  w: 40, h: 900 },
-        { x: 13400, y: -2200, w: 40, h: 800 },
-        { x: 18560, y: -2200, w: 40, h: 800 }
-    ];
 
     function ensure() {
         if (cv && cv.isConnected) return true;
@@ -35,6 +27,10 @@
     /** 월드 좌표 → 미니맵 좌표 */
     const mx = (x) => ((Math.max(MAP_X0, Math.min(MAP_X1, x)) - MAP_X0) / (MAP_X1 - MAP_X0)) * cv.width;
     const my = (y) => ((Math.max(MAP_Y0, Math.min(MAP_Y1, y)) - MAP_Y0) / (MAP_Y1 - MAP_Y0)) * cv.height;
+    /** ⚠️ mx/my 는 범위를 벗어난 좌표를 가장자리로 밀어 넣는다.
+     *     그대로 그리면 별세계(x 30000~40960) 지형까지 오른쪽 끝에 뭉쳐 보인다.
+     *     그리기 전에 이 함수로 걸러야 한다. */
+    const inRange = (x) => (x >= MAP_X0 - 200 && x <= MAP_X1 + 200);
 
     window.drawMiniMap = function () {
         if (!ensure()) return;
@@ -47,30 +43,36 @@
         ctx.fillStyle = "rgba(120,180,120,0.14)"; ctx.fillRect(blueEnd, 0, redStart - blueEnd, H);
         ctx.fillStyle = "rgba(231,76,60,0.20)";   ctx.fillRect(redStart, 0, W - redStart, H);
 
-        // ── 🟫 가로벽(발판) ────────────────────────────────────
-        const plats = window.PLATFORMS || [];
-        ctx.fillStyle = "rgba(200,205,215,0.55)";
+        // ── 🧱 지형 (가로 발판 · 세로벽) ───────────────────────
+        //    Platforms 안에 둘 다 들어 있다. 폭과 높이로 구분한다.
+        //      w > h  → 가로 발판 (회색)
+        //      h >= w → 세로벽   (노랑)
+        const plats = (window.GameData && window.GameData.Map && window.GameData.Map.Platforms)
+                    ? window.GameData.Map.Platforms : (window.PLATFORMS || []);
         for (let i = 0; i < plats.length; i++) {
             const p = plats[i];
             if (!p) continue;
-            const x1 = mx(p.x - (p.w || 0) / 2), x2 = mx(p.x + (p.w || 0) / 2);
-            const yy = my(p.y);
-            if (x2 - x1 < 0.6) continue;
-            ctx.fillRect(x1, yy - 0.6, Math.max(1, x2 - x1), 1.4);
+            const pw = p.w || 0, ph = p.h || 0;
+            // 미니맵 범위 밖(별세계 등)은 아예 그리지 않는다
+            if (!inRange(p.x)) continue;
+
+            if (pw > ph) {
+                // 🟫 가로 발판
+                const x1 = mx(p.x - pw / 2), x2 = mx(p.x + pw / 2);
+                if (x2 - x1 < 0.5) continue;
+                ctx.fillStyle = "rgba(205,210,220,0.6)";
+                ctx.fillRect(x1, my(p.y) - 0.6, Math.max(1, x2 - x1), 1.3);
+            } else {
+                // 🧱 세로벽
+                const y1 = my(p.y - ph / 2), y2 = my(p.y + ph / 2);
+                ctx.fillStyle = "rgba(255,232,150,0.85)";
+                ctx.fillRect(mx(p.x) - 0.7, y1, 1.5, Math.max(1.5, y2 - y1));
+            }
         }
 
         // ── 지면선 ─────────────────────────────────────────────
         ctx.strokeStyle = "rgba(255,255,255,0.42)"; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(0, my(2000)); ctx.lineTo(W, my(2000)); ctx.stroke();
-
-        // ── 🧱 세로벽 ──────────────────────────────────────────
-        ctx.fillStyle = "rgba(255,235,160,0.85)";
-        for (let i = 0; i < WALLS.length; i++) {
-            const w = WALLS[i];
-            const x1 = mx(w.x - w.w / 2);
-            const y1 = my(w.y - w.h / 2), y2 = my(w.y + w.h / 2);
-            ctx.fillRect(x1 - 0.6, y1, 1.6, Math.max(1.5, y2 - y1));
-        }
 
         // ── 🏛️ 넥서스 ──────────────────────────────────────────
         [[12250, "#3498db"], [19750, "#e74c3c"]].forEach(function (n) {
