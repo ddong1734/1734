@@ -64,6 +64,9 @@ window.GLOBAL_ITEM_DB = {
     'phoenix_fruit': { name: '새새 열매 모델 불사조', desc: '🔥[봉리력] 지속 +2초·범위 증가 · [불사 엉겅퀴] 세로 길이 증가 + 폭발에 화상(1초마다 30, 5초)', color: '#e74c3c', rarity: '전설', value: 18000, sellPrice: 9000 },
     'golden_belt': { name: '황금 벨트', desc: '🔥[봉황인]에 닿은 대상에게 화상(1초마다 30, 5초)', color: '#2ecc71', rarity: '희귀', value: 6000, sellPrice: 3000 },
     'phoenix_marco': { name: '불사조 마르코', desc: '새새 열매 + 황금 벨트의 모든 능력 (🔥1·2·3번 스킬 강화)', color: '#9b59b6', rarity: '신화', value: 50000, sellPrice: 25000 },
+    // ❄️ 쿠잔(해적) 전용 계열
+    'ice_leg': { name: '얼음 의족', desc: '❄️[아이스 글러브] 냉기 폭발 범위 1.5배·피해 2배 · [아이스 타임] 맞은 대상의 모든 스킬 5초 봉인', color: '#9b59b6', rarity: '신화', value: 40000, sellPrice: 20000 },
+    'lazy_justice': { name: '한껏 해이해진 정의', desc: '빙빙열매 + 얼음 의족의 모든 능력 · ❄️쿠잔(해적)의 모든 스킬과 평타 동결 시간 +1초', color: '#9b59b6', rarity: '신화', value: 80000, sellPrice: 40000 },
     // 🧲 유스타스 키드 전용 계열
     'magnet_fruit': { name: '자기자기열매', desc: '🧲[어사인] 감속 강화(→8%) + 점프 높이 저하 · [댐드 펑크] 차징 시간 절반', color: '#e74c3c', rarity: '전설', value: 18000, sellPrice: 9000 },
     'mech_arm': { name: '기계 의수', desc: '🗿고철 골렘 상태에서 주변에 자기장 형성 — 범위 안 적의 이동속도·점프 높이 절반 + 끌어당김', color: '#e74c3c', rarity: '전설', value: 18000, sellPrice: 9000 },
@@ -82,9 +85,9 @@ window.GLOBAL_ITEM_DB = {
     'raijin': { name: '뇌신(雷神)', desc: '카시모 전용: 여의의 모든 효과 + 전자파 범위·거리 증가 및 0.3초 뒤 전체 자리 동시 재폭발 + 음파 시전 시 번개 7발 동시 발사', color: '#9b59b6', rarity: '신화', value: 60000, sellPrice: 30000 },
     // ⬛ 다부라 카라바 전용 신화 아이템
     'black_square': { name: '■', desc: '다부라 카라바 전용: [빛] 폭발 범위 증가, [어둠] 소용돌이 및 어둠 구체 폭발 범위 증가, [아광속 발차기] 이동속도 증가량 1.5배 → 2배', color: '#9b59b6', rarity: '신화', value: 60000, sellPrice: 30000 },
-    'kizaru': { name: '키자루', desc: '체력+300, 공격력+30, 열매+코트 특성, 시전 시 주변 광탄 폭발', color: '#9b59b6', rarity: '신화', value: 75000, sellPrice: 22500 },
-    'aokiji': { name: '아오키지', desc: '체력+300, 공격력+30, 열매+코트 특성, 스킬 쿨타임 5초 동결', color: '#9b59b6', rarity: '신화', value: 75000, sellPrice: 22500 },
-    'akainu': { name: '아카이누', desc: '체력+300, 공격력+30, 열매+코트 특성, 마그마 낙하 강화', color: '#9b59b6', rarity: '신화', value: 75000, sellPrice: 22500 },
+    'kizaru': { name: '키자루', desc: '체력+500, 공격력 15%, 열매+코트 특성, 시전 시 주변 광탄 폭발 · ⚡볼사리노 모든 스킬 쿨타임 3초 감소', color: '#9b59b6', rarity: '신화', value: 75000, sellPrice: 22500 },
+    'aokiji': { name: '아오키지', desc: '체력+500, 공격력 15%, 열매+코트 특성, 스킬 쿨타임 5초 동결 · 🧊쿠잔(해군) 모든 스킬·평타 동결 시간 +1초', color: '#9b59b6', rarity: '신화', value: 75000, sellPrice: 22500 },
+    'akainu': { name: '아카이누', desc: '체력+500, 공격력 15%, 열매+코트 특성, 마그마 낙하 강화 · 🔥사카즈키 모든 스킬·평타 화상 지속 +2초', color: '#9b59b6', rarity: '신화', value: 75000, sellPrice: 22500 },
     'ark_maxim': { name: '방주 맥심', desc: '에넬 전용: 만뢰 범위 3배, 낙뢰 두께/길이 1.5배, 낙뢰 수 2배 증가', color: '#9b59b6', rarity: '신화', value: 75000, sellPrice: 22500 },
     'god_enel': { name: '갓 에넬', desc: '체력+300, 공+30, 쿠릉쿠릉+맥심 특성, 뇌영 범위/크기 2.5배 증가', color: '#9b59b6', rarity: '신화', value: 100000, sellPrice: 50000 }
 };
@@ -440,6 +443,30 @@ window.renderSmithUI = () => {
     let boxAW = document.createElement('div'); boxAW.className = 'shop-item-box'; boxAW.style.border = "3px solid #d63cf0";
     boxAW.innerHTML = `<div style="margin-bottom:8px;"><h3 style="color:#d63cf0; margin:0 0 5px 0;">자기자기열매(각성)</h3><p style="color:#bdc3c7; font-size:12px;">비용: 5,000 G<br>재료: 자기자기열매+기계 의수<br><span style="color:#f0a8ff;">키드 1·2·3번 전부 강화</span></p></div><button class="btn-main" style="padding:8px; font-size:15px; width:100%; background:${canCraftAwake?'#b02fd0':'#7f8c8d'}; margin-top:auto;" onclick="window.socket.emit('craftItem', 'magnet_awake')">${canCraftAwake?'5000 G 합성':'재료 부족'}</button>`;
     grid.appendChild(boxAW);
+
+    // 🦿 얼음 의족 (신화) — 빙빙열매 + 냉족발 5개
+    let hasHF = inv.some(i => i.id === 'hie_fruit');
+    let jokbalCnt = inv.filter(i => i.id === 'jokbal').length;
+    let canCraftIL = hasHF && jokbalCnt >= 5;
+    let boxIL = document.createElement('div'); boxIL.className = 'shop-item-box'; boxIL.style.border = "3px solid #4dd8ff";
+    boxIL.innerHTML = `<div style="margin-bottom:8px;"><h3 style="color:#4dd8ff; margin:0 0 5px 0;">얼음 의족</h3><p style="color:#bdc3c7; font-size:12px;">비용: 무료<br>재료: 빙빙열매+냉족발 5개 (보유 ${jokbalCnt})<br><span style="color:#a8e8ff;">글러브 강화 · 아이스 타임 스킬 봉인</span></p></div><button class="btn-main" style="padding:8px; font-size:15px; width:100%; background:${canCraftIL?'#2fa8d8':'#7f8c8d'}; margin-top:auto;" onclick="window.socket.emit('craftItem', 'ice_leg')">${canCraftIL?'합성':'재료 부족'}</button>`;
+    grid.appendChild(boxIL);
+
+    // ⚖️ 한껏 해이해진 정의 (신화) — 빙빙열매 + 얼음 의족 + 30,000 G
+    let hasIL = inv.some(i => i.id === 'ice_leg');
+    let canCraftLJ = hasHF && hasIL && (window.myPlayer.gold || 0) >= 30000;
+    let boxLJ = document.createElement('div'); boxLJ.className = 'shop-item-box'; boxLJ.style.border = "3px solid #9b59b6";
+    boxLJ.innerHTML = `<div style="margin-bottom:8px;"><h3 style="color:#c39bd3; margin:0 0 5px 0;">한껏 해이해진 정의</h3><p style="color:#bdc3c7; font-size:12px;">비용: 30,000 G<br>재료: 빙빙열매+얼음 의족<br><span style="color:#d7bde2;">모든 동결 시간 +1초</span></p></div><button class="btn-main" style="padding:8px; font-size:15px; width:100%; background:${canCraftLJ?'#8e44ad':'#7f8c8d'}; margin-top:auto;" onclick="window.socket.emit('craftItem', 'lazy_justice')">${canCraftLJ?'30000 G 합성':'재료 부족'}</button>`;
+    grid.appendChild(boxLJ);
+
+    // ⚖️ 정의 코트 (신화) — 해군 코트 + 황금 5 + 해루석 3
+    let hasNC = inv.some(i => i.id === 'navy_coat');
+    let goldCnt = inv.filter(i => i.id === 'gold').length;
+    let haeruCnt = inv.filter(i => i.id === 'haeru').length;
+    let canCraftJC = hasNC && goldCnt >= 5 && haeruCnt >= 3;
+    let boxJC = document.createElement('div'); boxJC.className = 'shop-item-box'; boxJC.style.border = "3px solid #ecf0f1";
+    boxJC.innerHTML = `<div style="margin-bottom:8px;"><h3 style="color:#ecf0f1; margin:0 0 5px 0;">정의의 코트</h3><p style="color:#bdc3c7; font-size:12px;">비용: 무료<br>재료: 해군 코트+황금 5(${goldCnt})+해루석 3(${haeruCnt})<br><span style="color:#d5dbdb;">해군 대장 강화의 기반</span></p></div><button class="btn-main" style="padding:8px; font-size:15px; width:100%; background:${canCraftJC?'#7f8c8d':'#4a5459'}; margin-top:auto;" onclick="window.socket.emit('craftItem', 'justice_coat')">${canCraftJC?'합성':'재료 부족'}</button>`;
+    grid.appendChild(boxJC);
 
     // ✨ 신규 고유 등급 아이템: 갓 에넬
     let hasGoro = inv.some(i => i.id === 'goro_fruit');
