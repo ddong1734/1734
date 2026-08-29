@@ -84,7 +84,10 @@ function applyProjectileEffects(ctx, p, t) {
     const isPlayer = (t.kind === 'player');
 
     if (p.freeze) {
-        t.obj.frozenUntil = Math.max(t.obj.frozenUntil || 0, now + p.freeze);
+        // 🧊 아오키지 : 쿠잔(해군)의 모든 스킬 동결 시간 +1초
+        const _ow = players[p.ownerId];
+        const _fz = p.freeze + ((_ow && _ow.hasAokiji) ? 1000 : 0);
+        t.obj.frozenUntil = Math.max(t.obj.frozenUntil || 0, now + _fz);
         if (isPlayer) emitStatus(io, t.obj);
         if (p.hasJusticeCoat && p.type === 'partisan') {
             let hitKey = 'partisanHits_' + p.ownerId;
@@ -98,7 +101,12 @@ function applyProjectileEffects(ctx, p, t) {
             }
         }
     }
-    if (p.fire) addBurn(t.key, t.obj, p.fire.dps, p.fire.dur, p.ownerId);
+    // 🔥 아카이누 : 화상 지속 +2초
+    if (p.fire) {
+        const _ow = players[p.ownerId];
+        const _d = p.fire.dur + ((_ow && _ow.hasAkainu) ? 2000 : 0);
+        addBurn(t.key, t.obj, p.fire.dps, _d, p.ownerId);
+    }
 
     if (p.hasMagu && p.type === 'meigou') {
         t.obj.maguBombUntil = Math.max(t.obj.maguBombUntil || 0, now + 3000);
@@ -208,7 +216,10 @@ function updateFallers(ctx, now, list, opts) {
                     t.obj.frozenUntil = Math.max(t.obj.frozenUntil || 0, now + 100);
                     t.obj.airFreezeUntil = Math.max(t.obj.airFreezeUntil || 0, now + 100);
                 }
-                if (opts.burn && f.fire) addBurn(t.key, t.obj, f.fire.dps, f.fire.dur, f.ownerId);
+                if (opts.burn && f.fire) {
+                    const _ow2 = players[f.ownerId];
+                    addBurn(t.key, t.obj, f.fire.dps, f.fire.dur + ((_ow2 && _ow2.hasAkainu) ? 2000 : 0), f.ownerId);
+                }
                 if (t.obj.hp <= 0) checkPlayerDeath(t.obj, f.ownerId);
                 else io.to(t.id).emit('takeDamage', actual);
                 return;
@@ -224,7 +235,10 @@ function updateFallers(ctx, now, list, opts) {
                 t.obj.frozenUntil = Math.max(t.obj.frozenUntil || 0, now + 100);
                 t.obj.airFreezeUntil = Math.max(t.obj.airFreezeUntil || 0, now + 100);
             }
-            if (opts.burn && f.fire) addBurn(t.key, t.obj, f.fire.dps, f.fire.dur, f.ownerId);
+            if (opts.burn && f.fire) {
+                const _ow3 = players[f.ownerId];
+                addBurn(t.key, t.obj, f.fire.dps, f.fire.dur + ((_ow3 && _ow3.hasAkainu) ? 2000 : 0), f.ownerId);
+            }
             if (owner) aggroByKind(ctx, t, f.ownerId);
             if (t.obj.hp <= 0) killByKind(ctx, t, f.ownerId);
         });
@@ -525,7 +539,13 @@ module.exports = {
                     let actual = (sw.damage || 30) * (1 - (obj.defense || 0));
                     obj.hp -= actual;
                     emitDamageText(obj.x, obj.y, actual);
-                    if (sw.freeze) { obj.frozenUntil = Math.max(obj.frozenUntil || 0, now + sw.freeze); emitStatus(io, obj); }
+                    if (sw.freeze) {
+                        // 🧊 아오키지 : 동결 시간 +1초
+                        const _swo = players[sw.ownerId];
+                        const _swf = sw.freeze + ((_swo && _swo.hasAokiji) ? 1000 : 0);
+                        obj.frozenUntil = Math.max(obj.frozenUntil || 0, now + _swf);
+                        emitStatus(io, obj);
+                    }
                     if (obj.hp <= 0) checkPlayerDeath(obj, sw.ownerId);
                     else io.to(key).emit('bossHit', { damage: actual, dir: sw.dir, kb: sw.kb });
                     continue;
@@ -539,7 +559,11 @@ module.exports = {
                 let swMobDmg = (typeof ctx.toemaDmgById === 'function') ? ctx.toemaDmgById(sw.ownerId, sw.damage) : sw.damage;
                 obj.hp -= swMobDmg;
                 emitDamageText(obj.x, obj.y, swMobDmg);
-                if (sw.freeze) obj.frozenUntil = Math.max(obj.frozenUntil || 0, now + sw.freeze);
+                if (sw.freeze) {
+                    const _swo2 = players[sw.ownerId];
+                    obj.frozenUntil = Math.max(obj.frozenUntil || 0,
+                        now + sw.freeze + ((_swo2 && _swo2.hasAokiji) ? 1000 : 0));
+                }
                 obj.knockbackForce += sw.kb * (kind === 'okra' ? 1 : (kind === 'burgess' ? 0.25 : (kind === 'hinbeom' || kind === 'blackbeard' ? 0.2 : 0.3)));
                 if (kind === 'hinbeom' && typeof ctx.recordHinbeomDamage === 'function') ctx.recordHinbeomDamage(sw.ownerId, swMobDmg);
                 aggroByKind(ctx, { obj: obj, kind: kind, id: entity.refId }, sw.ownerId);
