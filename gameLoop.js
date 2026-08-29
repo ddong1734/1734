@@ -160,10 +160,25 @@ module.exports = {
                 if (d.chest.length >= DETECTOR_CHEST_MAX) { d.nextMineTime = now + 30000; return; }
 
                 let rd = Math.random() * 100;
-                let aid = (rd < 60) ? (Math.random() < 0.5 ? 'jadam' : 'pepsi_art')
-                        : (rd < 90) ? 'rare_box'
-                        : (rd < 98) ? ['seolgonnyak','pika_fruit','hie_fruit','magu_fruit','goro_fruit','justice_coat','phoenix_fruit','magnet_fruit'][Math.floor(Math.random() * 8)]
-                        : 'justice_coat';
+                // 🎁 유물 등급 분포
+                //    ~60%  일반 (자담 · 펩시)
+                //    ~75%  희귀 상자
+                //     8%   🟡 황금        (전설)
+                //     8%   🎖️ 해군 코트   (전설)
+                //     2%   💎 해루석      (신화)
+                //     9%   🍎 열매 6종 — 모두 같은 확률 (각 1.5%)
+                //          번쩍번쩍 · 쿠릉쿠릉 · 빙빙 · 마그마그
+                //          새새 열매 · 자기자기열매
+                //          └ 뒤의 둘은 여기가 유일한 획득처다.
+                const FRUITS = ['pika_fruit', 'goro_fruit', 'hie_fruit', 'magu_fruit',
+                                'phoenix_fruit', 'magnet_fruit'];
+                let aid;
+                if (rd < 60)      aid = (Math.random() < 0.5 ? 'jadam' : 'pepsi_art');
+                else if (rd < 73) aid = 'rare_box';
+                else if (rd < 81) aid = 'gold';        // 🟡 8%
+                else if (rd < 89) aid = 'navy_coat';   // 🎖️ 8%
+                else if (rd < 91) aid = 'haeru';       // 💎 2%
+                else aid = FRUITS[Math.floor(Math.random() * FRUITS.length)];
                 d.chest.push({ uid: Math.random().toString(36).substr(2, 9), id: aid });
                 d.nextMineTime = now + 30000;   // ⛏️ 탐지 30초
                 detUp = true;

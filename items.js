@@ -87,7 +87,16 @@ const Items = {
     'hie_fruit': { type: 'util', buyPrice: 0, sellPrice: 2500, stats: { hasHie: true }, isArtifact: true, isUnique: true },
     'magu_fruit': { type: 'util', buyPrice: 0, sellPrice: 2500, stats: { hasMagu: true }, isArtifact: true, isUnique: true },
     'goro_fruit': { type: 'util', buyPrice: 0, sellPrice: 2500, stats: { hasGoro: true }, isArtifact: true, isUnique: true },
-    'justice_coat': { type: 'util', buyPrice: 0, sellPrice: 15000, stats: { maxHp: 300, dmgPct: 0.15, hasJusticeCoat: true }, isArtifact: true, isUnique: true },
+    // 🎖️ 해군 코트 (전설) — 유물 탐지기에서 나온다
+    'navy_coat': { type: 'util', buyPrice: 0, sellPrice: 9000, stats: { maxHp: 500, dmgPct: 0.15 }, isArtifact: true, isUnique: true },
+
+    // ⚖️ 정의 코트 (신화) — 해군 코트 + 황금 5 + 해루석 3
+    'justice_coat': {
+        type: 'util', buyPrice: 0, sellPrice: 20000,
+        stats: { maxHp: 500, dmgPct: 0.15, hasJusticeCoat: true },
+        isArtifact: true, isUnique: true,
+        recipe: { cost: 0, ingredients: ['navy_coat', 'gold', 'gold', 'gold', 'gold', 'gold', 'haeru', 'haeru', 'haeru'] }
+    },
 
     // ⚡🏵️ 여의 (카시모 전용 · 전설)
     'yeoui': {
@@ -290,6 +299,35 @@ const Items = {
     },
 
     // ══════════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════
+    // ❄️ 쿠잔(해적) 전용 계열
+    //   빙빙열매 + 냉족발 5개 → 얼음 의족
+    //   빙빙열매 + 얼음 의족 + 30,000 G → 한껏 해이해진 정의
+    // ══════════════════════════════════════════════════════════════════
+
+    // 🦿 얼음 의족 (신화) — 빙빙열매 + 냉족발 5개
+    //    · 아이스 글러브 냉기 폭발 범위 1.5배 · 피해 2배
+    //    · 아이스 타임에 맞은 대상은 5초간 모든 스킬 봉인
+    'ice_leg': {
+        type: 'attack', buyPrice: 0, sellPrice: 20000,
+        displayName: '얼음 의족',
+        stats: { hasIceLeg: true }, isUnique: true,
+        exclusiveWith: ['lazy_justice'],
+        recipe: { cost: 0, ingredients: ['hie_fruit', 'jokbal', 'jokbal', 'jokbal', 'jokbal', 'jokbal'] }
+    },
+
+    // ⚖️ 한껏 해이해진 정의 (신화) — 빙빙열매 + 얼음 의족 + 30,000 G
+    //    · 빙빙열매 + 얼음 의족의 모든 능력
+    //    · 쿠잔(해적)의 모든 스킬·평타 동결 시간 +1초
+    'lazy_justice': {
+        type: 'attack', buyPrice: 0, sellPrice: 40000,
+        displayName: '한껏 해이해진 정의',
+        stats: { hasHie: true, hasIceLeg: true, hasLazyJustice: true },
+        isUnique: true,
+        exclusiveWith: ['ice_leg', 'hie_fruit'],
+        recipe: { cost: 30000, ingredients: ['hie_fruit', 'ice_leg'] }
+    },
+
     // 🧲 유스타스 키드 전용 계열
     //   자기자기열매 + 기계 의수 → 자기자기열매(각성)
     // ══════════════════════════════════════════════════════════════════
@@ -324,15 +362,15 @@ const Items = {
 
     // 5. 해군대장 전용 및 신규 에넬 신화 장비
     'kizaru': { 
-        type: 'attack', buyPrice: 0, sellPrice: 22500, stats: { maxHp: 300, dmgPct: 0.15, hasJusticeCoat: true, hasPika: true, hasKizaru: true }, isUnique: true, isArtifact: true,
+        type: 'attack', buyPrice: 0, sellPrice: 22500, stats: { maxHp: 500, dmgPct: 0.15, hasJusticeCoat: true, hasPika: true, hasKizaru: true }, isUnique: true, isArtifact: true,
         recipe: { cost: 30000, ingredients: ['justice_coat', 'pika_fruit'] } 
     },
     'aokiji': { 
-        type: 'attack', buyPrice: 0, sellPrice: 22500, stats: { maxHp: 300, dmgPct: 0.15, hasJusticeCoat: true, hasHie: true, hasAokiji: true }, isUnique: true, isArtifact: true,
+        type: 'attack', buyPrice: 0, sellPrice: 22500, stats: { maxHp: 500, dmgPct: 0.15, hasJusticeCoat: true, hasHie: true, hasAokiji: true }, isUnique: true, isArtifact: true,
         recipe: { cost: 30000, ingredients: ['justice_coat', 'hie_fruit'] } 
     },
     'akainu': { 
-        type: 'attack', buyPrice: 0, sellPrice: 22500, stats: { maxHp: 300, dmgPct: 0.15, hasJusticeCoat: true, hasMagu: true, hasAkainu: true }, isUnique: true, isArtifact: true,
+        type: 'attack', buyPrice: 0, sellPrice: 22500, stats: { maxHp: 500, dmgPct: 0.15, hasJusticeCoat: true, hasMagu: true, hasAkainu: true }, isUnique: true, isArtifact: true,
         recipe: { cost: 30000, ingredients: ['justice_coat', 'magu_fruit'] } 
     },
     'ark_maxim': { 

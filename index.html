@@ -20,6 +20,19 @@
         body { margin: 0; background-color: #0b0c10; display: flex; align-items: center; justify-content: center; height: 100vh; width: 100vw; color: white; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
         #gameCanvas { width: 100vw; height: 100vh; object-fit: cover; display: none; touch-action: none; }
         .screen-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0b0c10; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; overflow: hidden; touch-action: none; }
+        /* 🛟 [수정] 캐릭터가 늘어나면서 '대기실 입장' 버튼이 화면 밖으로 잘렸다.
+           선택 화면만 세로 스크롤을 허용하고 여백을 넉넉히 준다. */
+        #nicknameScreen {
+            justify-content: flex-start;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+            padding: 18px 10px 40px 10px;
+        }
+        #nicknameScreen h1 { font-size: 34px; margin: 6px 0 6px 0; }
+        #nicknameScreen > p { font-size: 14px; margin: 0 0 10px 0; }
+        #nicknameScreen input[type="text"] { margin-bottom: 12px; }
+        #btn-confirm-name { margin-bottom: 24px; }
         .screen-container h1 { color: #3498db; font-size: 40px; margin: 0 0 10px 0; }
         .screen-container p { color: #ccc; font-size: 16px; margin: 0 0 15px 0; }
         input[type="text"] { font-size: 18px; padding: 12px; border-radius: 10px; border: 3px solid #3498db; background: #1a1e29; color: white; text-align: center; font-weight: bold; width: 280px; margin-bottom: 15px; outline: none; max-width: 90vw; }
@@ -379,7 +392,7 @@
         <div id="battleTimer" style="margin-top:2px; font-size:11px; font-weight:bold; color:#f1c40f; letter-spacing:0.5px;">⏱️ 00:00</div>
     </div>
     <!-- 🗺️ 미니맵 — 전장 인원 박스 바로 밑 -->
-    <canvas id="miniMap" width="220" height="58"
+    <canvas id="miniMap" width="168" height="74"
         style="position:absolute; top:66px; left:8px; z-index:5; display:none;
                background:rgba(0,0,0,0.55); border:2px solid #555; border-radius:7px;"></canvas>
 
@@ -427,48 +440,48 @@
            - 3번 [아광속 발차기] : 2초 응축 후 5초 활공 (적중 시 500 대폭발)
          · ⬛ 신규 신화 아이템 [■] (어둠어둠열매 + 번쩍번쩍열매) -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="data.js?v=100000049"></script>
-    <script src="characters.js?v=100000049"></script>
-    <script src="skills.js?v=100000049"></script>
-    <script src="physics.js?v=100000049"></script>
-    <script type="module" src="renderer/renderEngine.js?v=100000049"></script>
+    <script src="data.js?v=100000052"></script>
+    <script src="characters.js?v=100000052"></script>
+    <script src="skills.js?v=100000052"></script>
+    <script src="physics.js?v=100000052"></script>
+    <script type="module" src="renderer/renderEngine.js?v=100000052"></script>
     <!-- 🎒 UI 모듈 — 반드시 아래 순서대로 로드해야 한다
          uiItems  : 아이템 DB · 상점 · 보관함 · 대장간
          uiNpc    : NPC 대화창 · 퀘스트 배너 · 보상 표시
          uiHud    : 알림 · 쿨타임 오버레이 · 열매 배지 · 통합버튼 · 핑
          uiSkill  : ⚡ 카시모 · ⬛ 다부라 스킬 버튼 상태 -->
-    <script src="ui/uiItems.js?v=100000049"></script>
-    <script src="ui/uiNpc.js?v=100000049"></script>
-    <script src="ui/uiHud.js?v=100000049"></script>
-    <script src="ui/uiSkillButtons.js?v=100000049"></script>
-    <script src="ui/uiCharSelect.js?v=100000049"></script>
-    <script src="ui/uiBlackMarket.js?v=100000049"></script>
-    <script src="ui/uiMiniMap.js?v=100000049"></script>
-    <script src="core/gameState.js?v=100000049"></script>
+    <script src="ui/uiItems.js?v=100000052"></script>
+    <script src="ui/uiNpc.js?v=100000052"></script>
+    <script src="ui/uiHud.js?v=100000052"></script>
+    <script src="ui/uiSkillButtons.js?v=100000052"></script>
+    <script src="ui/uiCharSelect.js?v=100000052"></script>
+    <script src="ui/uiBlackMarket.js?v=100000052"></script>
+    <script src="ui/uiMiniMap.js?v=100000052"></script>
+    <script src="core/gameState.js?v=100000052"></script>
 
     <!-- 🧩 네트워크 모듈 — netUtils 가 반드시 가장 먼저 로드되어야 한다.
          이후 net*.js 들이 registerNetModule 로 자신을 등록하고,
          마지막에 network.js 가 initNetwork 시점에 전부 실행한다. -->
-    <script src="core/netUtils.js?v=100000049"></script>
-    <script src="core/netLobby.js?v=100000049"></script>
-    <script src="core/netPlayer.js?v=100000049"></script>
-    <script src="core/netWorld.js?v=100000049"></script>
-    <script src="core/netBoss.js?v=100000049"></script>
-    <script src="core/netKashimo.js?v=100000049"></script>
-    <script src="core/netDabura.js?v=100000049"></script>
-    <script src="core/netNpc.js?v=100000049"></script>
-    <script src="core/netDomain.js?v=100000049"></script>
-    <script src="core/netSukuna.js?v=100000049"></script>
-    <script src="core/netDaido.js?v=100000049"></script>
-    <script src="core/netKurusu.js?v=100000049"></script>
-    <script src="core/netMarco.js?v=100000049"></script>
-    <script src="core/netKid.js?v=100000049"></script>
-    <script src="core/netKuzanP.js?v=100000049"></script>
-    <script src="core/netPing.js?v=100000049"></script>
-    <script src="core/network.js?v=100000049"></script>
+    <script src="core/netUtils.js?v=100000052"></script>
+    <script src="core/netLobby.js?v=100000052"></script>
+    <script src="core/netPlayer.js?v=100000052"></script>
+    <script src="core/netWorld.js?v=100000052"></script>
+    <script src="core/netBoss.js?v=100000052"></script>
+    <script src="core/netKashimo.js?v=100000052"></script>
+    <script src="core/netDabura.js?v=100000052"></script>
+    <script src="core/netNpc.js?v=100000052"></script>
+    <script src="core/netDomain.js?v=100000052"></script>
+    <script src="core/netSukuna.js?v=100000052"></script>
+    <script src="core/netDaido.js?v=100000052"></script>
+    <script src="core/netKurusu.js?v=100000052"></script>
+    <script src="core/netMarco.js?v=100000052"></script>
+    <script src="core/netKid.js?v=100000052"></script>
+    <script src="core/netKuzanP.js?v=100000052"></script>
+    <script src="core/netPing.js?v=100000052"></script>
+    <script src="core/network.js?v=100000052"></script>
 
-    <script src="core/input.js?v=100000049"></script>
-    <script src="core/main.js?v=100000049"></script>
+    <script src="core/input.js?v=100000052"></script>
+    <script src="core/main.js?v=100000052"></script>
 
     <!-- ★ 2-C 수정: 게임을 켤 때마다 1.5초 뒤 화면을 멈추던 디버그 alert 블록을 제거하고
          콘솔 출력으로 대체했습니다. (alert 은 메인 스레드를 완전히 정지시킴) -->
