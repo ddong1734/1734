@@ -17,6 +17,31 @@
 
 window.registerNetModule('world', function (socket, U) {
 
+    // 🤖 [파시피스타] 목록 · 레이저 · 파괴
+    socket.on('syncPacifistas', (list) => { window.pacifistas = list || []; });
+    socket.on('pacifistaLaser', (d) => {
+        if (!d) return;
+        window.visualFX.push({
+            type: 'pacifista_laser', x: d.x, y: d.y, tx: d.tx, ty: d.ty,
+            isMk3: !!d.isMk3, durationMs: 700, life: 42, maxLife: 42
+        });
+    });
+    socket.on('pacifistaDown', (d) => {
+        if (!d) return;
+        window.visualFX.push({
+            type: 'pacifista_down', x: d.x, y: d.y, isMk3: !!d.isMk3,
+            durationMs: 800, life: 48, maxLife: 48
+        });
+    });
+    // 💣 대포 폭발
+    socket.on('cannonBlast', (d) => {
+        if (!d) return;
+        window.visualFX.push({
+            type: 'cannon_blast', x: d.x, y: d.y, radius: d.radius || 220,
+            durationMs: 520, life: 31, maxLife: 31
+        });
+    });
+
     // 🏛️ [세계정부] 진영 · 스킬 웹 상태
     socket.on('govSync', (d) => {
         if (!d) return;
