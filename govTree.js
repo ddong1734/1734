@@ -57,33 +57,74 @@
 
     /**
      * 🕸️ 스킬 웹 노드
-     *   x, y  : 웹 화면에서의 상대 좌표 (가운데가 0,0)
-     *   cost  : 가격
-     *   parent: 이 노드를 열려면 먼저 열어야 하는 노드
+     *   x, y    : 웹 화면 좌표 (가운데 세계정부가 0,0)
+     *   cost    : 가격
+     *   parents : 이 노드를 열려면 '전부' 열려 있어야 하는 노드들
+     *             (예: 전군총수는 해군본부 + SSG 를 모두 열어야 한다)
+     *
+     *   ⚠️ 지금은 [세계정부] 만 효과가 있다. 나머지는 나중에 채운다.
      */
     const NODES = {
-        wg: {
-            id: 'wg', name: '세계정부', cost: 0, x: 0, y: 0, parent: null,
-            desc: '공격력 및 체력 10% 증가',
-            effect: { atkPct: 0.10, hpPct: 0.10 }
-        },
-        rule: {
-            id: 'rule', name: '최고 통치 및\n의사결정 기관', cost: 3000, x: 0, y: -1, parent: 'wg',
-            desc: '아직 효과가 없습니다.', effect: null
-        },
-        army: {
-            id: 'army', name: '군사 및\n치안 유지 기관', cost: 3000, x: 1, y: 0, parent: 'wg',
-            desc: '아직 효과가 없습니다.', effect: null
-        },
-        law: {
-            id: 'law', name: '사법 및\n형벌 집행 기관', cost: 3000, x: -1, y: 0, parent: 'wg',
-            desc: '아직 효과가 없습니다.', effect: null
-        },
-        intel: {
-            id: 'intel', name: '첩보 및\n정보 수집 기관', cost: 3000, x: 0, y: 1, parent: 'wg',
-            desc: '아직 효과가 없습니다.', effect: null
-        }
+        // ── 가운데 ──────────────────────────────────────────────
+        wg: { id: 'wg', name: '세계정부', cost: 0, x: 0, y: 0, parents: [],
+              desc: '공격력 및 체력 10% 증가', effect: { atkPct: 0.10, hpPct: 0.10 } },
+
+        // ── 🏛️ 북 : 최고 통치 및 의사결정 기관 ──────────────────
+        rule:    { id: 'rule',    name: '최고 통치 및\n의사결정 기관', cost: 3000,  x: 0,     y: -1.75, parents: ['wg'] },
+        reverie: { id: 'reverie', name: '레벌리',        cost: 5000,  x: -1.15, y: -2.45, parents: ['rule'] },
+        celest:  { id: 'celest',  name: '천룡인',        cost: 5000,  x: 1.0,   y: -2.15, parents: ['rule'] },
+        imu:     { id: 'imu',     name: '임',            cost: 15000, x: -0.35, y: -3.35, parents: ['reverie'] },
+        gorosei: { id: 'gorosei', name: '오로성',        cost: 9000,  x: 0.62,  y: -3.2,  parents: ['imu'] },
+        knights: { id: 'knights', name: '신의 기사단',    cost: 9000,  x: 1.3,   y: -2.8,  parents: ['gorosei', 'celest'] },
+
+        // ── ⚓ 동 : 군사 및 치안 유지 기관 ──────────────────────
+        army:    { id: 'army',    name: '군사 및\n치안 유지 기관', cost: 3000,  x: 1.7,  y: -0.15, parents: ['wg'] },
+        branch:  { id: 'branch',  name: '해군지부',      cost: 5000,  x: 2.5,  y: -0.85, parents: ['army'] },
+        hq:      { id: 'hq',      name: '해군본부',      cost: 8000,  x: 3.4,  y: -1.25, parents: ['branch'] },
+        ssg:     { id: 'ssg',     name: 'SSG',           cost: 5000,  x: 2.95, y: 0.05,  parents: ['army'] },
+        warlord: { id: 'warlord', name: '왕하칠무해',    cost: 5000,  x: 2.7,  y: 0.95,  parents: ['army'] },
+        pacif:   { id: 'pacif',   name: '파시피스타',    cost: 7000,  x: 3.8,  y: 0.15,  parents: ['ssg'] },
+        seraph:  { id: 'seraph',  name: '세리핌',        cost: 9000,  x: 4.6,  y: 0.05,  parents: ['pacif', 'warlord'] },
+        fleet:   { id: 'fleet',   name: '전군총수',      cost: 15000, x: 4.6,  y: -1.05, parents: ['hq', 'ssg'] },
+
+        // ── ⚖️ 서 : 사법 및 형벌 집행 기관 ──────────────────────
+        law:     { id: 'law',     name: '사법 및\n형벌 집행 기관', cost: 3000, x: -1.7, y: 0.1,  parents: ['wg'] },
+        enies:   { id: 'enies',   name: '애니에스 로비',  cost: 6000, x: -2.9, y: -0.2, parents: ['law'] },
+        impel:   { id: 'impel',   name: '임펠다운',      cost: 6000, x: -3.0, y: 1.0,  parents: ['law'] },
+
+        // ── 🕵️ 남 : 첩보 및 정보 수집 기관 ──────────────────────
+        intel:   { id: 'intel',   name: '첩보 및\n정보 수집 기관', cost: 3000, x: 0,     y: 1.8,  parents: ['wg'] },
+        rokushiki: { id: 'rokushiki', name: '육식',      cost: 5000, x: -0.95, y: 2.6,  parents: ['intel'] },
+        cp18:    { id: 'cp18',    name: 'CP1-8',         cost: 5000, x: 1.1,   y: 2.65, parents: ['intel'] },
+        cp9:     { id: 'cp9',     name: 'CP9',           cost: 8000, x: -0.9,  y: 3.5,  parents: ['rokushiki'] },
+        cp0:     { id: 'cp0',     name: 'CP0',           cost: 12000, x: 0.2,  y: 3.8,  parents: ['cp9', 'cp18'] }
     };
+
+    // 효과가 아직 없는 노드에는 기본 설명을 채워 넣는다
+    for (const id in NODES) {
+        if (!NODES[id].desc) NODES[id].desc = '아직 효과가 없습니다.';
+        if (!NODES[id].effect) NODES[id].effect = null;
+    }
+
+    /**
+     * 🔗 노드를 잇는 선.
+     *    parents 로 자동 생성하면 그림의 '고리 모양' 연결이 빠지므로
+     *    실제로 그려야 할 선을 따로 적어 둔다.
+     */
+    const EDGES = [
+        // 🏛️ 북
+        ['wg', 'rule'], ['rule', 'reverie'], ['rule', 'celest'],
+        ['reverie', 'imu'], ['imu', 'gorosei'], ['gorosei', 'knights'], ['knights', 'celest'],
+        // ⚓ 동
+        ['wg', 'army'], ['army', 'branch'], ['branch', 'hq'], ['hq', 'fleet'],
+        ['army', 'ssg'], ['ssg', 'pacif'], ['pacif', 'seraph'], ['ssg', 'fleet'],
+        ['army', 'warlord'], ['warlord', 'seraph'],
+        // ⚖️ 서
+        ['wg', 'law'], ['law', 'enies'], ['law', 'impel'],
+        // 🕵️ 남
+        ['wg', 'intel'], ['intel', 'rokushiki'], ['intel', 'cp18'],
+        ['rokushiki', 'cp9'], ['cp9', 'cp0'], ['cp0', 'cp18']
+    ];
 
     /** 열려 있는 노드로 계산한 팀 보너스 */
     function bonusOf(unlocked) {
@@ -99,14 +140,29 @@
         return b;
     }
 
-    /** 이 노드를 지금 열 수 있는가 */
+    /**
+     * 이 노드를 지금 열 수 있는가.
+     * ⚠️ parents 가 여럿이면 '전부' 열려 있어야 한다.
+     *    (예: 전군총수는 해군본부와 SSG 를 모두 연 뒤에야 열린다)
+     */
     function canUnlock(unlocked, id) {
         const n = NODES[id];
         if (!n) return false;
         if (unlocked && unlocked[id]) return false;        // 이미 열림
-        if (!n.parent) return true;                        // 뿌리 노드
-        return !!(unlocked && unlocked[n.parent]);         // 부모가 열려 있어야 한다
+        const ps = n.parents || [];
+        if (!ps.length) return true;                       // 뿌리 노드
+        for (let i = 0; i < ps.length; i++) {
+            if (!(unlocked && unlocked[ps[i]])) return false;
+        }
+        return true;
     }
 
-    return { FACTION, decideGov, NODES, bonusOf, canUnlock };
+    /** 아직 못 연 부모 목록 (설명 패널에 쓴다) */
+    function missingParents(unlocked, id) {
+        const n = NODES[id];
+        if (!n) return [];
+        return (n.parents || []).filter(function (pid) { return !(unlocked && unlocked[pid]); });
+    }
+
+    return { FACTION, decideGov, NODES, EDGES, bonusOf, canUnlock, missingParents };
 }));
