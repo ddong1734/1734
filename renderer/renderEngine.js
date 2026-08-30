@@ -35,6 +35,7 @@ import './fxkurusu.js';          // 🕊️ [신규] 쿠루스 하나 (신성력
 import './fxmarco.js';           // 🔥 [신규] 마르코 (푸른 불꽃 이펙트)
 import './fxkid.js';             // 🧲 [신규] 유스타스 키드 (자기력 · 고철)
 import './fxkuzanp.js';          // ❄️ [신규] 쿠잔(해적) (얼음 · 냉기)
+import './fxpacifista.js';       // 🤖 [신규] 파시피스타 (세계정부 공성 유닛)
 import { drawSukunaFires } from './fxsukuna.js';
 import { drawDomain, domainFadeAlpha } from './fxdomain.js';
 

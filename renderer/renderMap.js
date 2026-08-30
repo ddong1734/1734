@@ -336,7 +336,108 @@ export class RenderMap {
         };
 
         const drawSign = (x, y) => { if (!this.isVisible(camX, camY, viewW, viewH, x, y, 15, 90, 100)) return; ctx.fillStyle = "#8B4513"; ctx.fillRect(x - 7.5, y - 90, 15, 90); ctx.fillStyle = "#fff"; ctx.font = "bold 18px sans-serif"; ctx.textAlign = "center"; ctx.fillText("탐지기", x, y - 108); };
-        const drawTurret = (x, y, team) => { if (!this.isVisible(camX, camY, viewW, viewH, x, y, 40, 120)) return; ctx.fillStyle = "#2c3e50"; ctx.fillRect(x - 30, y - 120, 60, 120); ctx.fillStyle = team === 1 ? "#3498db" : "#e74c3c"; ctx.beginPath(); ctx.arc(x, y - 120, 40, 0, Math.PI * 2); ctx.fill(); };
+        /**
+         * 🏹 포탑 — 받침대 · 회전 포신 · 팀 색 코어
+         * @param boost 🎖️ 해군지부를 열었으면 금빛 강화 표시가 붙는다
+         */
+        const drawTurret = (x, y, team, boost) => {
+            if (!this.isVisible(camX, camY, viewW, viewH, x, y, 60, 150)) return;
+            const C = (team === 1) ? "#3498db" : "#e74c3c";
+            const CD = (team === 1) ? "#1c5f8f" : "#8f2418";
+
+            // 받침대
+            ctx.fillStyle = "#2c3e50";
+            ctx.beginPath();
+            ctx.moveTo(x - 38, y); ctx.lineTo(x - 26, y - 118);
+            ctx.lineTo(x + 26, y - 118); ctx.lineTo(x + 38, y);
+            ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = "#141a22"; ctx.lineWidth = 4; ctx.stroke();
+            // 받침대 띠
+            ctx.fillStyle = CD;
+            ctx.fillRect(x - 33, y - 40, 66, 12);
+            ctx.fillRect(x - 30, y - 78, 60, 10);
+
+            // 포신 (적을 향해 살짝 흔들린다)
+            const sw = Math.sin(mathNow / 700) * 0.12;
+            ctx.save();
+            ctx.translate(x, y - 120); ctx.rotate(sw);
+            ctx.fillStyle = "#39424f";
+            ctx.fillRect(0, -11, (team === 1 ? 62 : -62), 22);
+            ctx.strokeStyle = "#141a22"; ctx.lineWidth = 3;
+            ctx.strokeRect(0, -11, (team === 1 ? 62 : -62), 22);
+            ctx.restore();
+
+            // 코어
+            const g = ctx.createRadialGradient(x - 12, y - 132, 5, x, y - 120, 42);
+            g.addColorStop(0, "#ffffff"); g.addColorStop(0.35, C); g.addColorStop(1, CD);
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(x, y - 120, 40, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#141a22"; ctx.lineWidth = 4; ctx.stroke();
+
+            // 🎖️ 해군지부 강화 — 금빛 고리가 돈다
+            if (boost) {
+                ctx.save();
+                ctx.globalCompositeOperation = "screen";
+                ctx.globalAlpha = 0.55 + Math.sin(mathNow / 260) * 0.25;
+                const bg = ctx.createRadialGradient(x, y - 120, 12, x, y - 120, 70);
+                bg.addColorStop(0, "rgba(255,235,150,0.5)");
+                bg.addColorStop(1, "rgba(255,200,60,0)");
+                ctx.fillStyle = bg;
+                ctx.beginPath(); ctx.arc(x, y - 120, 70, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+                ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 3;
+                ctx.setLineDash([12, 8]);
+                ctx.lineDashOffset = -mathNow / 22;
+                ctx.beginPath(); ctx.arc(x, y - 120, 50, 0, Math.PI * 2); ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        };
+
+        /** 💣 대포 — 해군본부를 열면 세계정부 바깥쪽에 선다 */
+        const drawCannon = (x, y, team) => {
+            if (!this.isVisible(camX, camY, viewW, viewH, x, y, 90, 150)) return;
+            const dir = (team === 1) ? -1 : 1;   // 바깥쪽을 향한다
+
+            // 바퀴 달린 포대
+            ctx.fillStyle = "#4a3a28";
+            ctx.fillRect(x - 52, y - 46, 104, 34);
+            ctx.strokeStyle = "#241a10"; ctx.lineWidth = 4;
+            ctx.strokeRect(x - 52, y - 46, 104, 34);
+            for (const sd of [-1, 1]) {
+                ctx.fillStyle = "#2c2418";
+                ctx.beginPath(); ctx.arc(x + sd * 34, y - 12, 22, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = "#141008"; ctx.lineWidth = 4; ctx.stroke();
+                ctx.strokeStyle = "#6b5a3a"; ctx.lineWidth = 3;
+                for (let k = 0; k < 4; k++) {
+                    const a = k * Math.PI / 4 + mathNow / 1400;
+                    ctx.beginPath();
+                    ctx.moveTo(x + sd * 34 - Math.cos(a) * 18, y - 12 - Math.sin(a) * 18);
+                    ctx.lineTo(x + sd * 34 + Math.cos(a) * 18, y - 12 + Math.sin(a) * 18);
+                    ctx.stroke();
+                }
+            }
+
+            // 굵은 포신
+            ctx.save();
+            ctx.translate(x, y - 62);
+            ctx.rotate(dir * -0.22);
+            const bg = ctx.createLinearGradient(0, -20, 0, 20);
+            bg.addColorStop(0, "#6b7280"); bg.addColorStop(0.5, "#39424f"); bg.addColorStop(1, "#1e242e");
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, -20, dir * 96, 40);
+            ctx.strokeStyle = "#141a22"; ctx.lineWidth = 4;
+            ctx.strokeRect(0, -20, dir * 96, 40);
+            // 포구 테
+            ctx.fillStyle = "#8f98ad";
+            ctx.fillRect(dir * 84, -24, dir * 14, 48);
+            ctx.strokeStyle = "#141a22"; ctx.lineWidth = 3;
+            ctx.strokeRect(dir * 84, -24, dir * 14, 48);
+            ctx.restore();
+
+            // 세계정부 남색 문양
+            ctx.fillStyle = "#151b52";
+            ctx.beginPath(); ctx.arc(x, y - 30, 11, 0, Math.PI * 2); ctx.fill();
+        };
 
         drawShop(constants.BLUE_SHOP_X, groundY, 1); drawShop(constants.RED_SHOP_X, groundY, 2);
         drawSmith(constants.BLUE_SMITH_X, groundY, 1); drawSmith(constants.RED_SMITH_X, groundY, 2);
@@ -666,7 +767,19 @@ export class RenderMap {
                 ctx.fillStyle = "#95a5a6"; ctx.fillRect(p.x, p.y, p.w, 8); 
             } 
         }
-        drawTurret(12500, groundY, 1); drawTurret(19500, groundY, 2);
+        // 🎖️ 세계정부 스킬 웹 상태에 따라 포탑이 강화되고 대포가 선다
+        const govOf = (tm) => {
+            const gs = (typeof window !== 'undefined') ? window.govState : null;
+            if (!gs || !gs.gov || gs.gov[tm] !== 'wg') return null;
+            const GT = (typeof window !== 'undefined') ? window.GovTree : null;
+            if (!GT) return null;
+            return GT.bonusOf((gs.tree && gs.tree[tm]) || {});
+        };
+        const gb1 = govOf(1), gb2 = govOf(2);
+        drawTurret(12500, groundY, 1, !!(gb1 && gb1.turretBoost > 0));
+        drawTurret(19500, groundY, 2, !!(gb2 && gb2.turretBoost > 0));
+        if (gb1 && gb1.cannon) drawCannon(constants.BLUE_NEXUS_X - 330, groundY, 1);
+        if (gb2 && gb2.cannon) drawCannon(constants.RED_NEXUS_X + 330, groundY, 2);
 
         for (let d of detectors) {
             if (!this.isVisible(camX, camY, viewW, viewH, d.x, groundY, 50, 150)) continue;

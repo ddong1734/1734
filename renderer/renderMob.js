@@ -9,6 +9,7 @@
 
 import { RenderUtils } from './renderUtils.js';
 import { drawKidStack, drawGolemBody } from './fxkid.js';
+import { drawPacifista } from './fxpacifista.js';
 import { drawHpTicks, drawKashimoCharge, drawAmberBody, drawDaburaLightBody } from './renderEntityParts.js';
 import { drawNpc } from './renderNpc.js';
 import { drawPortal, drawPortalCountdown, drawDarkPortalCountdown } from './renderPortal.js';
@@ -23,6 +24,17 @@ export function kidStackOn(ctx, o, size, mathNow) {
 
 /** 🎃 쫄몹과 NPC 를 그린다. */
 export function drawMobs(ctx, state, z) {
+    // 🤖 파시피스타 — 세계정부 공성 유닛
+    {
+        const pfs = (typeof window !== 'undefined' && window.pacifistas) ? window.pacifistas : [];
+        for (let i = 0; i < pfs.length; i++) {
+            const u = pfs[i];
+            if (!u || u.hp <= 0) continue;
+            if (!RenderUtils.isVisible(state.camX, state.camY, state.viewW, state.viewH, u.x, u.y, 140, 200)) continue;
+            drawPacifista(ctx, u, state.mathNow);
+        }
+    }
+
     const { camX, camY, viewW, viewH, okras, players, myId, myPlayer, mathNow } = state;
     const inDarkZone = z.inDarkZone, inCurseZone = z.inCurseZone;
 
