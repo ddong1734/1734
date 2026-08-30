@@ -432,7 +432,28 @@ setInterval(() => {
                 }
             }
 
-            // 🏛️ 세계정부 웹이 열려 있으면 골드 표시를 갱신한다
+            // 🚢 버스터 콜 버튼 — 세계정부 근처이고 노드를 열었을 때만 보인다
+        {
+            const bcEl = document.getElementById('busterCallBtn');
+            if (bcEl) {
+                let show = false;
+                if (nearGov && window.GovTree && window.govState) {
+                    const tm = pObj.team;
+                    const b = window.GovTree.bonusOf((window.govState.tree && window.govState.tree[tm]) || {});
+                    show = !!(b && b.buster);
+                }
+                bcEl.style.display = show ? 'flex' : 'none';
+                if (show && !bcEl._bound) {
+                    bcEl._bound = true;
+                    bcEl.addEventListener('pointerdown', function (e) {
+                        e.preventDefault(); e.stopPropagation();
+                        if (window.socket) window.socket.emit('busterCall');
+                    });
+                }
+            }
+        }
+
+        // 🏛️ 세계정부 웹이 열려 있으면 골드 표시를 갱신한다
             const _gv = document.getElementById('govModal');
             if (_gv && _gv.style.display === 'flex') {
                 const _gg = document.getElementById('govGold');

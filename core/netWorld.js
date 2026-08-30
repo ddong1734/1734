@@ -17,8 +17,48 @@
 
 window.registerNetModule('world', function (socket, U) {
 
-    // ⏱️ [파시피스타] 출격까지 남은 시간
-    socket.on('pacifCountdown', (d) => { window.pacifCountdown = d || {}; });
+    // ⏱️ [세계정부] 파시피스타 출격 · 칠무해 부활 카운트다운
+    socket.on('pacifCountdown', (d) => {
+        if (!d) return;
+        window.pacifCountdown = d.spawn || {};
+        window.warlordCountdown = d.warlord || {};
+    });
+
+    // ⚔️ 칠무해 · 세라핌
+    socket.on('syncWarlords', (m) => { window.warlords = m || {}; });
+    socket.on('warlordStrike', (d) => {
+        if (!d) return;
+        window.visualFX.push({
+            type: 'warlord_strike', x: d.x, y: d.y, dir: d.dir, kind: d.kind,
+            durationMs: 320, life: 19, maxLife: 19
+        });
+    });
+    socket.on('warlordDown', (d) => {
+        if (!d) return;
+        window.visualFX.push({ type: 'warlord_down', x: d.x, y: d.y, durationMs: 700, life: 42, maxLife: 42 });
+    });
+
+    // 🚢 버스터 콜 군함
+    socket.on('syncWarships', (list) => { window.warships = list || []; });
+    socket.on('busterCall', (d) => {
+        if (d && window.myPlayer && d.team === window.myPlayer.team && typeof window.showAlert === 'function') {
+            window.showAlert('🚢 버스터 콜 발동!');
+        }
+    });
+    socket.on('warshipFire', (d) => {
+        if (!d) return;
+        const ms = (d.kind === 'cannon') ? 900 : 620;
+        const lf = Math.max(1, Math.round(ms / (1000 / 60)));
+        window.visualFX.push({
+            type: 'warship_shot', kind: d.kind,
+            x: d.x, y: d.y, tx: d.tx, ty: d.ty,
+            durationMs: ms, life: lf, maxLife: lf
+        });
+    });
+    socket.on('warshipDown', (d) => {
+        if (!d) return;
+        window.visualFX.push({ type: 'warship_down', x: d.x, y: d.y, durationMs: 800, life: 48, maxLife: 48 });
+    });
 
     // 🤖 [파시피스타] 목록 · 레이저 · 파괴
     socket.on('syncPacifistas', (list) => { window.pacifistas = list || []; });
