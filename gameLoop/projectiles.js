@@ -144,6 +144,18 @@ function projectileTargets(ctx, p, eR) {
     if (burgessAlive() && near(State.burgess, State.burgess.radius)) list.push({ obj: State.burgess, kind: 'burgess', id: 'burgess', key: 'burgess' });
     State.hinbeomMinions.forEach(mn => { if (mn.hp > 0 && near(mn, mn.radius)) list.push({ obj: mn, kind: 'minion', id: mn.id, key: 'minion_' + mn.id }); });
     State.okras.forEach(ok => { if (ok.hp > 0 && near(ok, ok.radius)) list.push({ obj: ok, kind: 'okra', id: ok.id, key: 'okra_' + ok.id }); });
+    // ⚔️🚢 칠무해 · 세라핌 · 군함도 탄환에 맞는다
+    for (const k in (State.warlords || {})) {
+        const wl = State.warlords[k];
+        if (wl && wl.hp > 0 && wl.team !== p.team && near(wl, wl.radius)) {
+            list.push({ obj: wl, kind: 'warlord', id: wl.id, key: 'warlord_' + wl.id });
+        }
+    }
+    (State.warships || []).forEach(ws => {
+        if (ws.hp > 0 && ws.team !== p.team && near(ws, ws.radius)) {
+            list.push({ obj: ws, kind: 'warship', id: ws.id, key: 'warship_' + ws.id });
+        }
+    });
     // 🤖 파시피스타 — 적 팀 것만 탄환에 맞는다
     (State.pacifistas || []).forEach(pf => {
         if (pf.hp > 0 && pf.team !== p.team && near(pf, pf.radius)) {
@@ -218,6 +230,8 @@ function updateFallers(ctx, now, list, opts) {
 
             if (t.kind === 'player') {
                 let actual = f.damage * (1 - (t.obj.defense || 0));
+                // 🫧 버블 보호막이 남아 있으면 보호막이 대신 받는다
+                actual = SB.absorbShield(t.obj, actual);
                 t.obj.hp -= actual;
                 emitDamageText(t.obj.x, t.obj.y, actual);
                 if (opts.shock) {
@@ -380,8 +394,12 @@ module.exports = {
             if (!target) return;
 
             turret.lastShot = now;
-            let dirX = target.x - turret.x;
-            let dirY = (target.y - 45) - (turret.y - 60);
+            // 💣 대포는 포신 끝에서, 일반 포탑은 코어에서 나간다
+            //    (예전엔 대포도 코어 높이라 몸통 밖에서 튀어나와 보였다)
+            const muzX = isCannon ? (turret.x + (turret.team === 1 ? 96 : -96)) : turret.x;
+            const muzY = isCannon ? (turret.y - 82) : (turret.y - 60);
+            let dirX = target.x - muzX;
+            let dirY = (target.y - 45) - muzY;
             let dist = Math.hypot(dirX, dirY) || 1;
 
             let dmg = turret.damage;
@@ -390,7 +408,7 @@ module.exports = {
             const spd = isCannon ? 19 : 15;          // 대포가 조금 더 빠르다
             projectiles.push({
                 id: getNextProjId(), team: turret.team,
-                x: turret.x, y: turret.y - 60,
+                x: muzX, y: muzY,
                 vx: (dirX / dist) * spd, vy: (dirY / dist) * spd,
                 life: isCannon ? 70 : 80, damage: dmg,
                 // 💣 대포 : 크고 폭발한다
@@ -477,7 +495,8 @@ module.exports = {
                         const t2 = players[tid];
                         if (!t2 || t2.isDead || t2.team === p.team) continue;
                         if (Math.hypot(p.x - t2.x, p.y - t2.y) > bl) continue;
-                        const act = bdmg * (1 - (t2.defense || 0));
+                        let act = bdmg * (1 - (t2.defense || 0));
+                        act = SB.absorbShield(t2, act);
                         t2.hp -= act;
                         emitDamageText(t2.x, t2.y, act);
                         io.to(tid).emit('takeDamage', act);
