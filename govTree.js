@@ -71,18 +71,19 @@
 
         // ── 🏛️ 북 : 최고 통치 및 의사결정 기관 ──────────────────
         rule:    { id: 'rule',    name: '최고 통치 및\n의사결정 기관', cost: 3000,  x: 0,     y: -1.75, parents: ['wg'] },
-        reverie: { id: 'reverie', name: '레벌리',        cost: 5000,  x: -1.15, y: -2.45, parents: ['rule'] },
+        reverie: { id: 'reverie', name: '레벨리',        cost: 5000,  x: -1.15, y: -2.45, parents: ['rule'] },
         celest:  { id: 'celest',  name: '천룡인',        cost: 5000,  x: 1.0,   y: -2.15, parents: ['rule'] },
-        imu:     { id: 'imu',     name: '임',            cost: 15000, x: -0.35, y: -3.35, parents: ['reverie'] },
-        gorosei: { id: 'gorosei', name: '오로성',        cost: 9000,  x: 0.62,  y: -3.2,  parents: ['imu'] },
-        knights: { id: 'knights', name: '신의 기사단',    cost: 9000,  x: 1.3,   y: -2.8,  parents: ['gorosei', 'celest'] },
+        knights: { id: 'knights', name: '신의 기사단',    cost: 7000,  x: 1.3,   y: -2.85, parents: ['celest'] },
+        gorosei: { id: 'gorosei', name: '오로성',        cost: 9000,  x: 0.62,  y: -3.2,  parents: ['knights'] },
+        // 👑 임 — 레벨리와 오로성을 모두 열어야 한다
+        imu:     { id: 'imu',     name: '임',            cost: 15000, x: -0.35, y: -3.35, parents: ['reverie', 'gorosei'] },
 
         // ── ⚓ 동 : 군사 및 치안 유지 기관 ──────────────────────
         army:    { id: 'army',    name: '군사 및\n치안 유지 기관', cost: 3000,  x: 1.7,  y: -0.15, parents: ['wg'] },
         branch:  { id: 'branch',  name: '해군지부',      cost: 5000,  x: 2.5,  y: -0.85, parents: ['army'] },
         hq:      { id: 'hq',      name: '해군본부',      cost: 8000,  x: 3.4,  y: -1.25, parents: ['branch'] },
         ssg:     { id: 'ssg',     name: 'SSG',           cost: 5000,  x: 2.95, y: 0.05,  parents: ['army'] },
-        warlord: { id: 'warlord', name: '왕하칠무해',    cost: 5000,  x: 2.7,  y: 0.95,  parents: ['army'] },
+        warlord: { id: 'warlord', name: '왕하 칠무해',    cost: 5000,  x: 2.7,  y: 0.95,  parents: ['army'] },
         pacif:   { id: 'pacif',   name: '파시피스타',    cost: 7000,  x: 3.8,  y: 0.15,  parents: ['ssg'] },
         seraph:  { id: 'seraph',  name: '세리핌',        cost: 9000,  x: 4.6,  y: 0.05,  parents: ['pacif', 'warlord'] },
         fleet:   { id: 'fleet',   name: '전군총수',      cost: 15000, x: 4.6,  y: -1.05, parents: ['hq', 'ssg'] },
@@ -90,7 +91,7 @@
         // ── ⚖️ 서 : 사법 및 형벌 집행 기관 ──────────────────────
         law:     { id: 'law',     name: '사법 및\n형벌 집행 기관', cost: 3000, x: -1.7, y: 0.1,  parents: ['wg'] },
         enies:   { id: 'enies',   name: '애니에스 로비',  cost: 6000, x: -2.9, y: -0.2, parents: ['law'] },
-        impel:   { id: 'impel',   name: '임펠다운',      cost: 6000, x: -3.0, y: 1.0,  parents: ['law'] },
+        impel:   { id: 'impel',   name: '임펠 다운',      cost: 6000, x: -3.0, y: 1.0,  parents: ['law'] },
 
         // ── 🕵️ 남 : 첩보 및 정보 수집 기관 ──────────────────────
         intel:   { id: 'intel',   name: '첩보 및\n정보 수집 기관', cost: 3000, x: 0,     y: 1.8,  parents: ['wg'] },
@@ -114,7 +115,7 @@
     const EDGES = [
         // 🏛️ 북
         ['wg', 'rule'], ['rule', 'reverie'], ['rule', 'celest'],
-        ['reverie', 'imu'], ['imu', 'gorosei'], ['gorosei', 'knights'], ['knights', 'celest'],
+        ['celest', 'knights'], ['knights', 'gorosei'], ['gorosei', 'imu'], ['imu', 'reverie'],
         // ⚓ 동
         ['wg', 'army'], ['army', 'branch'], ['branch', 'hq'], ['hq', 'fleet'],
         ['army', 'ssg'], ['ssg', 'pacif'], ['pacif', 'seraph'], ['ssg', 'fleet'],
