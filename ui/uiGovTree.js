@@ -14,8 +14,11 @@
     let selected = null;          // 지금 고른 노드 id
     let hitAreas = [];            // 클릭 판정용 [{id, x, y, r}]
 
-    const STEP = 118;             // 노드 사이 거리
-    const HEX_R = 46;             // 육각형 반지름
+    const STEP = 104;             // 노드 사이 거리
+    const HEX_R = 40;             // 육각형 반지름
+    // 🖐️ 웹이 화면보다 넓으므로 끌어서 움직일 수 있게 한다
+    let panX = 0, panY = 0;
+    let dragging = false, moved = 0, lastX = 0, lastY = 0;
 
     const NAVY = "#151b52";
     const NAVY_L = "#3a47a8";
@@ -33,10 +36,16 @@
         return !!(g && tm && g[tm] === 'wg');
     }
 
-    /** 이 노드를 화면에 보여 줄 때가 되었는가 */
+    /**
+     * 이 노드를 화면에 보여 줄 때가 되었는가.
+     *   부모 중 '하나라도' 열리면 미리 보여 준다.
+     *   (열 수 있는지는 canUnlock 이 따로 판단한다)
+     */
     function visible(node, tree) {
-        if (!node.parent) return true;            // 가운데는 항상 보인다
-        return !!tree[node.parent];               // 부모가 열려야 나타난다
+        const ps = node.parents || [];
+        if (!ps.length) return true;              // 가운데는 항상 보인다
+        for (let i = 0; i < ps.length; i++) if (tree[ps[i]]) return true;
+        return false;
     }
 
     /** ⬡ 육각형 하나 */
@@ -56,7 +65,7 @@
         ctx = cv.getContext('2d');
 
         const W = cv.width, H = cv.height;
-        const ox = W / 2, oy = H / 2;
+        const ox = W / 2 + panX, oy = H / 2 + panY;
         const tree = myTree();
         const NODES = G().NODES;
 
@@ -72,17 +81,17 @@
             ctx.stroke();
         }
 
-        // ── 연결선 ─────────────────────────────────────────────
-        for (const id in NODES) {
-            const n = NODES[id];
-            if (!n.parent) continue;
-            if (!visible(n, tree)) continue;
-            const pn = NODES[n.parent];
-            const x1 = ox + pn.x * STEP, y1 = oy + pn.y * STEP;
-            const x2 = ox + n.x * STEP,  y2 = oy + n.y * STEP;
-            const on = tree[id];
-            ctx.strokeStyle = on ? "rgba(241,196,15,0.9)" : "rgba(130,150,210,0.45)";
-            ctx.lineWidth = on ? 5 : 3;
+        // ── 연결선 (EDGES 그대로 — 고리 모양까지 살린다) ──────
+        const E = G().EDGES;
+        for (let i = 0; i < E.length; i++) {
+            const a = NODES[E[i][0]], b = NODES[E[i][1]];
+            if (!a || !b) continue;
+            if (!visible(a, tree) || !visible(b, tree)) continue;
+            const x1 = ox + a.x * STEP, y1 = oy + a.y * STEP;
+            const x2 = ox + b.x * STEP, y2 = oy + b.y * STEP;
+            const both = tree[E[i][0]] && tree[E[i][1]];
+            ctx.strokeStyle = both ? "rgba(241,196,15,0.9)" : "rgba(130,150,210,0.42)";
+            ctx.lineWidth = both ? 4.5 : 2.5;
             ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
         }
 
@@ -145,6 +154,7 @@
         const n = NODES[selected];
         const on = !!tree[selected];
         const gold = (window.myPlayer && window.myPlayer.gold) || 0;
+        const miss = G().missingParents(tree, selected);
         const can = G().canUnlock(tree, selected) && gold >= n.cost;
 
         el.innerHTML =
@@ -155,13 +165,36 @@
           + (n.cost > 0 ? n.cost.toLocaleString() + ' G' : '무료') + '</div>'
           + (on
               ? '<div style="color:#2ecc71; font-weight:bold; font-size:15px;">✔ 이미 열렸습니다</div>'
-              : '<div style="color:' + (can ? '#8fd4ff' : '#7f8c8d') + '; font-size:13px;">'
-                + (can ? '한 번 더 누르면 열립니다' : (gold < n.cost ? '골드가 부족합니다' : '앞 단계를 먼저 열어야 합니다'))
+              : '<div style="color:' + (can ? '#8fd4ff' : '#7f8c8d') + '; font-size:13px; line-height:1.6;">'
+                + (can
+                    ? '한 번 더 누르면 열립니다'
+                    : (miss.length
+                        ? '먼저 열어야 합니다 — <span style="color:#ff9f9f;">'
+                          + miss.map(function (mid) { return NODES[mid].name.replace(/\n/g, ' '); }).join(' · ')
+                          + '</span>'
+                        : '골드가 부족합니다'))
                 + '</div>');
     }
 
-    /** 캔버스 클릭 */
+    /** 🖐️ 끌기 시작 */
+    function onDown(e) {
+        dragging = true; moved = 0;
+        lastX = e.clientX; lastY = e.clientY;
+    }
+    /** 🖐️ 끌어서 웹을 움직인다 */
+    function onMove(e) {
+        if (!dragging || !cv) return;
+        const r = cv.getBoundingClientRect();
+        const k = cv.width / r.width;
+        const dx = (e.clientX - lastX) * k, dy = (e.clientY - lastY) * k;
+        lastX = e.clientX; lastY = e.clientY;
+        moved += Math.abs(dx) + Math.abs(dy);
+        if (moved > 8) { panX += dx; panY += dy; window.renderGovTree(); }
+    }
+    /** 캔버스 클릭 (끌지 않았을 때만 선택으로 본다) */
     function onTap(e) {
+        dragging = false;
+        if (moved > 10) return;              // 끌기였으면 무시
         if (!cv) return;
         const r = cv.getBoundingClientRect();
         const sx = (e.clientX - r.left) * (cv.width / r.width);
@@ -192,9 +225,14 @@
         m.style.display = 'flex';
         const c = document.getElementById('govCanvas');
         if (c && !c._bound) {
-            c.addEventListener('pointerdown', onTap);
+            c.addEventListener('pointerdown', onDown);
+            c.addEventListener('pointermove', onMove);
+            c.addEventListener('pointerup', onTap);
+            c.addEventListener('pointercancel', function () { dragging = false; });
             c._bound = true;
         }
+        // 열 때마다 가운데(세계정부)로 시점을 되돌린다
+        panX = 0; panY = 0;
         window.renderGovTree();
     };
 
