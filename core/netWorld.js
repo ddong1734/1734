@@ -17,6 +17,9 @@
 
 window.registerNetModule('world', function (socket, U) {
 
+    // ⏱️ [파시피스타] 출격까지 남은 시간
+    socket.on('pacifCountdown', (d) => { window.pacifCountdown = d || {}; });
+
     // 🤖 [파시피스타] 목록 · 레이저 · 파괴
     socket.on('syncPacifistas', (list) => { window.pacifistas = list || []; });
     socket.on('pacifistaLaser', (d) => {

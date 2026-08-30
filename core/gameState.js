@@ -116,6 +116,7 @@ window.borsComboCount = 0;
 window.blackMarket = { x: 16000, y: 2000, discounts: {}, nextRollAt: 0 };
 // 🤖 파시피스타 (서버가 syncPacifistas 로 채운다)
 window.pacifistas = [];
+window.pacifCountdown = {};
 window.daidoComboCount = 0;
 window.daidoLastComboTime = 0; 
 window.borsLastComboTime = 0; 
