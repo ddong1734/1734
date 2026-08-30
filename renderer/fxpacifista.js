@@ -65,18 +65,17 @@ export function drawPacifista(ctx, u, mathNow) {
     ctx.fillStyle = mk3 ? "#c8b48a" : "#8f98ad";
     ctx.beginPath(); ctx.arc(cx, cy + R * 0.3, R * 0.13, 0, Math.PI * 2); ctx.fill();
 
-    // ── 팔 (앞으로 뻗은 손바닥) ────────────────────────────
+    // ── 팔 (몸 옆으로 내린 자세) ───────────────────────────
+    //    👄 레이저는 입에서 나가므로 손을 앞으로 뻗지 않는다
     const dir = (u.team === 1) ? 1 : -1;
     ctx.strokeStyle = mk3 ? "#241a14" : "#15171f";
-    ctx.lineWidth = R * 0.30; ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(cx + dir * R * 0.45, cy);
-    ctx.lineTo(cx + dir * R * 1.05, cy - R * 0.1);
-    ctx.stroke();
-    // 손바닥
-    ctx.fillStyle = "#e8c49a";
-    ctx.beginPath(); ctx.arc(cx + dir * R * 1.12, cy - R * 0.12, R * 0.20, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#8a6440"; ctx.lineWidth = 3; ctx.stroke();
+    ctx.lineWidth = R * 0.28; ctx.lineCap = "round";
+    for (const sd of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(cx + sd * R * 0.55, cy - R * 0.2);
+        ctx.lineTo(cx + sd * R * 0.78, cy + R * 0.55);
+        ctx.stroke();
+    }
 
     // ── 머리 ───────────────────────────────────────────────
     const hy = cy - R * 0.85;
@@ -97,6 +96,13 @@ export function drawPacifista(ctx, u, mathNow) {
     ctx.fillRect(cx - R * 0.34, hy - R * 0.10, R * 0.68, R * 0.16);
     ctx.strokeStyle = "#000"; ctx.lineWidth = 2.5;
     ctx.strokeRect(cx - R * 0.34, hy - R * 0.10, R * 0.68, R * 0.16);
+    // 👄 입 — 여기서 빛 레이저가 나간다
+    ctx.fillStyle = "#5a3b2a";
+    ctx.beginPath();
+    ctx.ellipse(cx, hy + R * 0.17, R * 0.15, R * 0.075, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#3a2418"; ctx.lineWidth = 2; ctx.stroke();
+
     if (mk3) {
         // 마크 Ⅲ 는 붉은 눈이 빛난다
         ctx.save();

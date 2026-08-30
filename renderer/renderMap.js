@@ -545,6 +545,21 @@ export class RenderMap {
                 ctx.beginPath(); ctx.arc(fmx + d[0] * fa, fmy + d[1] * fa, fr, 0, Math.PI * 2); ctx.fill();
             });
 
+            // ── ⏱️ 파시피스타 출격 카운트다운 ─────────────────
+            const cdMap = (typeof window !== 'undefined') ? window.pacifCountdown : null;
+            const left = cdMap ? (cdMap[team] || 0) : 0;
+            if (left > 0) {
+                const mm = Math.floor(left / 60000);
+                const ss = String(Math.floor((left % 60000) / 1000)).padStart(2, '0');
+                const txt = '🤖 ' + mm + ':' + ss;
+                ctx.font = "bold 26px sans-serif"; ctx.textAlign = "center";
+                ctx.lineWidth = 6; ctx.lineJoin = "round";
+                ctx.strokeStyle = "rgba(8,10,26,0.92)";
+                ctx.strokeText(txt, nx, gy - H - 200);
+                ctx.fillStyle = (left < 20000) ? "#ffd23c" : "#a9bcff";
+                ctx.fillText(txt, nx, gy - H - 200);
+            }
+
             // ── 정문 ───────────────────────────────────────────
             ctx.fillStyle = NAVY_L;
             ctx.beginPath();
