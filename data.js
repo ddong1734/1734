@@ -241,7 +241,7 @@ window.GameData = {
         },
         'KUZANP_S3': {
             type: 'kuzanp_dash', cd: 45000,
-            castTime: 500, dashSpeed: 42, dashTime: 900,
+            castTime: 0, dashSpeed: 42, dashTime: 450,
             damage: 400, hitRadius: 200, freezeRadius: 380, freezeTime: 5000,
             effect: 'kuzanp_dash'
         },

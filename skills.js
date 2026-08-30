@@ -203,7 +203,7 @@ const SkillsData = {
     // 3번 [아이스 타임] — 0.5초 결빙 후 직선 돌진 · 5초 동결
     'KUZANP_S3': {
         type: 'kuzanp_dash', cd: 45000,
-        castTime: 500, dashSpeed: 42, dashTime: 900,
+        castTime: 0, dashSpeed: 42, dashTime: 450,
         damage: 400, hitRadius: 200, freezeRadius: 380, freezeTime: 5000,
         effect: 'kuzanp_dash'
     },
