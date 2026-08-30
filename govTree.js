@@ -80,17 +80,30 @@
 
         // ── ⚓ 동 : 군사 및 치안 유지 기관 ──────────────────────
         army:    { id: 'army',    name: '군사 및\n치안 유지 기관', cost: 3000,  x: 1.7,  y: -0.15, parents: ['wg'] },
-        branch:  { id: 'branch',  name: '해군지부',      cost: 5000,  x: 2.5,  y: -0.85, parents: ['army'] },
-        hq:      { id: 'hq',      name: '해군본부',      cost: 8000,  x: 3.4,  y: -1.25, parents: ['branch'] },
-        ssg:     { id: 'ssg',     name: 'SSG',           cost: 5000,  x: 2.95, y: 0.05,  parents: ['army'] },
-        warlord: { id: 'warlord', name: '왕하 칠무해',    cost: 5000,  x: 2.7,  y: 0.95,  parents: ['army'] },
-        pacif:   { id: 'pacif',   name: '파시피스타',    cost: 7000,  x: 3.8,  y: 0.15,  parents: ['ssg'] },
-        seraph:  { id: 'seraph',  name: '세리핌',        cost: 9000,  x: 4.6,  y: 0.05,  parents: ['pacif', 'warlord'] },
-        fleet:   { id: 'fleet',   name: '전군총수',      cost: 15000, x: 4.6,  y: -1.05, parents: ['hq', 'ssg'] },
+        branch:  { id: 'branch',  name: '해군지부',      cost: 5000,  x: 2.5,  y: -0.85, parents: ['army'],
+                   desc: '아군 포탑의 피해량과 연사 속도 25% 증가 (대포 제외)', effect: { turretBoost: 0.25 } },
+        hq:      { id: 'hq',      name: '해군본부',      cost: 8000,  x: 3.4,  y: -1.25, parents: ['branch'],
+                   desc: '세계정부 왼쪽에 대포가 세워진다. 폭발하는 큰 포탄을 쏜다.', effect: { cannon: true } },
+        // 📞 버스터 콜 — 해군본부만 열면 바로 열린다 (전군총수와 달리 SSG 는 필요 없다)
+        buster:  { id: 'buster',  name: '버스터 콜',      cost: 12000, x: 3.9,  y: -2.15, parents: ['hq'] },
+        ssg:     { id: 'ssg',     name: 'SSG',           cost: 5000,  x: 2.9,  y: 0.1,   parents: ['army'],
+                   desc: '(과학 기술 해금)' },
+        warlord: { id: 'warlord', name: '왕하 칠무해',    cost: 5000,  x: 2.8,  y: 1.35,  parents: ['army'] },
+        pacif:   { id: 'pacif',   name: '파시피스타',    cost: 7000,  x: 3.7,  y: 0.55,  parents: ['ssg'],
+                   desc: '3분마다 파시피스타가 출격한다. 적 넥서스만 노려 빛 레이저를 쏜다.', effect: { pacifista: 1 } },
+        // 🤖 파시피스타 마크 Ⅲ — 파시피스타 아래.
+        //    세리핌(4.6, 0.05) 과 왕하 칠무해(2.7, 0.95) 를 잇는 선 바깥에 둔다.
+        pacif3:  { id: 'pacif3',  name: '파시피스타\n마크 Ⅲ', cost: 9000, x: 4.55, y: 0.95, parents: ['pacif'],
+                   desc: '3분마다 마크 Ⅲ 가 출격한다. 더 크고 버블 보호막을 두르며 피해가 500 이다.', effect: { pacifista3: 1 } },
+        seraph:  { id: 'seraph',  name: '세리핌',        cost: 9000,  x: 4.5,  y: 1.75,  parents: ['pacif', 'warlord'] },
+        fleet:   { id: 'fleet',   name: '전군총수',      cost: 15000, x: 4.7,  y: -1.0,  parents: ['hq', 'ssg'],
+                   desc: '세계정부의 체력 3배 · 초당 100 회복', effect: { nexusHpMult: 3, nexusRegen: 100 } },
 
         // ── ⚖️ 서 : 사법 및 형벌 집행 기관 ──────────────────────
         law:     { id: 'law',     name: '사법 및\n형벌 집행 기관', cost: 3000, x: -1.7, y: 0.1,  parents: ['wg'] },
         enies:   { id: 'enies',   name: '애니에스 로비',  cost: 6000, x: -2.9, y: -0.2, parents: ['law'] },
+        // ⛩️ 정의의 문 — 애니에스 로비 위쪽. 사법·임펠 다운 선과 겹치지 않는다.
+        gate:    { id: 'gate',    name: '정의의 문',      cost: 9000, x: -3.2, y: -1.25, parents: ['enies'] },
         impel:   { id: 'impel',   name: '임펠 다운',      cost: 6000, x: -3.0, y: 1.0,  parents: ['law'] },
 
         // ── 🕵️ 남 : 첩보 및 정보 수집 기관 ──────────────────────
@@ -117,11 +130,11 @@
         ['wg', 'rule'], ['rule', 'reverie'], ['rule', 'celest'],
         ['celest', 'knights'], ['knights', 'gorosei'], ['gorosei', 'imu'], ['imu', 'reverie'],
         // ⚓ 동
-        ['wg', 'army'], ['army', 'branch'], ['branch', 'hq'], ['hq', 'fleet'],
-        ['army', 'ssg'], ['ssg', 'pacif'], ['pacif', 'seraph'], ['ssg', 'fleet'],
+        ['wg', 'army'], ['army', 'branch'], ['branch', 'hq'], ['hq', 'fleet'], ['hq', 'buster'],
+        ['army', 'ssg'], ['ssg', 'pacif'], ['pacif', 'seraph'], ['ssg', 'fleet'], ['pacif', 'pacif3'],
         ['army', 'warlord'], ['warlord', 'seraph'],
         // ⚖️ 서
-        ['wg', 'law'], ['law', 'enies'], ['law', 'impel'],
+        ['wg', 'law'], ['law', 'enies'], ['law', 'impel'], ['enies', 'gate'],
         // 🕵️ 남
         ['wg', 'intel'], ['intel', 'rokushiki'], ['intel', 'cp18'],
         ['rokushiki', 'cp9'], ['cp9', 'cp0'], ['cp0', 'cp18']
@@ -129,7 +142,15 @@
 
     /** 열려 있는 노드로 계산한 팀 보너스 */
     function bonusOf(unlocked) {
-        const b = { atkPct: 0, hpPct: 0 };
+        const b = {
+            atkPct: 0, hpPct: 0,
+            turretBoost: 0,      // 🏹 포탑 피해·연사 증가율
+            cannon: false,       // 💣 대포 설치 여부
+            nexusHpMult: 1,      // 🏛️ 넥서스 최대 체력 배수
+            nexusRegen: 0,       // 🏛️ 넥서스 초당 회복
+            pacifista: 0,        // 🤖 파시피스타 출격
+            pacifista3: 0        // 🤖 마크 Ⅲ 출격
+        };
         if (!unlocked) return b;
         for (const id in NODES) {
             if (!unlocked[id]) continue;
@@ -137,6 +158,12 @@
             if (!e) continue;
             b.atkPct += (e.atkPct || 0);
             b.hpPct += (e.hpPct || 0);
+            b.turretBoost += (e.turretBoost || 0);
+            if (e.cannon) b.cannon = true;
+            if (e.nexusHpMult) b.nexusHpMult *= e.nexusHpMult;
+            b.nexusRegen += (e.nexusRegen || 0);
+            b.pacifista += (e.pacifista || 0);
+            b.pacifista3 += (e.pacifista3 || 0);
         }
         return b;
     }

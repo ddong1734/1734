@@ -216,6 +216,7 @@ module.exports = {
         safe('kid', () => { if (typeof ctx.kidProcessAll === 'function') ctx.kidProcessAll(now); });            // 🧲 키드
         safe('kuzanp', () => { if (typeof ctx.kuzanpProcessAll === 'function') ctx.kuzanpProcessAll(now); });     // ❄️ 쿠잔(해적)
         safe('blackMarket', () => { require('./server/blackMarket.js').process(now, io); });                       // 🕶️ 암매상
+        safe('gov', () => { require('./server/govEffects.js').process(now, ctx); });                              // 🏛️ 세계정부
         safe('portals', () => Portals.update(ctx, now));
 
         // ── 충격파 (그리드 판정) ──────────────────────────────────────
