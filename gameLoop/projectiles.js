@@ -85,7 +85,8 @@ function applyProjectileEffects(ctx, p, t) {
 
     if (p.freeze) {
         // 🧊 아오키지 : 쿠잔(해군)의 모든 스킬 동결 시간 +1초
-        const _ow = players[p.ownerId];
+        //    ⚠️ 이 함수에는 players 지역 변수가 없다. State.players 를 써야 한다.
+        const _ow = State.players[p.ownerId];
         const _fz = p.freeze + ((_ow && _ow.hasAokiji) ? 1000 : 0);
         t.obj.frozenUntil = Math.max(t.obj.frozenUntil || 0, now + _fz);
         if (isPlayer) emitStatus(io, t.obj);
@@ -102,8 +103,10 @@ function applyProjectileEffects(ctx, p, t) {
         }
     }
     // 🔥 아카이누 : 화상 지속 +2초
+    //    ⚠️ 이 함수에는 players 지역 변수가 없다. State.players 를 써야 한다.
+    //       (예전에 players 를 쓰다가 오류가 나서 화상이 통째로 안 걸렸다)
     if (p.fire) {
-        const _ow = players[p.ownerId];
+        const _ow = State.players[p.ownerId];
         const _d = p.fire.dur + ((_ow && _ow.hasAkainu) ? 2000 : 0);
         addBurn(t.key, t.obj, p.fire.dps, _d, p.ownerId);
     }
@@ -217,7 +220,7 @@ function updateFallers(ctx, now, list, opts) {
                     t.obj.airFreezeUntil = Math.max(t.obj.airFreezeUntil || 0, now + 100);
                 }
                 if (opts.burn && f.fire) {
-                    const _ow2 = players[f.ownerId];
+                    const _ow2 = State.players[f.ownerId];
                     addBurn(t.key, t.obj, f.fire.dps, f.fire.dur + ((_ow2 && _ow2.hasAkainu) ? 2000 : 0), f.ownerId);
                 }
                 if (t.obj.hp <= 0) checkPlayerDeath(t.obj, f.ownerId);
@@ -236,7 +239,7 @@ function updateFallers(ctx, now, list, opts) {
                 t.obj.airFreezeUntil = Math.max(t.obj.airFreezeUntil || 0, now + 100);
             }
             if (opts.burn && f.fire) {
-                const _ow3 = players[f.ownerId];
+                const _ow3 = State.players[f.ownerId];
                 addBurn(t.key, t.obj, f.fire.dps, f.fire.dur + ((_ow3 && _ow3.hasAkainu) ? 2000 : 0), f.ownerId);
             }
             if (owner) aggroByKind(ctx, t, f.ownerId);
@@ -304,8 +307,22 @@ module.exports = {
         }
 
         // ── 🏹 포탑 ──────────────────────────────────────────────────
+        //    🎖️ [해군지부] 아군 포탑의 피해·연사 25% 증가 (대포는 제외)
+        //    💣 [해군본부] 대포는 느리지만 크고 강한 폭발탄을 쏜다
+        const GTree = (function () { try { return require('../govTree.js'); } catch (e) { return null; } })();
+        const govBonus = (tm) => {
+            if (!GTree || !State.govTree) return null;
+            if (!State.bases[tm] || State.bases[tm].govType !== 'wg') return null;
+            return GTree.bonusOf(State.govTree[tm]);
+        };
+
         turrets.forEach(turret => {
-            if (now - turret.lastShot < 333) return;
+            const gb = govBonus(turret.team);
+            const isCannon = !!turret.isCannon;
+            // 대포는 2배 느리고, 일반 포탑만 해군지부 보정을 받는다
+            let cool = isCannon ? 666 : 333;
+            if (!isCannon && gb && gb.turretBoost > 0) cool = Math.round(cool / (1 + gb.turretBoost));
+            if (now - turret.lastShot < cool) return;
             let target = null, minDist = turret.range;
             for (let pid in players) {
                 let p = players[pid];
@@ -348,11 +365,20 @@ module.exports = {
             let dirX = target.x - turret.x;
             let dirY = (target.y - 45) - (turret.y - 60);
             let dist = Math.hypot(dirX, dirY) || 1;
+
+            let dmg = turret.damage;
+            if (!isCannon && gb && gb.turretBoost > 0) dmg = Math.round(dmg * (1 + gb.turretBoost));
+
+            const spd = isCannon ? 19 : 15;          // 대포가 조금 더 빠르다
             projectiles.push({
                 id: getNextProjId(), team: turret.team,
                 x: turret.x, y: turret.y - 60,
-                vx: (dirX / dist) * 15, vy: (dirY / dist) * 15,
-                life: 80, damage: turret.damage
+                vx: (dirX / dist) * spd, vy: (dirY / dist) * spd,
+                life: isCannon ? 70 : 80, damage: dmg,
+                // 💣 대포 : 크고 폭발한다
+                isCannon: isCannon,
+                hitR: isCannon ? 90 : undefined,
+                blast: isCannon ? 220 : 0
             });
         });
 
@@ -424,6 +450,23 @@ module.exports = {
             }
 
             if (hit || p.life <= 0) {
+                // 💣 [대포] 맞으면 그 자리에서 터져 주변을 함께 친다
+                if (p.blast > 0 && hit) {
+                    io.emit('cannonBlast', { x: p.x, y: p.y, radius: p.blast });
+                    // 포탑 발사체라 주인이 없다 → 팀만 보고 적을 친다
+                    const bl = p.blast, bdmg = Math.round(p.damage * 0.6);
+                    for (const tid in players) {
+                        const t2 = players[tid];
+                        if (!t2 || t2.isDead || t2.team === p.team) continue;
+                        if (Math.hypot(p.x - t2.x, p.y - t2.y) > bl) continue;
+                        const act = bdmg * (1 - (t2.defense || 0));
+                        t2.hp -= act;
+                        emitDamageText(t2.x, t2.y, act);
+                        io.to(tid).emit('takeDamage', act);
+                        if (t2.hp <= 0) checkPlayerDeath(t2, null);
+                        else io.emit('syncPlayerFull', t2);
+                    }
+                }
                 if (p.type === 'magatama' && p.hasKizaru) {
                     io.emit('actionEffect', { type: 'magatama_explosion', x: p.x, y: p.y });
                     if (owner) applyAoEDamage(owner, p.x, p.y, 80, p.damage * 0.5, 0);
