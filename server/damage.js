@@ -72,6 +72,22 @@ function forEachTarget(attacker, hitTest, cb, deps) {
         let ok = State.okras[i];
         if (ok.hp > 0 && hitTest(ok, ok.radius)) cb({ obj: ok, kind: 'okra', id: ok.id });
     }
+    // ⚔️ 칠무해 · 세라핌 — 적 팀 것만 (세라핌은 체력 무한이라 죽지 않는다)
+    for (const k in (State.warlords || {})) {
+        const wl = State.warlords[k];
+        if (wl && wl.hp > 0 && wl.team !== attacker.team && hitTest(wl, wl.radius)) {
+            cb({ obj: wl, kind: 'warlord', id: wl.id });
+        }
+    }
+    // 🚢 버스터 콜 군함 — 적 팀 것만
+    if (State.warships) {
+        for (let i = State.warships.length - 1; i >= 0; i--) {
+            const ws = State.warships[i];
+            if (ws.hp > 0 && ws.team !== attacker.team && hitTest(ws, ws.radius)) {
+                cb({ obj: ws, kind: 'warship', id: ws.id });
+            }
+        }
+    }
     // 🤖 파시피스타 — 적 팀 것만 때릴 수 있다
     if (State.pacifistas) {
         for (let i = State.pacifistas.length - 1; i >= 0; i--) {
@@ -94,12 +110,12 @@ module.exports = (deps) => {
     function hurt(t, attacker, damage, kb, opts) {
         // 🫧 [마크 Ⅲ] 버블 보호막이 남아 있으면 먼저 깎인다
         if (t && t.kind === 'pacifista' && t.obj && t.obj.shield > 0) {
+            // 🫧 보호막이 남아 있는 동안에는 '받는 모든 피해' 를 보호막이 대신 받는다.
+            //    한 방에 보호막을 넘겨도 본체에는 넘치지 않는다.
             const o = t.obj;
-            const use = Math.min(o.shield, damage);
-            o.shield -= use;
-            damage -= use;
-            emitDamageText(o.x, o.y, use);
-            if (damage <= 0) return;
+            o.shield = Math.max(0, o.shield - damage);
+            emitDamageText(o.x, o.y, damage);
+            return;
         }
         opts = opts || {};
         const { obj, kind, id } = t;
@@ -182,9 +198,13 @@ module.exports = (deps) => {
         } else if (kind === 'okra') {
             obj.knockbackForce += kb; obj.targetId = attacker.id; obj.state = 'chase';
             if (obj.hp <= 0) killOkra(obj, attacker.id);
-        } else if (kind === 'pacifista') {
-            // 🤖 공성 유닛이라 반격하지 않는다. govEffects 가 정리한다.
+        } else if (kind === 'pacifista' || kind === 'warship') {
+            // 🤖🚢 공성 유닛이라 반격하지 않는다. govEffects 가 정리한다.
             if (obj.hp < 0) obj.hp = 0;
+        } else if (kind === 'warlord') {
+            // ⚔️ 칠무해는 맞으면 그 상대를 노린다. 👼 세라핌은 체력이 닳지 않는다.
+            if (obj.infinite) obj.hp = obj.maxHp;
+            else if (obj.hp < 0) obj.hp = 0;
         }
     }
 

@@ -258,6 +258,7 @@ function tryDomainBasicAttack(socket, attacker) {
 
             if (t.kind === 'player') {
                 let actual = myDamage * (1 - (o.defense || 0));
+                actual = S.absorbShield(o, actual);
                 o.hp -= actual;
                 emitDamageText(o.x, o.y, actual);
                 if (o.hp <= 0) { checkPlayerDeath(o, attacker.id); continue; }
@@ -577,12 +578,14 @@ function applyDomainHit(t, attacker, dmg, attackerId) {
 
     if (t.kind === 'player') {
         let actual = dmg * (1 - (o.defense || 0));
+        actual = S.absorbShield(o, actual);
         o.hp -= actual;
         emitDamageText(o.x, o.y, actual);
         if (o.hp <= 0) { checkPlayerDeath(o, attackerId); return; }
         io.emit('syncPlayerFull', o);
     } else {
         let d = (typeof S.toemaDmg === 'function') ? S.toemaDmg(attacker, dmg) : dmg;
+        d = S.absorbShield(o, d);
         o.hp -= d;
         emitDamageText(o.x, o.y, d);
         if (t.kind === 'hinbeom' && Bosses && typeof Bosses.recordHinbeomDamage === 'function') {

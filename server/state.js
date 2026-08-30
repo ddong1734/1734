@@ -243,6 +243,20 @@ function shieldAbsorb(sp, dmg, io) {
     }
 }
 
+/**
+ * 🫧 [파시피스타 마크 Ⅲ] 버블 보호막이 남아 있으면 '모든' 피해를 대신 받는다.
+ *
+ *   ⚠️ hp 를 직접 깎는 곳이 여러 군데라 보호막이 자주 뚫렸다.
+ *      피해를 주기 전에 반드시 이 함수를 거쳐야 한다.
+ *
+ *   @return 보호막이 흡수하고 남은 피해 (0 이면 본체에 피해 없음)
+ */
+function absorbShield(o, damage) {
+    if (!o || !(o.shield > 0)) return damage;
+    o.shield = Math.max(0, o.shield - damage);
+    return 0;
+}
+
 /** 🛡️ 보호막 밖으로 밀어낸다 (겹쳐 있으면 표면으로 튕겨낸다) */
 function pushOutOfShield(o, team) {
     const sp = shieldAt(o.x, o.y, team);
@@ -442,6 +456,13 @@ const State = {
     // 🤖 파시피스타 (세계정부 공성 유닛)
     pacifistas: [],
     pacifSpawn: { 1: 0, 2: 0 },
+    // ⚔️ 칠무해 / 👼 세라핌 (팀마다 1기)
+    warlords: {},
+    warlordRespawn: { 1: 0, 2: 0 },
+    // 🚢 버스터 콜 군함
+    warships: [],
+    busterQueue: [],
+    busterCd: { 1: 0, 2: 0 },
     // 🕸️ 팀별 세계정부 스킬 웹 (열린 노드 목록)
     govTree: { 1: {}, 2: {} },
     // 🕶️ 암매상 — 아이템별 할인율(%) 과 다음 갱신 시각
@@ -540,7 +561,7 @@ function toemaDmgById(attackerId, damage) {
 }
 
 module.exports = {
-    shieldAt, pushOutOfShield, shieldAbsorb,
+    shieldAt, pushOutOfShield, shieldAbsorb, absorbShield,
     State, compressors, DeltaCompressor,
     makeMonster, makeHinbeom, makeBlackbeard, makeBurgess, makeBases, makeTurrets, makePlayer, makeNpcs, baseStatus,
     makeSukuna,

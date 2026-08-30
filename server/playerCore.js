@@ -371,6 +371,18 @@ function resetGame() {
     State.giantPartisanQueue = []; State.mantleBolts = []; State.burnMap.clear();
     State.yamiBinds = []; State.guraCharges = [];
     State.amberTrails = []; State.waveChains = []; State.waveEchoes = [];
+    // 🤖 [세계정부] 이전 판의 파시피스타·출격 타이머가 남으면
+    //    새 판이 시작하자마자 소환되어 버린다. 반드시 비운다.
+    State.pacifistas = [];
+    State.pacifSpawn = { 1: 0, 2: 0 };
+    State.warlords = {};
+    State.warlordRespawn = { 1: 0, 2: 0 };
+    State.warships = [];
+    State.busterQueue = [];
+    State.busterCd = { 1: 0, 2: 0 };
+    State.govTree = { 1: {}, 2: {} };
+    State.kuzanpBalls = [];
+    State.turrets = State.turrets.filter(function (t) { return !t.isCannon; });
     State.bases = makeBases();
     State.monster = makeMonster();
 

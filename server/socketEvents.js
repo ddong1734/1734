@@ -781,6 +781,22 @@ io.on('connection', (socket) => {
         });
     });
 
+    // 🚢 [버스터 콜] 세계정부 근처에서 발동
+    socket.on('busterCall', () => {
+        const p = State.players[socket.id];
+        if (!p || p.isDead) return;
+        const base = State.bases[p.team];
+        if (!base || base.govType !== 'wg') { socket.emit('buyFail', '세계정부가 아닙니다.'); return; }
+        const GT = require('../govTree.js');
+        const b = GT.bonusOf(State.govTree[p.team]);
+        if (!b || !b.buster) { socket.emit('buyFail', '버스터 콜을 아직 열지 않았습니다.'); return; }
+        if (Math.hypot(p.x - base.x, p.y - base.y) > 280) { socket.emit('buyFail', '세계정부에 더 가까이 가야 합니다.'); return; }
+        const GE = require('./govEffects.js');
+        if (!GE.startBusterCall(p.team, Date.now(), io)) {
+            socket.emit('buyFail', '아직 쿨타임입니다.');
+        }
+    });
+
     socket.on('disconnect', () => {
         let dp = State.players[socket.id];
         if (dp && dp.surgeActive) {
