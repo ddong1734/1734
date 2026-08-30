@@ -10,6 +10,7 @@
 import { RenderUtils } from './renderUtils.js';
 import { drawKidStack, drawGolemBody } from './fxkid.js';
 import { drawPacifista } from './fxpacifista.js';
+import { drawWarlord, drawWarship } from './fxwarship.js';
 import { drawHpTicks, drawKashimoCharge, drawAmberBody, drawDaburaLightBody } from './renderEntityParts.js';
 import { drawNpc } from './renderNpc.js';
 import { drawPortal, drawPortalCountdown, drawDarkPortalCountdown } from './renderPortal.js';
@@ -32,6 +33,22 @@ export function drawMobs(ctx, state, z) {
             if (!u || u.hp <= 0) continue;
             if (!RenderUtils.isVisible(state.camX, state.camY, state.viewW, state.viewH, u.x, u.y, 140, 200)) continue;
             drawPacifista(ctx, u, state.mathNow);
+        }
+        // 🚢 버스터 콜 군함
+        const wss = (typeof window !== 'undefined' && window.warships) ? window.warships : [];
+        for (let i = 0; i < wss.length; i++) {
+            const w = wss[i];
+            if (!w || w.hp <= 0) continue;
+            if (!RenderUtils.isVisible(state.camX, state.camY, state.viewW, state.viewH, w.x, w.y, 180, 260)) continue;
+            drawWarship(ctx, w, state.mathNow);
+        }
+        // ⚔️ 칠무해 · 세라핌
+        const wls = (typeof window !== 'undefined' && window.warlords) ? window.warlords : {};
+        for (const k in wls) {
+            const w = wls[k];
+            if (!w || (!w.infinite && w.hp <= 0)) continue;
+            if (!RenderUtils.isVisible(state.camX, state.camY, state.viewW, state.viewH, w.x, w.y, 110, 170)) continue;
+            drawWarlord(ctx, w, state.mathNow);
         }
     }
 

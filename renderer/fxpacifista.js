@@ -24,6 +24,17 @@ export function drawPacifista(ctx, u, mathNow) {
     const mk3 = !!u.isMk3;
     const bob = Math.sin(mathNow / 520) * 3;
 
+    // 🎨 사진에서 뽑은 특징
+    //    · 거대한 검은 몸집 · 풍성한 곱슬머리 · 진한 선글라스
+    //    · 기본형 : 흰 해군 모자 · 검은 코트에 흰 문양
+    //    · 마크 Ⅲ : 카키 군복 · 금색 단추 · 붉은 눈 · 가슴의 PX-Ⅲ 표기
+    const COAT = mk3 ? "#3d3a2a" : "#14161d";     // 마크Ⅲ 는 카키, 기본은 검정
+    const COAT_D = mk3 ? "#26241a" : "#0a0c11";
+    const SKIN = "#d9a877";
+    const SKIN_D = "#a87a4e";
+    const HAIR = "#2b1f18";
+    const GOLD = "#c9a227";
+
     ctx.save();
     ctx.translate(0, bob);
 
@@ -32,102 +43,147 @@ export function drawPacifista(ctx, u, mathNow) {
         const f = u.shield / (u.maxShield || 1);
         ctx.save();
         ctx.globalCompositeOperation = "screen";
-        ctx.globalAlpha = 0.30 + f * 0.30;
-        const bg = ctx.createRadialGradient(cx, cy - R * 0.2, R * 0.4, cx, cy - R * 0.2, R * 1.55);
-        bg.addColorStop(0, "rgba(140,220,255,0.05)");
-        bg.addColorStop(0.72, "rgba(120,200,255,0.35)");
-        bg.addColorStop(1, "rgba(190,240,255,0.75)");
+        ctx.globalAlpha = 0.28 + f * 0.32;
+        const bg = ctx.createRadialGradient(cx, cy - R * 0.25, R * 0.4, cx, cy - R * 0.25, R * 1.6);
+        bg.addColorStop(0, "rgba(140,220,255,0.04)");
+        bg.addColorStop(0.72, "rgba(120,200,255,0.32)");
+        bg.addColorStop(1, "rgba(190,240,255,0.8)");
         ctx.fillStyle = bg;
-        ctx.beginPath(); ctx.arc(cx, cy - R * 0.2, R * 1.55, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = "rgba(210,245,255,0.85)";
-        ctx.lineWidth = 3;
-        ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy - R * 0.25, R * 1.6, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "rgba(210,245,255,0.9)"; ctx.lineWidth = 3; ctx.stroke();
         ctx.restore();
     }
 
-    // ── 몸통 (검은 정장) ───────────────────────────────────
-    ctx.fillStyle = mk3 ? "#241a14" : "#15171f";
+    // ── 다리 (짧고 굵다) ───────────────────────────────────
+    ctx.fillStyle = COAT_D;
+    for (const sd of [-1, 1]) {
+        ctx.fillRect(cx + sd * R * 0.34 - R * 0.16, cy + R * 0.62, R * 0.32, R * 0.42);
+    }
+
+    // ── 몸통 (거대한 상체) ─────────────────────────────────
+    ctx.fillStyle = COAT;
     ctx.beginPath();
-    ctx.ellipse(cx, cy + R * 0.18, R * 0.82, R * 0.92, 0, 0, Math.PI * 2);
+    ctx.moveTo(cx - R * 0.86, cy + R * 0.7);
+    ctx.quadraticCurveTo(cx - R * 0.95, cy - R * 0.4, cx - R * 0.5, cy - R * 0.62);
+    ctx.lineTo(cx + R * 0.5, cy - R * 0.62);
+    ctx.quadraticCurveTo(cx + R * 0.95, cy - R * 0.4, cx + R * 0.86, cy + R * 0.7);
+    ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = "#000"; ctx.lineWidth = 4; ctx.stroke();
 
-    // 옷깃 (V자)
-    ctx.strokeStyle = mk3 ? "#6b5a3a" : "#3a4152";
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(cx - R * 0.32, cy - R * 0.35);
-    ctx.lineTo(cx, cy + R * 0.18);
-    ctx.lineTo(cx + R * 0.32, cy - R * 0.35);
-    ctx.stroke();
-
-    // 가슴의 정부 문양
-    ctx.fillStyle = mk3 ? "#c8b48a" : "#8f98ad";
-    ctx.beginPath(); ctx.arc(cx, cy + R * 0.3, R * 0.13, 0, Math.PI * 2); ctx.fill();
+    if (mk3) {
+        // 🎖️ 군복 옷깃 + 금색 단추
+        ctx.strokeStyle = "#5c5740"; ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(cx - R * 0.42, cy - R * 0.58);
+        ctx.lineTo(cx, cy - R * 0.05);
+        ctx.lineTo(cx + R * 0.42, cy - R * 0.58);
+        ctx.stroke();
+        ctx.fillStyle = GOLD;
+        for (const sd of [-1, 1]) {
+            ctx.beginPath(); ctx.arc(cx + sd * R * 0.44, cy - R * 0.34, R * 0.09, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#8a6c15"; ctx.lineWidth = 2; ctx.stroke();
+        }
+        // 가슴의 PX-Ⅲ 표기
+        ctx.fillStyle = "#e8e2cc";
+        ctx.font = "bold " + Math.round(R * 0.24) + "px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("PX-Ⅲ", cx, cy + R * 0.34);
+    } else {
+        // ⚪ 검은 코트 위의 흰 원형 문양
+        ctx.strokeStyle = "#e9edf2"; ctx.lineWidth = R * 0.11;
+        ctx.beginPath();
+        ctx.arc(cx - R * 0.1, cy + R * 0.08, R * 0.42, Math.PI * 0.35, Math.PI * 1.5);
+        ctx.stroke();
+        // 허리 벨트
+        ctx.fillStyle = "#e9edf2";
+        ctx.fillRect(cx - R * 0.7, cy + R * 0.5, R * 1.4, R * 0.13);
+    }
 
     // ── 팔 (몸 옆으로 내린 자세) ───────────────────────────
-    //    👄 레이저는 입에서 나가므로 손을 앞으로 뻗지 않는다
-    const dir = (u.team === 1) ? 1 : -1;
-    ctx.strokeStyle = mk3 ? "#241a14" : "#15171f";
-    ctx.lineWidth = R * 0.28; ctx.lineCap = "round";
+    ctx.strokeStyle = COAT; ctx.lineWidth = R * 0.30; ctx.lineCap = "round";
     for (const sd of [-1, 1]) {
         ctx.beginPath();
-        ctx.moveTo(cx + sd * R * 0.55, cy - R * 0.2);
-        ctx.lineTo(cx + sd * R * 0.78, cy + R * 0.55);
+        ctx.moveTo(cx + sd * R * 0.62, cy - R * 0.34);
+        ctx.lineTo(cx + sd * R * 0.86, cy + R * 0.5);
         ctx.stroke();
+    }
+    // 손
+    ctx.fillStyle = SKIN;
+    for (const sd of [-1, 1]) {
+        ctx.beginPath(); ctx.arc(cx + sd * R * 0.88, cy + R * 0.58, R * 0.16, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = SKIN_D; ctx.lineWidth = 2.5; ctx.stroke();
     }
 
     // ── 머리 ───────────────────────────────────────────────
-    const hy = cy - R * 0.85;
-    // 곱슬머리
-    ctx.fillStyle = "#1a1410";
-    for (let k = 0; k < 9; k++) {
-        const a = Math.PI + (k / 8) * Math.PI;
+    const hy = cy - R * 0.95;
+    // 풍성한 곱슬머리 (사진의 큰 특징)
+    ctx.fillStyle = HAIR;
+    for (let k = 0; k < 11; k++) {
+        const a = Math.PI * 0.92 + (k / 10) * Math.PI * 1.16;
         ctx.beginPath();
-        ctx.arc(cx + Math.cos(a) * R * 0.42, hy + Math.sin(a) * R * 0.34, R * 0.20, 0, Math.PI * 2);
+        ctx.arc(cx + Math.cos(a) * R * 0.46, hy + Math.sin(a) * R * 0.40, R * 0.21, 0, Math.PI * 2);
         ctx.fill();
     }
     // 얼굴
-    ctx.fillStyle = "#e8c49a";
-    ctx.beginPath(); ctx.arc(cx, hy, R * 0.36, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#8a6440"; ctx.lineWidth = 3; ctx.stroke();
-    // 선글라스
-    ctx.fillStyle = mk3 ? "#4a1010" : "#0d0f16";
-    ctx.fillRect(cx - R * 0.34, hy - R * 0.10, R * 0.68, R * 0.16);
-    ctx.strokeStyle = "#000"; ctx.lineWidth = 2.5;
-    ctx.strokeRect(cx - R * 0.34, hy - R * 0.10, R * 0.68, R * 0.16);
-    // 👄 입 — 여기서 빛 레이저가 나간다
-    ctx.fillStyle = "#5a3b2a";
+    ctx.fillStyle = SKIN;
+    ctx.beginPath(); ctx.arc(cx, hy + R * 0.05, R * 0.37, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = SKIN_D; ctx.lineWidth = 3; ctx.stroke();
+
+    // 선글라스 (진하고 넓다)
+    ctx.fillStyle = mk3 ? "#2a1410" : "#0b0d13";
     ctx.beginPath();
-    ctx.ellipse(cx, hy + R * 0.17, R * 0.15, R * 0.075, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#3a2418"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.moveTo(cx - R * 0.38, hy - R * 0.07);
+    ctx.lineTo(cx + R * 0.38, hy - R * 0.07);
+    ctx.lineTo(cx + R * 0.34, hy + R * 0.11);
+    ctx.lineTo(cx - R * 0.34, hy + R * 0.11);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.stroke();
 
     if (mk3) {
-        // 마크 Ⅲ 는 붉은 눈이 빛난다
+        // 마크 Ⅲ — 붉은 눈이 빛난다
         ctx.save();
         ctx.globalCompositeOperation = "screen";
         ctx.globalAlpha = 0.7 + Math.sin(mathNow / 220) * 0.3;
         for (const sd of [-1, 1]) {
-            const g = ctx.createRadialGradient(cx + sd * R * 0.17, hy - R * 0.02, 1, cx + sd * R * 0.17, hy - R * 0.02, R * 0.12);
+            const g = ctx.createRadialGradient(cx + sd * R * 0.18, hy + R * 0.02, 1, cx + sd * R * 0.18, hy + R * 0.02, R * 0.13);
             g.addColorStop(0, "rgba(255,255,255,1)");
             g.addColorStop(0.4, "rgba(255,90,60,0.95)");
             g.addColorStop(1, "rgba(200,40,20,0)");
             ctx.fillStyle = g;
-            ctx.beginPath(); ctx.arc(cx + sd * R * 0.17, hy - R * 0.02, R * 0.12, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx + sd * R * 0.18, hy + R * 0.02, R * 0.13, 0, Math.PI * 2); ctx.fill();
         }
         ctx.restore();
-        // PX-Ⅲ 표기
-        ctx.fillStyle = "#e8dcc0";
-        ctx.font = "bold " + Math.round(R * 0.2) + "px sans-serif";
+        // 모자챙에 새긴 PX-Ⅲ
+        ctx.fillStyle = "#d8d2bc";
+        ctx.font = "bold " + Math.round(R * 0.13) + "px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("PX-Ⅲ", cx, cy + R * 0.72);
+        ctx.fillText("PX-Ⅲ", cx + R * 0.02, hy - R * 0.13);
+    } else {
+        // 🎩 기본형 — 흰 해군 모자
+        ctx.fillStyle = "#eef1f5";
+        ctx.beginPath();
+        ctx.ellipse(cx, hy - R * 0.34, R * 0.44, R * 0.15, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#9aa3ad"; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = "#e2e7ee";
+        ctx.beginPath();
+        ctx.ellipse(cx, hy - R * 0.46, R * 0.30, R * 0.17, 0, Math.PI, 0);
+        ctx.fill();
+        ctx.strokeStyle = "#9aa3ad"; ctx.lineWidth = 3; ctx.stroke();
     }
+
+    // 👄 입 — 여기서 빛 레이저가 나간다
+    ctx.fillStyle = "#5a3b2a";
+    ctx.beginPath();
+    ctx.ellipse(cx, hy + R * 0.25, R * 0.16, R * 0.08, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#3a2418"; ctx.lineWidth = 2; ctx.stroke();
 
     ctx.restore();
 
     // ── 체력바 ─────────────────────────────────────────────
-    const bw = R * 1.7, bx = cx - bw / 2, by = cy - R * 1.5;
+    const bw = R * 1.7, bx = cx - bw / 2, by = cy - R * 1.62;
     ctx.fillStyle = "#2b1a1a"; ctx.fillRect(bx, by, bw, 8);
     ctx.fillStyle = mk3 ? "#ff7a4d" : "#f1c40f";
     ctx.fillRect(bx, by, bw * Math.max(0, u.hp / u.maxHp), 8);

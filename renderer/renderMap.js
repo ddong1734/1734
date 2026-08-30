@@ -396,7 +396,7 @@ export class RenderMap {
         /** 💣 대포 — 해군본부를 열면 세계정부 바깥쪽에 선다 */
         const drawCannon = (x, y, team) => {
             if (!this.isVisible(camX, camY, viewW, viewH, x, y, 90, 150)) return;
-            const dir = (team === 1) ? -1 : 1;   // 바깥쪽을 향한다
+            const dir = (team === 1) ? 1 : -1;   // 🎯 적 진영 쪽을 향한다
 
             // 바퀴 달린 포대
             ctx.fillStyle = "#4a3a28";
@@ -558,6 +558,21 @@ export class RenderMap {
                 ctx.strokeText(txt, nx, gy - H - 200);
                 ctx.fillStyle = (left < 20000) ? "#ffd23c" : "#a9bcff";
                 ctx.fillText(txt, nx, gy - H - 200);
+            }
+
+            // ── ⚔️ 칠무해 부활 카운트다운 ─────────────────────
+            const wlMap = (typeof window !== 'undefined') ? window.warlordCountdown : null;
+            const wLeft = wlMap ? (wlMap[team] || 0) : 0;
+            if (wLeft > 0) {
+                const wm = Math.floor(wLeft / 60000);
+                const ws = String(Math.floor((wLeft % 60000) / 1000)).padStart(2, '0');
+                const wtxt = '⚔️ ' + wm + ':' + ws;
+                ctx.font = "bold 24px sans-serif"; ctx.textAlign = "center";
+                ctx.lineWidth = 6; ctx.lineJoin = "round";
+                ctx.strokeStyle = "rgba(8,10,26,0.92)";
+                ctx.strokeText(wtxt, nx, gy - H - 236);
+                ctx.fillStyle = "#ffb8b0";
+                ctx.fillText(wtxt, nx, gy - H - 236);
             }
 
             // ── 정문 ───────────────────────────────────────────
