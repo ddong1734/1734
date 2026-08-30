@@ -166,6 +166,14 @@ function giveTichReward(p) {
 function register() {
 
 io.on('connection', (socket) => {
+    // 🏛️ [세계정부] 접속하면 현재 진영·트리 상태를 보낸다
+    try {
+        socket.emit('govSync', {
+            gov: { 1: State.bases[1].govType, 2: State.bases[2].govType },
+            tree: State.govTree
+        });
+    } catch (e) {}
+
     // 🕶️ [암매상] 접속하면 현재 할인 정보를 바로 보낸다
     try {
         const BM = require('./blackMarket.js');
@@ -196,10 +204,13 @@ io.on('connection', (socket) => {
         let bCount = 0, rCount = 0;
         for (let id in State.players) { if (State.players[id].team === 1) bCount++; else rCount++; }
 
+        // 🏛️ 진영 동점 시 '먼저 들어온 사람' 을 가리기 위해 순번을 매긴다
+        State._joinSeq = (State._joinSeq || 0) + 1;
         State.players[socket.id] = makePlayer({
             id: socket.id, nick: nick, charType: charType,
             team: (bCount <= rCount) ? 1 : 2,
-            sessionId: sessionId, Characters: Characters
+            sessionId: sessionId, Characters: Characters,
+            joinOrder: State._joinSeq
         });
         io.emit('lobbyUpdated', { players: State.players, masterId: State.masterId });
     });
@@ -217,6 +228,27 @@ io.on('connection', (socket) => {
         if (State.masterId !== socket.id || Object.keys(State.players).length === 0) return;
         for (let k in compressors) compressors[k].snapshots.clear();
         State.gameStarted = true;
+
+        // 🏛️ [세계정부] 팀 구성으로 각 넥서스의 진영을 정한다.
+        //    해군 계열이 가장 많으면 그 팀 넥서스가 세계정부가 된다.
+        try {
+            const GT = require('../govTree.js');
+            [1, 2].forEach(function (tm) {
+                const members = [];
+                for (const id in State.players) {
+                    const pl = State.players[id];
+                    if (pl && pl.team === tm) {
+                        members.push({ charType: pl.characterType, joinOrder: pl.joinOrder || 0 });
+                    }
+                }
+                State.bases[tm].govType = GT.decideGov(members);
+                State.govTree[tm] = {};
+            });
+            io.emit('govSync', {
+                gov: { 1: State.bases[1].govType, 2: State.bases[2].govType },
+                tree: State.govTree
+            });
+        } catch (e) { console.error('[GOV]', e); }
         io.emit('gameStartSign', State.players);
         io.emit('syncDetectors', State.detectors);
         io.emit('syncTeamStorage', State.teamStorages);
@@ -715,6 +747,38 @@ io.on('connection', (socket) => {
         if (typeof serverContext.kuzanpBasicHit === 'function') {
             serverContext.kuzanpBasicHit(p, tx, ty);
         }
+    });
+
+    // 🕸️ [세계정부] 스킬 웹 노드 열기
+    socket.on('govUnlock', (nodeId) => {
+        const p = State.players[socket.id];
+        if (!p || p.isDead) return;
+        if (State.bases[p.team].govType !== 'wg') { socket.emit('buyFail', '세계정부가 아닙니다.'); return; }
+
+        const GT = require('../govTree.js');
+        const node = GT.NODES[nodeId];
+        if (!node) return;
+
+        const tree = State.govTree[p.team] || (State.govTree[p.team] = {});
+        if (tree[nodeId]) { socket.emit('buyFail', '이미 열린 노드입니다.'); return; }
+        if (!GT.canUnlock(tree, nodeId)) { socket.emit('buyFail', '앞 단계를 먼저 열어야 합니다.'); return; }
+        if ((p.gold || 0) < node.cost) { socket.emit('buyFail', '골드가 부족합니다.'); return; }
+
+        if (node.cost > 0) p.gold -= node.cost;
+        tree[nodeId] = true;
+
+        // 팀 전원의 스탯을 다시 계산한다
+        for (const id in State.players) {
+            const q = State.players[id];
+            if (!q || q.team !== p.team) continue;
+            recalcStats(q);
+            io.emit('syncPlayerFull', q);
+        }
+        socket.emit('syncInventory', { inventory: p.inventory, equippedUids: p.equippedUids, gold: p.gold });
+        io.emit('govSync', {
+            gov: { 1: State.bases[1].govType, 2: State.bases[2].govType },
+            tree: State.govTree
+        });
     });
 
     socket.on('disconnect', () => {

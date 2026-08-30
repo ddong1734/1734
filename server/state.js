@@ -271,8 +271,9 @@ function makeBases() {
     return {
         // 🏛️ radius 는 피해 판정용. 예전에는 없어서 forEachTarget 이
         //    넥서스를 제대로 못 맞혔다.
-        1: { hp: 20000, maxHp: 20000, x: 12250, y: 1900, radius: 150 },
-        2: { hp: 20000, maxHp: 20000, x: 19750, y: 1900, radius: 150 }
+        // 🏛️ govType : 'none' | 'wg' (세계정부) — 팀 구성으로 정해진다
+        1: { hp: 20000, maxHp: 20000, x: 12250, y: 1900, radius: 150, govType: 'none' },
+        2: { hp: 20000, maxHp: 20000, x: 19750, y: 1900, radius: 150, govType: 'none' }
     };
 }
 
@@ -292,6 +293,7 @@ function makePlayer(opts) {
     const ch = Characters[charType];
     return Object.assign({
         id: opts.id, nickname: opts.nick, characterType: charType, team: opts.team,
+        joinOrder: opts.joinOrder || 0,   // 🏛️ 진영 동점 시 '먼저 들어온 사람' 판정용
         sessionId: opts.sessionId, disconnected: false,
         x: opts.team === 1 ? 12800 : 19200, y: 1955,
         hp: ch.hp, maxHp: ch.hp, gold: 100000,
@@ -437,6 +439,8 @@ const State = {
     kidMarks: [],
     // ❄️ 쿠잔(해적) — 날아가는 얼음 구슬
     kuzanpBalls: [],
+    // 🕸️ 팀별 세계정부 스킬 웹 (열린 노드 목록)
+    govTree: { 1: {}, 2: {} },
     // 🕶️ 암매상 — 아이템별 할인율(%) 과 다음 갱신 시각
     blackMarket: { discounts: {}, nextRollAt: 0 },
     sukunaSlashes: [],   // 예고 중인 참격 { x, y, w, h, fireAt, done }

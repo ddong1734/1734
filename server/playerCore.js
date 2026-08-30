@@ -180,6 +180,18 @@ function recalcStats(p) {
         p.bonusDamage += (p.baseDamage || 0) * p.dmgPct;
     }
 
+    // 🏛️ [세계정부] 팀이 연 스킬 웹 노드만큼 공격력·체력이 오른다.
+    //    아이템 계산이 모두 끝난 뒤 마지막에 곱해야 중복 계산이 없다.
+    try {
+        const GT = require('../govTree.js');
+        const tree = State.govTree && State.govTree[p.team];
+        if (tree) {
+            const b = GT.bonusOf(tree);
+            if (b.hpPct)  p.maxHp = Math.round(p.maxHp * (1 + b.hpPct));
+            if (b.atkPct) p.bonusDamage += (p.baseDamage || 0) * b.atkPct;
+        }
+    } catch (e) { /* 트리를 못 읽어도 게임은 굴러가야 한다 */ }
+
     // ✅ 방어력 한도(상한) 제거 — 장착한 만큼 그대로 합산된다
     if (p.maxHp > oldMax) p.hp += (p.maxHp - oldMax);
     p.hp = Math.min(p.hp, p.maxHp);
