@@ -14,8 +14,8 @@
     let selected = null;          // 지금 고른 노드 id
     let hitAreas = [];            // 클릭 판정용 [{id, x, y, r}]
 
-    const STEP = 104;             // 노드 사이 거리
-    const HEX_R = 40;             // 육각형 반지름
+    const STEP = 138;             // 노드 사이 거리 (확대)
+    const HEX_R = 53;             // 육각형 반지름
     // 🖐️ 웹이 화면보다 넓으므로 끌어서 움직일 수 있게 한다
     let panX = 0, panY = 0;
     let dragging = false, moved = 0, lastX = 0, lastY = 0;
@@ -129,7 +129,7 @@
             ctx.fillStyle = on ? "#fff8dc" : "#c8d0e0";
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
             const lines = n.name.split('\n');
-            const fs = (lines.length > 1) ? 11 : 14;
+            const fs = (lines.length > 1) ? 14 : 18;
             ctx.font = "bold " + fs + "px sans-serif";
             lines.forEach(function (ln, i) {
                 ctx.fillText(ln, x, y - (lines.length - 1) * fs * 0.6 + i * fs * 1.2);
@@ -154,7 +154,6 @@
         const n = NODES[selected];
         const on = !!tree[selected];
         const gold = (window.myPlayer && window.myPlayer.gold) || 0;
-        const miss = G().missingParents(tree, selected);
         const can = G().canUnlock(tree, selected) && gold >= n.cost;
 
         el.innerHTML =
@@ -166,13 +165,8 @@
           + (on
               ? '<div style="color:#2ecc71; font-weight:bold; font-size:15px;">✔ 이미 열렸습니다</div>'
               : '<div style="color:' + (can ? '#8fd4ff' : '#7f8c8d') + '; font-size:13px; line-height:1.6;">'
-                + (can
-                    ? '한 번 더 누르면 열립니다'
-                    : (miss.length
-                        ? '먼저 열어야 합니다 — <span style="color:#ff9f9f;">'
-                          + miss.map(function (mid) { return NODES[mid].name.replace(/\n/g, ' '); }).join(' · ')
-                          + '</span>'
-                        : '골드가 부족합니다'))
+                + (can ? '한 번 더 누르면 열립니다'
+                       : (gold < n.cost ? '골드가 부족합니다' : ''))
                 + '</div>');
     }
 

@@ -54,17 +54,20 @@
             if (!p) continue;
             const pw = p.w || 0, ph = p.h || 0;
             // 미니맵 범위 밖(별세계 등)은 아예 그리지 않는다
-            if (!inRange(p.x)) continue;
+            if (!inRange(p.x) && !inRange(p.x + pw)) continue;
 
+            // ⚠️ [중요] Platforms 의 x 는 '중심' 이 아니라 '왼쪽 끝' 이다.
+            //    중심으로 잘못 보면 좌우가 어긋나 대칭이 깨져 보인다.
+            //    (실제 데이터는 중앙 16000 기준으로 완전히 대칭이다)
             if (pw > ph) {
                 // 🟫 가로 발판
-                const x1 = mx(p.x - pw / 2), x2 = mx(p.x + pw / 2);
+                const x1 = mx(p.x), x2 = mx(p.x + pw);
                 if (x2 - x1 < 0.5) continue;
                 ctx.fillStyle = "rgba(205,210,220,0.6)";
                 ctx.fillRect(x1, my(p.y) - 0.6, Math.max(1, x2 - x1), 1.3);
             } else {
                 // 🧱 세로벽
-                const y1 = my(p.y - ph / 2), y2 = my(p.y + ph / 2);
+                const y1 = my(p.y), y2 = my(p.y + ph);
                 ctx.fillStyle = "rgba(255,232,150,0.85)";
                 ctx.fillRect(mx(p.x) - 0.7, y1, 1.5, Math.max(1.5, y2 - y1));
             }
