@@ -139,6 +139,27 @@
         drawPanel();
     };
 
+    /**
+     * 🔗 필요 노드 안내
+     *    이미 연 것은 초록 체크, 아직 못 연 것은 붉은색으로 보여 준다.
+     */
+    function reqHtml(n, tree) {
+        const ps = n.parents || [];
+        if (!ps.length) return '';
+        const NODES = G().NODES;
+        const items = ps.map(function (pid) {
+            const done = !!tree[pid];
+            const nm = NODES[pid].name.replace(/\n/g, ' ');
+            return '<span style="color:' + (done ? '#2ecc71' : '#ff8f8f') + ';">'
+                 + (done ? '✔ ' : '✖ ') + nm + '</span>';
+        }).join('<br>');
+        return '<div style="margin-bottom:12px; padding:9px 11px; background:rgba(255,255,255,0.05);'
+             + ' border-left:3px solid #3a47a8; border-radius:5px;">'
+             + '<div style="color:#8fa3b8; font-size:12px; margin-bottom:5px;">필요한 노드</div>'
+             + '<div style="font-size:13px; line-height:1.7; font-weight:bold;">' + items + '</div>'
+             + '</div>';
+    }
+
     /** 오른쪽 설명 패널 */
     function drawPanel() {
         const el = document.getElementById('govPanel');
@@ -160,8 +181,11 @@
             '<div style="color:' + (on ? GOLD : '#dfe6ec') + '; font-size:20px; font-weight:bold; margin-bottom:8px;">'
           + n.name.replace(/\n/g, ' ') + '</div>'
           + '<div style="color:#bdc3c7; font-size:14px; line-height:1.6; margin-bottom:14px;">' + n.desc + '</div>'
-          + '<div style="color:#f1c40f; font-size:14px; margin-bottom:12px;">비용: '
+          + '<div style="color:#f1c40f; font-size:14px; margin-bottom:10px;">비용: '
           + (n.cost > 0 ? n.cost.toLocaleString() + ' G' : '무료') + '</div>'
+          // 🔗 이 노드를 열려면 어떤 노드가 필요한지 항상 보여 준다.
+          //    (전군총수처럼 부모가 둘이면 헷갈리기 쉽다)
+          + reqHtml(n, tree)
           + (on
               ? '<div style="color:#2ecc71; font-weight:bold; font-size:15px;">✔ 이미 열렸습니다</div>'
               : '<div style="color:' + (can ? '#8fd4ff' : '#7f8c8d') + '; font-size:13px; line-height:1.6;">'
