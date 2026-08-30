@@ -72,6 +72,15 @@ function forEachTarget(attacker, hitTest, cb, deps) {
         let ok = State.okras[i];
         if (ok.hp > 0 && hitTest(ok, ok.radius)) cb({ obj: ok, kind: 'okra', id: ok.id });
     }
+    // 🤖 파시피스타 — 적 팀 것만 때릴 수 있다
+    if (State.pacifistas) {
+        for (let i = State.pacifistas.length - 1; i >= 0; i--) {
+            const pf = State.pacifistas[i];
+            if (pf.hp > 0 && pf.team !== attacker.team && hitTest(pf, pf.radius)) {
+                cb({ obj: pf, kind: 'pacifista', id: pf.id });
+            }
+        }
+    }
 }
 
 module.exports = (deps) => {
@@ -83,6 +92,15 @@ module.exports = (deps) => {
 
     /** 대상 하나에 피해 + 넉백 + 어그로를 공통 처리한다 */
     function hurt(t, attacker, damage, kb, opts) {
+        // 🫧 [마크 Ⅲ] 버블 보호막이 남아 있으면 먼저 깎인다
+        if (t && t.kind === 'pacifista' && t.obj && t.obj.shield > 0) {
+            const o = t.obj;
+            const use = Math.min(o.shield, damage);
+            o.shield -= use;
+            damage -= use;
+            emitDamageText(o.x, o.y, use);
+            if (damage <= 0) return;
+        }
         opts = opts || {};
         const { obj, kind, id } = t;
 
@@ -164,6 +182,9 @@ module.exports = (deps) => {
         } else if (kind === 'okra') {
             obj.knockbackForce += kb; obj.targetId = attacker.id; obj.state = 'chase';
             if (obj.hp <= 0) killOkra(obj, attacker.id);
+        } else if (kind === 'pacifista') {
+            // 🤖 공성 유닛이라 반격하지 않는다. govEffects 가 정리한다.
+            if (obj.hp < 0) obj.hp = 0;
         }
     }
 
