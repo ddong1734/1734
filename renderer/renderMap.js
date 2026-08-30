@@ -401,7 +401,8 @@ export class RenderMap {
 
             // ── 🏛️ 세계정부 마크 (성벽 가운데) ─────────────────
             //    가운데 원 + 상하좌우 4개 원을 막대로 이은 문양
-            const mx2 = nx, myy = gy - H * 0.55;
+            //  🔼 마크 위치를 성벽 위쪽으로 올린다 (0.55 → 0.72)
+            const mx2 = nx, myy = gy - H * 0.72;
             const R = 15, ARM = 34;
             ctx.strokeStyle = NAVY; ctx.lineWidth = 11; ctx.lineCap = "butt";
             [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
@@ -639,12 +640,15 @@ export class RenderMap {
         if (bases[2]) drawNexus(constants.RED_NEXUS_X, 2);
 
         if (bases[1] && this.isVisible(camX, camY, viewW, viewH, constants.BLUE_NEXUS_X, groundY, 150, 300)) { 
-            ctx.fillStyle = "#fff"; ctx.font = "bold 35px sans-serif"; ctx.textAlign = "center"; ctx.fillText("블루 넥서스", constants.BLUE_NEXUS_X, groundY - 270); 
+            ctx.fillStyle = "#fff"; ctx.font = "bold 35px sans-serif"; ctx.textAlign = "center";
+            // 🏛️ 세계정부가 되었으면 이름도 바꾼다
+            ctx.fillText(bases[1].govType === 'wg' ? "세계정부" : "블루 넥서스", constants.BLUE_NEXUS_X, groundY - 270); 
             ctx.fillStyle = "#3498db"; ctx.fillRect(constants.BLUE_NEXUS_X - 98, groundY - 318, 196 * (Math.max(0, bases[1].hp) / bases[1].maxHp), 16); 
             ctx.strokeStyle = "#000"; ctx.lineWidth = 1.5; ctx.strokeRect(constants.BLUE_NEXUS_X - 98, groundY - 318, 196, 16); 
         }
         if (bases[2] && this.isVisible(camX, camY, viewW, viewH, constants.RED_NEXUS_X, groundY, 150, 300)) { 
-            ctx.fillStyle = "#fff"; ctx.font = "bold 35px sans-serif"; ctx.textAlign = "center"; ctx.fillText("레드 넥서스", constants.RED_NEXUS_X, groundY - 270); 
+            ctx.fillStyle = "#fff"; ctx.font = "bold 35px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(bases[2].govType === 'wg' ? "세계정부" : "레드 넥서스", constants.RED_NEXUS_X, groundY - 270); 
             ctx.fillStyle = "#e74c3c"; ctx.fillRect(constants.RED_NEXUS_X - 98, groundY - 318, 196 * (Math.max(0, bases[2].hp) / bases[2].maxHp), 16); 
             ctx.strokeStyle = "#000"; ctx.lineWidth = 1.5; ctx.strokeRect(constants.RED_NEXUS_X - 98, groundY - 318, 196, 16); 
         }
