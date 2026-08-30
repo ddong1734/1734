@@ -144,6 +144,12 @@ function projectileTargets(ctx, p, eR) {
     if (burgessAlive() && near(State.burgess, State.burgess.radius)) list.push({ obj: State.burgess, kind: 'burgess', id: 'burgess', key: 'burgess' });
     State.hinbeomMinions.forEach(mn => { if (mn.hp > 0 && near(mn, mn.radius)) list.push({ obj: mn, kind: 'minion', id: mn.id, key: 'minion_' + mn.id }); });
     State.okras.forEach(ok => { if (ok.hp > 0 && near(ok, ok.radius)) list.push({ obj: ok, kind: 'okra', id: ok.id, key: 'okra_' + ok.id }); });
+    // 🤖 파시피스타 — 적 팀 것만 탄환에 맞는다
+    (State.pacifistas || []).forEach(pf => {
+        if (pf.hp > 0 && pf.team !== p.team && near(pf, pf.radius)) {
+            list.push({ obj: pf, kind: 'pacifista', id: pf.id, key: 'pacifista_' + pf.id });
+        }
+    });
     // 🔥 헤이안 스쿠나
     if (State.sukuna && State.sukuna.hp > 0 && State.sukuna.state !== 'dead' && near(State.sukuna, State.sukuna.radius)) list.push({ obj: State.sukuna, kind: 'sukuna', id: 'sukuna', key: 'sukuna' });
 
@@ -339,6 +345,12 @@ module.exports = {
                 let d = Math.hypot(ok.x - turret.x, ok.y - turret.y);
                 if (d < minDist) { minDist = d; target = ok; }
             });
+            // 🤖 적 파시피스타도 포탑·대포의 표적이 된다
+            (State.pacifistas || []).forEach(pf => {
+                if (pf.hp <= 0 || pf.team === turret.team) return;
+                const d = Math.hypot(pf.x - turret.x, pf.y - turret.y);
+                if (d < minDist) { minDist = d; target = pf; }
+            });
             // 🛡️ [마르코] 보호막 안에 숨은 대상은 맞힐 수 없다.
             //    ⚠️ 예전에는 target 을 비워 포탑이 아예 멈춰 버렸다.
             //       이제는 그 대상만 건너뛰고 '다음으로 가까운 적' 을 다시 찾아 계속 쏜다.
@@ -357,6 +369,12 @@ module.exports = {
                     if (SB.shieldAt && SB.shieldAt(ok.x, ok.y, turret.team)) return;
                     const d2 = Math.hypot(ok.x - turret.x, ok.y - turret.y);
                     if (d2 < minDist) { minDist = d2; target = ok; }
+                });
+                // 🤖 적 파시피스타도 표적이다
+                (State.pacifistas || []).forEach(pf => {
+                    if (pf.hp <= 0 || pf.team === turret.team) return;
+                    const d2 = Math.hypot(pf.x - turret.x, pf.y - turret.y);
+                    if (d2 < minDist) { minDist = d2; target = pf; }
                 });
             }
             if (!target) return;
