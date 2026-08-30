@@ -349,8 +349,129 @@ export class RenderMap {
 
         // 🏛️ [신규] 넥서스 본체를 그린다.
         //    예전에는 이름표와 체력바만 있고 건물이 아예 안 그려져 투명했다.
+        /**
+         * 🏛️ 세계정부 요새 — 해군 계열이 많은 팀의 넥서스
+         *    성벽 · 첨탑 · 세계정부 마크 · 깃발로 이루어진다.
+         */
+        const drawWorldGov = (nx, team) => {
+            const b = bases[team]; if (!b) return;
+            const gy = groundY;
+            const hpF = Math.max(0, b.hp / b.maxHp);
+            const NAVY = "#151b52";      // 세계정부 남색
+            const NAVY_L = "#2a3480";
+            const STONE = "#c8ccd6";
+            const STONE_D = "#8d93a3";
+
+            ctx.save();
+
+            // ── 성벽 본체 ──────────────────────────────────────
+            const W = 210, H = 175;
+            const g = ctx.createLinearGradient(nx - W / 2, gy - H, nx + W / 2, gy);
+            g.addColorStop(0, STONE); g.addColorStop(0.55, STONE_D); g.addColorStop(1, "#5f6575");
+            ctx.fillStyle = g;
+            ctx.fillRect(nx - W / 2, gy - H, W, H);
+            ctx.strokeStyle = "#2b2f3a"; ctx.lineWidth = 5;
+            ctx.strokeRect(nx - W / 2, gy - H, W, H);
+
+            // 성벽 위 총안(요철)
+            for (let k = 0; k < 7; k++) {
+                const bx = nx - W / 2 + k * (W / 7);
+                ctx.fillStyle = STONE;
+                ctx.fillRect(bx, gy - H - 22, W / 14, 22);
+                ctx.strokeStyle = "#2b2f3a"; ctx.lineWidth = 3;
+                ctx.strokeRect(bx, gy - H - 22, W / 14, 22);
+            }
+
+            // ── 좌우 첨탑 ──────────────────────────────────────
+            for (const sd of [-1, 1]) {
+                const tx = nx + sd * (W / 2 + 24);
+                ctx.fillStyle = STONE_D;
+                ctx.fillRect(tx - 22, gy - H - 40, 44, H + 40);
+                ctx.strokeStyle = "#2b2f3a"; ctx.lineWidth = 4;
+                ctx.strokeRect(tx - 22, gy - H - 40, 44, H + 40);
+                // 첨탑 지붕
+                ctx.fillStyle = NAVY;
+                ctx.beginPath();
+                ctx.moveTo(tx - 30, gy - H - 40);
+                ctx.lineTo(tx, gy - H - 86);
+                ctx.lineTo(tx + 30, gy - H - 40);
+                ctx.closePath(); ctx.fill();
+                ctx.strokeStyle = "#0b0f30"; ctx.lineWidth = 3; ctx.stroke();
+            }
+
+            // ── 🏛️ 세계정부 마크 (성벽 가운데) ─────────────────
+            //    가운데 원 + 상하좌우 4개 원을 막대로 이은 문양
+            const mx2 = nx, myy = gy - H * 0.55;
+            const R = 15, ARM = 34;
+            ctx.strokeStyle = NAVY; ctx.lineWidth = 11; ctx.lineCap = "butt";
+            [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+                ctx.beginPath();
+                ctx.moveTo(mx2, myy);
+                ctx.lineTo(mx2 + d[0] * ARM, myy + d[1] * ARM);
+                ctx.stroke();
+            });
+            ctx.fillStyle = NAVY;
+            [[0, 0], [0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+                ctx.beginPath();
+                ctx.arc(mx2 + d[0] * ARM, myy + d[1] * ARM, R, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // ── 🚩 깃발 (성벽 위) ──────────────────────────────
+            const fx = nx, fy = gy - H - 22;
+            ctx.strokeStyle = "#6d7480"; ctx.lineWidth = 5;
+            ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx, fy - 96); ctx.stroke();
+            // 펄럭이는 천
+            const wave = Math.sin(mathNow / 260) * 7;
+            ctx.beginPath();
+            ctx.moveTo(fx, fy - 96);
+            ctx.quadraticCurveTo(fx + 40, fy - 92 + wave, fx + 78, fy - 84);
+            ctx.lineTo(fx + 78, fy - 44);
+            ctx.quadraticCurveTo(fx + 40, fy - 52 + wave, fx, fy - 48);
+            ctx.closePath();
+            ctx.fillStyle = "#f2f4f8"; ctx.fill();
+            ctx.strokeStyle = "#2b2f3a"; ctx.lineWidth = 3; ctx.stroke();
+            // 깃발 속 작은 마크
+            const fmx = fx + 39, fmy = fy - 68, fr = 5, fa = 12;
+            ctx.strokeStyle = NAVY; ctx.lineWidth = 4;
+            [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+                ctx.beginPath(); ctx.moveTo(fmx, fmy);
+                ctx.lineTo(fmx + d[0] * fa, fmy + d[1] * fa); ctx.stroke();
+            });
+            ctx.fillStyle = NAVY;
+            [[0, 0], [0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+                ctx.beginPath(); ctx.arc(fmx + d[0] * fa, fmy + d[1] * fa, fr, 0, Math.PI * 2); ctx.fill();
+            });
+
+            // ── 정문 ───────────────────────────────────────────
+            ctx.fillStyle = NAVY_L;
+            ctx.beginPath();
+            ctx.moveTo(nx - 34, gy);
+            ctx.lineTo(nx - 34, gy - 52);
+            ctx.quadraticCurveTo(nx, gy - 88, nx + 34, gy - 52);
+            ctx.lineTo(nx + 34, gy);
+            ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = "#0b0f30"; ctx.lineWidth = 4; ctx.stroke();
+
+            // ── 체력이 낮으면 금이 간다 ────────────────────────
+            if (hpF < 0.5) {
+                ctx.strokeStyle = "rgba(30,20,10,0.7)"; ctx.lineWidth = 3;
+                for (let k = 0; k < 4; k++) {
+                    const sx = nx - 70 + k * 42;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, gy - H + 12);
+                    ctx.lineTo(sx + 13, gy - H * 0.55);
+                    ctx.lineTo(sx - 7, gy - 20);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        };
+
         const drawNexus = (nx, team) => {
             const b = bases[team]; if (!b) return;
+            // 🏛️ 세계정부라면 요새 모습으로 그린다
+            if (b.govType === 'wg') { drawWorldGov(nx, team); return; }
             const col = (team === 1) ? "#3498db" : "#e74c3c";
             const dark = (team === 1) ? "#1b4f72" : "#7b241c";
             const lite = (team === 1) ? "#85c1e9" : "#f1948a";
