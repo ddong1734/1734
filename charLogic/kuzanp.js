@@ -196,7 +196,9 @@ function onBasicHit(p, tx, ty, ctx) {
     // 🦿 얼음 의족 : 범위 1.5배 · 피해 2배
     const R2 = p.hasIceLeg ? Math.round(S2.blastRadius * 1.5) : S2.blastRadius;
     const D2 = p.hasIceLeg ? S2.blastDamage * 2 : S2.blastDamage;
-    const F2 = freezeMs(p, S2.freezeTime);
+    // ⚖️ [예외] 아이스 글러브의 0.3초 동결은 '한껏 해이해진 정의' 의
+    //    +1초 보정을 받지 않는다. (평타마다 터지므로 너무 강해진다)
+    const F2 = S2.freezeTime;
     ctx.io.emit('kuzanpFrostBurst', { x: tx, y: ty, radius: R2 });
     // 평타 피해와 별개
     iceBurst(p, tx, ty, R2, D2, F2, ctx);
@@ -237,15 +239,22 @@ function useDash(p, data, ctx) {
     }
     const len = Math.hypot(dx, dy) || 1;
 
-    p.kzDashCastEnd = now + S3.castTime;
-    p.kzDashEnd = 0;
+    // ⚡ [수정] 0.5초 결빙 대기를 없애고 곧바로 돌진한다.
+    p.kzDashCastEnd = 0;
     p.kzDashDX = dx / len;
     p.kzDashDY = dy / len;
     p.kzDashHit = false;
+    p.kzDashEnd = now + S3.dashTime;
 
+    // 결빙 연출은 돌진과 겹쳐 아주 짧게 보여 준다
     ctx.io.emit('kuzanpDashCast', {
         id: p.id, x: p.x, y: p.y,
-        castMs: S3.castTime, dirX: p.kzDashDX, dirY: p.kzDashDY
+        castMs: 180, dirX: p.kzDashDX, dirY: p.kzDashDY
+    });
+    ctx.io.emit('kuzanpDash', {
+        id: p.id, x: p.x, y: p.y,
+        dirX: p.kzDashDX, dirY: p.kzDashDY,
+        durationMs: S3.dashTime, speed: S3.dashSpeed
     });
     ctx.io.emit('syncPlayerFull', p);
 }
