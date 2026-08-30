@@ -47,7 +47,8 @@ function syncCannon(team, gb, io) {
     // 블루(1팀)는 넥서스 왼쪽, 레드(2팀)는 오른쪽 — 각자 진영 바깥쪽이다
     const side = (team === 1) ? -1 : 1;
     State.turrets.push({
-        team: team, x: base.x + side * 330, y: 1850,
+        // 🛒 상점(11800 / 20200) 과 겹치지 않게 넥서스 가까이 붙인다
+        team: team, x: base.x + side * 210, y: 1850,
         range: TURRET_RANGE,
         damage: 90,              // 기본 포탑(30) 의 3배
         lastShot: 0,
@@ -86,7 +87,9 @@ function syncNexus(team, gb, now, io) {
 /** 🤖 파시피스타 출격 */
 function spawnPacifistas(team, gb, now, io) {
     if (!gb) return;
-    const n1 = gb.pacifista || 0, n3 = gb.pacifista3 || 0;
+    // 🤖 마크 Ⅲ 를 열면 상위 기종만 나온다 (기존 파시피스타는 더 이상 출격하지 않는다)
+    const n3 = gb.pacifista3 || 0;
+    const n1 = n3 > 0 ? 0 : (gb.pacifista || 0);
     if (!n1 && !n3) return;
 
     if (!State.pacifSpawn[team]) State.pacifSpawn[team] = now + SPAWN_MS;
@@ -99,7 +102,9 @@ function spawnPacifistas(team, gb, now, io) {
         const u = {
             id: 'pf' + Math.random().toString(36).slice(2, 9),
             team: team, isMk3: !!isMk3,
-            x: base.x + (team === 1 ? 220 : -220), y: 1955,
+            x: base.x + (team === 1 ? 220 : -220),
+            // 🦶 발이 땅에 닿도록 반지름만큼 띄운다 (예전엔 땅에 묻혀 보였다)
+            y: 2000 - Math.round(HINBEOM_R * (isMk3 ? 0.95 : 0.8)) - 30,
             hp: hp, maxHp: hp,
             // 🫧 마크 Ⅲ 는 자기 체력의 절반짜리 버블 보호막을 두른다
             shield: isMk3 ? Math.round(hp / 2) : 0,
@@ -147,8 +152,9 @@ function processPacifistas(now, ctx) {
         // 사거리 안 — 3초에 한 번 빛 레이저를 쏜다
         if (now - u.lastShot < 3000) continue;
         u.lastShot = now;
+        // 👄 레이저는 입(얼굴)에서 나간다
         io.emit('pacifistaLaser', {
-            id: u.id, x: u.x, y: u.y, tx: foe.x, ty: foe.y - 60,
+            id: u.id, x: u.x, y: u.y - Math.round(u.radius * 0.72), tx: foe.x, ty: foe.y - 60,
             isMk3: u.isMk3, damage: u.damage
         });
         if (typeof ctx.applyBaseDamage === 'function') {
@@ -159,6 +165,8 @@ function processPacifistas(now, ctx) {
     if (changed) io.emit('syncPacifistas', State.pacifistas);
 }
 
+let _cdAt = 0;
+
 function process(now, ctx) {
     const io = ctx.io;
     [1, 2].forEach(function (team) {
@@ -168,6 +176,18 @@ function process(now, ctx) {
         spawnPacifistas(team, gb, now, io);
     });
     processPacifistas(now, ctx);
+
+    // ⏱️ 출격까지 남은 시간을 1초에 한 번 알려 준다 (세계정부 위에 표시된다)
+    if (now - _cdAt >= 1000) {
+        _cdAt = now;
+        const cd = {};
+        [1, 2].forEach(function (team) {
+            const gb = bonusOf(team);
+            const on = gb && ((gb.pacifista3 || 0) > 0 || (gb.pacifista || 0) > 0);
+            cd[team] = on ? Math.max(0, (State.pacifSpawn[team] || 0) - now) : 0;
+        });
+        io.emit('pacifCountdown', cd);
+    }
 }
 
 module.exports = { process, PACIF_RANGE, SPAWN_MS };
