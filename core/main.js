@@ -433,14 +433,21 @@ setInterval(() => {
             }
 
             // 🚢 버스터 콜 버튼 — 세계정부 근처이고 노드를 열었을 때만 보인다
-        {
+        //    ⚠️ nearGov 는 이 아래(통합 버튼 쪽)에서 선언된다.
+        //       여기서 그대로 쓰면 ReferenceError 가 나서 물리 갱신·미니맵까지
+        //       통째로 멈춘다. 그래서 거리를 직접 다시 구한다.
+        try {
             const bcEl = document.getElementById('busterCallBtn');
             if (bcEl) {
                 let show = false;
-                if (nearGov && window.GovTree && window.govState) {
+                if (!pObj.isDead && window.GovTree && window.govState && window.serverBases) {
                     const tm = pObj.team;
-                    const b = window.GovTree.bonusOf((window.govState.tree && window.govState.tree[tm]) || {});
-                    show = !!(b && b.buster);
+                    const gmap = window.govState.gov || {};
+                    const bs = window.serverBases[tm];
+                    if (gmap[tm] === 'wg' && bs && Math.hypot(pObj.x - bs.x, pObj.y - bs.y) < 280) {
+                        const b = window.GovTree.bonusOf((window.govState.tree && window.govState.tree[tm]) || {});
+                        show = !!(b && b.buster);
+                    }
                 }
                 bcEl.style.display = show ? 'flex' : 'none';
                 if (show && !bcEl._bound) {
@@ -451,7 +458,7 @@ setInterval(() => {
                     });
                 }
             }
-        }
+        } catch (e) { console.error('[BUSTER BTN]', e); }
 
         // 🏛️ 세계정부 웹이 열려 있으면 골드 표시를 갱신한다
             const _gv = document.getElementById('govModal');
@@ -463,7 +470,9 @@ setInterval(() => {
             // 🗺️ 미니맵 — 1초에 12번만 다시 그린다 (부담을 줄인다)
             if (loopNow - (window._mmAt || 0) >= 80) {
                 window._mmAt = loopNow;
-                if (typeof window.drawMiniMap === 'function') window.drawMiniMap();
+                // 🛟 미니맵에서 오류가 나도 게임 루프는 계속 돌아야 한다
+                try { if (typeof window.drawMiniMap === 'function') window.drawMiniMap(); }
+                catch (e) { console.error('[MINIMAP]', e); }
             }
 
             // ⏱️ 난투 시간 — 전투가 시작된 시각부터 흐른다
