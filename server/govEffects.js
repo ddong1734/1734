@@ -20,7 +20,7 @@ try { GT = require('../govTree.js'); } catch (e) { }
 
 const TURRET_RANGE = 1200;              // 기본 포탑 사거리
 const PACIF_RANGE = TURRET_RANGE / 2;   // 파시피스타는 그 절반
-const SPAWN_MS = 180000;                // 3분
+const SPAWN_MS = 150000;                // 2분 30초
 const HINBEOM_R = 90;                   // 박힌범 반지름 기준
 
 /** 이 팀의 세계정부 보너스 (세계정부가 아니면 null) */
@@ -82,6 +82,34 @@ function syncNexus(team, gb, now, io) {
             io.emit('syncBases', State.bases);
         }
     }
+}
+
+/**
+ * 💚 [구/뉴 마린 포드] 세계정부를 감싸는 회복 돔.
+ *    돔 안의 아군은 1초마다 회복한다.
+ */
+const HEAL_ZONE_R = 620;   // 세계정부를 덮고도 남는 크기
+
+let _healAt = 0;
+function processHealZone(now, ctx) {
+    if (now - _healAt < 1000) return;
+    _healAt = now;
+    const io = ctx.io;
+    [1, 2].forEach(function (team) {
+        const gb = bonusOf(team);
+        if (!gb || !gb.healZone) return;
+        const base = State.bases[team];
+        if (!base) return;
+        for (const pid in State.players) {
+            const p = State.players[pid];
+            if (!p || p.isDead || p.team !== team) continue;
+            if (Math.hypot(p.x - base.x, p.y - base.y) > HEAL_ZONE_R) continue;
+            if (p.hp >= p.maxHp) continue;
+            p.hp = Math.min(p.maxHp, p.hp + gb.healZone);
+            io.to(pid).emit('heal', gb.healZone);
+            io.emit('syncPlayerFull', p);
+        }
+    });
 }
 
 /** 🤖 파시피스타 출격 */
@@ -179,6 +207,10 @@ function process(now, ctx) {
         spawnPacifistas(team, gb, now, io);
     });
     processPacifistas(now, ctx);
+    // 💚 회복 돔
+    processHealZone(now, ctx);
+    // ⛩️ 정의의 문
+    processGateCasts(now, ctx);
     // ⚔️ 칠무해 · 세라핌
     [1, 2].forEach(function (team) { syncWarlord(team, bonusOf(team), now, io); });
     processWarlords(now, ctx);
@@ -204,7 +236,7 @@ function process(now, ctx) {
     }
 }
 
-module.exports = { process, PACIF_RANGE, SPAWN_MS };
+module.exports = { process, PACIF_RANGE, SPAWN_MS, HEAL_ZONE_R };
 
 // ============================================================================
 // ⚔️ 칠무해 / 👼 세라핌 · 🚢 버스터 콜
@@ -331,9 +363,11 @@ function processBusterQueue(now, io) {
         State.warships.push({
             id: 'ws' + Math.random().toString(36).slice(2, 9),
             team: q.team,
-            x: base.x + (q.team === 1 ? 150 : -150), y: 1880,
-            hp: 1500, maxHp: 1500,
-            radius: 92,
+            x: base.x + (q.team === 1 ? 150 : -150),
+            // 🚢 배가 물(지면)에 잠기도록 내려 앉힌다 (예전엔 공중에 떠 보였다)
+            y: 1975,
+            hp: 2000, maxHp: 2000,
+            radius: 138,
             range: Math.round(PACIF_RANGE * 1.35),   // 파시피스타보다 조금 넓다
             speed: 1.65,                              // 파시피스타(1.1) 의 1.5배
             lastCannon: 0, lastGun: 0
@@ -388,8 +422,18 @@ function processWarships(now, ctx) {
                 id: w.id, kind: 'cannon', team: w.team,
                 x: w.x, y: w.y - 30, tx: aimX, ty: aimY
             });
+            // 💥 대포알은 터지므로 착탄 지점 주변을 함께 친다
             if (baseIn && typeof ctx.applyBaseDamage === 'function') ctx.applyBaseDamage(w.team, 40);
-            else if (tgt) hitPlayer(tgt, 40, ctx);
+            else if (tgt) {
+                hitPlayer(tgt, 40, ctx);
+                const BR = 150;
+                for (const pid in State.players) {
+                    const o = State.players[pid];
+                    if (!o || o.isDead || o.team === w.team || o === tgt) continue;
+                    if (Math.hypot(o.x - tgt.x, o.y - tgt.y) > BR) continue;
+                    hitPlayer(o, 40, ctx);
+                }
+            }
             changed = true;
         }
         // 🔫 총알 — 1초마다 앞·뒤 두 곳에서
@@ -428,3 +472,44 @@ module.exports.processBusterQueue = processBusterQueue;
 module.exports.processWarships = processWarships;
 module.exports.WARLORD_RESPAWN = WARLORD_RESPAWN;
 module.exports.BUSTER_CD = BUSTER_CD;
+
+// ============================================================================
+// ⛩️ 정의의 문 — 5초를 버티면 아군 세계정부로 순간이동한다
+// ============================================================================
+const GATE_CD = 200000;   // 쿨타임 200초
+
+function processGateCasts(now, ctx) {
+    const io = ctx.io;
+    for (const id in State.gateCasts) {
+        const g = State.gateCasts[id];
+        const p = State.players[id];
+
+        // 시전자가 사라졌거나 죽으면 취소된다
+        if (!p || p.isDead) {
+            delete State.gateCasts[id];
+            io.emit('gateCastEnd', { id: id, done: false });
+            continue;
+        }
+        // 🚶 조금이라도 움직였으면 취소 (점프도 좌표가 바뀐다)
+        if (Math.hypot(p.x - g.x, p.y - g.y) > 12) {
+            delete State.gateCasts[id];
+            io.emit('gateCastEnd', { id: id, done: false });
+            continue;
+        }
+        if (now < g.endAt) continue;
+
+        // ✨ 5초를 버텼다 — 아군 세계정부로 보낸다
+        const base = State.bases[p.team];
+        delete State.gateCasts[id];
+        p.gateCdEnd = now + GATE_CD;
+        p.x = base.x;
+        p.y = 1955;
+        p.knockbackForce = 0;
+        p.vy = 0;
+        io.emit('gateCastEnd', { id: id, done: true, x: p.x, y: p.y });
+        io.emit('syncPlayerFull', p);
+    }
+}
+
+module.exports.processGateCasts = processGateCasts;
+module.exports.GATE_CD = GATE_CD;

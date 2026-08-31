@@ -463,6 +463,8 @@ const State = {
     warships: [],
     busterQueue: [],
     busterCd: { 1: 0, 2: 0 },
+    // ⛩️ 정의의 문 — 채널링 중인 플레이어
+    gateCasts: {},
     // 🕸️ 팀별 세계정부 스킬 웹 (열린 노드 목록)
     govTree: { 1: {}, 2: {} },
     // 🕶️ 암매상 — 아이템별 할인율(%) 과 다음 갱신 시각

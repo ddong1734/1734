@@ -797,6 +797,33 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ⛩️ [정의의 문] 5초 채널링 시작
+    socket.on('gateCast', () => {
+        const p = State.players[socket.id];
+        if (!p || p.isDead) return;
+        if (State.bases[p.team].govType !== 'wg') { socket.emit('buyFail', '세계정부가 아닙니다.'); return; }
+        const GT = require('../govTree.js');
+        const b = GT.bonusOf(State.govTree[p.team]);
+        if (!b || !b.gateSkill) { socket.emit('buyFail', '정의의 문을 아직 열지 않았습니다.'); return; }
+        const now = Date.now();
+        if (p.gateCdEnd && now < p.gateCdEnd) { socket.emit('buyFail', '아직 쿨타임입니다.'); return; }
+        if (State.gateCasts[socket.id]) return;
+
+        State.gateCasts[socket.id] = {
+            id: socket.id, team: p.team, endAt: now + 5000,
+            x: p.x, y: p.y
+        };
+        io.emit('gateCastStart', { id: socket.id, x: p.x, y: p.y, durationMs: 5000 });
+    });
+
+    // ⛩️ 채널링이 깨졌다 (움직임 · 점프 · 스킬 · 평타 · 피격)
+    socket.on('gateCancel', () => {
+        if (State.gateCasts[socket.id]) {
+            delete State.gateCasts[socket.id];
+            io.emit('gateCastEnd', { id: socket.id, done: false });
+        }
+    });
+
     socket.on('disconnect', () => {
         let dp = State.players[socket.id];
         if (dp && dp.surgeActive) {

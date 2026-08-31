@@ -332,12 +332,60 @@ function checkPlayerDeath(targetPlayer, attackerId) {
     if (bb && bb.crowsActiveTarget === targetPlayer.id) { bb.crowsActiveTarget = null; bb.crowsHitAt = 0; io.emit('crowsEnd', { id: targetPlayer.id }); }
     if (bb && bb.crowsPendingTarget === targetPlayer.id) bb.crowsPendingTarget = null;
 
+    // ⏱️ 기본 부활 15초. 임펠 다운을 연 상대에게 죽으면 30초로 늘어난다.
+    let respawnMs = 15000;
+
     if (attackerId && State.players[attackerId] && attackerId !== targetPlayer.id) {
-        State.players[attackerId].gold += 800;
-        io.to(attackerId).emit('updateGold', State.players[attackerId].gold);
-        gainXp(State.players[attackerId], Math.max(1, targetPlayer.level) * 10);
+        const killer = State.players[attackerId];
+        killer.gold += 800;
+        io.to(attackerId).emit('updateGold', killer.gold);
+        gainXp(killer, Math.max(1, targetPlayer.level) * 10);
         // 🔯 법진 : 적 플레이어 처치도 스택에 포함된다 (자살 · 아군 오폭은 제외)
         addBeopjinKill(attackerId);
+
+        // 🏛️ [세계정부] 사법 기관 효과 — '플레이어에게 죽었을 때만' 발동한다.
+        //    몬스터 · 보스 · 포탑에 죽은 경우에는 attackerId 가 없으므로 여기 안 들어온다.
+        try {
+            const GT = require('../govTree.js');
+            const kb = (State.bases[killer.team] && State.bases[killer.team].govType === 'wg')
+                     ? GT.bonusOf(State.govTree[killer.team]) : null;
+            if (kb) {
+                // ⛓️ 임펠 다운 — 부활 30초
+                if (kb.impelDown > 0) {
+                    respawnMs = 30000;
+                    io.to(targetPlayer.id).emit('impelDown', { ms: respawnMs });
+                }
+                // 📚 에니에스 로비 — 경험치 10% 강탈
+                if (kb.stealXp > 0) {
+                    const take = Math.floor((targetPlayer.xp || 0) * kb.stealXp);
+                    if (take > 0) {
+                        targetPlayer.xp = Math.max(0, (targetPlayer.xp || 0) - take);
+                        gainXp(killer, take);
+                        io.to(attackerId).emit('govSteal', { kind: 'xp', amount: take });
+                        // 🧾 빼앗긴 쪽에도 알린다 (부활할 때까지 화면에 남는다)
+                        io.to(targetPlayer.id).emit('govRobbed', {
+                            kind: 'xp', amount: take, ms: respawnMs
+                        });
+                    }
+                }
+                // 💰 사법의 탑 — 골드 10% 강탈
+                if (kb.stealGold > 0) {
+                    const take = Math.floor((targetPlayer.gold || 0) * kb.stealGold);
+                    if (take > 0) {
+                        targetPlayer.gold = Math.max(0, (targetPlayer.gold || 0) - take);
+                        killer.gold += take;
+                        io.to(targetPlayer.id).emit('updateGold', targetPlayer.gold);
+                        io.to(attackerId).emit('updateGold', killer.gold);
+                        io.to(attackerId).emit('govSteal', { kind: 'gold', amount: take });
+                        // 🧾 빼앗긴 쪽에도 알린다
+                        io.to(targetPlayer.id).emit('govRobbed', {
+                            kind: 'gold', amount: take, ms: respawnMs
+                        });
+                    }
+                }
+                io.emit('syncPlayerFull', killer);
+            }
+        } catch (e) { console.error('[GOV KILL]', e); }
     }
 
     setTimeout(() => {
@@ -358,7 +406,7 @@ function checkPlayerDeath(targetPlayer, attackerId) {
             recalcStats(targetPlayer);
             io.emit('player_respawned', targetPlayer);
         } catch (e) { console.error('[RESPAWN]', e); }
-    }, 15000);
+    }, respawnMs);
 }
 
 // ============================================================================
@@ -380,6 +428,7 @@ function resetGame() {
     State.warships = [];
     State.busterQueue = [];
     State.busterCd = { 1: 0, 2: 0 };
+    State.gateCasts = {};
     State.govTree = { 1: {}, 2: {} };
     State.kuzanpBalls = [];
     State.turrets = State.turrets.filter(function (t) { return !t.isCannon; });
