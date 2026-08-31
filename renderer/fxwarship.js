@@ -403,13 +403,41 @@ registerVisualFX('gate_channel', (ctx, fx, alpha, state) => {
 
     // 모여드는 빛 조각
     ctx.globalAlpha = alpha * 0.9;
-    for (let k = 0; k < 12; k++) {
-        const a = (k / 12) * Math.PI * 2 + tt * 1.6;
-        const d = 200 * (1 - t) + 26;
+    for (let k = 0; k < 20; k++) {
+        const a = (k / 20) * Math.PI * 2 + tt * 1.6;
+        const d = 260 * (1 - t) + 26;
         const px = cx + Math.cos(a) * d, py = cy + Math.sin(a) * d * 0.6;
         ctx.fillStyle = "rgba(220,230,255,0.95)";
         ctx.beginPath(); ctx.arc(px, py, 5 - t * 2, 0, Math.PI * 2); ctx.fill();
     }
+
+    // 🌀 위로 솟구치는 빛 소용돌이
+    ctx.globalAlpha = alpha * 0.75;
+    for (let k = 0; k < 5; k++) {
+        const ph = (tt * 1.3 + k / 5) % 1;
+        const rr = 70 * (1 - ph * 0.55);
+        const yy = cy + 48 - ph * 250;
+        ctx.strokeStyle = "rgba(200,218,255," + (0.85 * (1 - ph)) + ")";
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.ellipse(cx, yy, rr, rr * 0.3, 0, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    // ⛩️ 머리 위에 떠오르는 세계정부 문양
+    ctx.globalAlpha = alpha * (0.4 + t * 0.6);
+    const my2 = cy - 150 - t * 26, MR = 9 + t * 5, MA = 22 + t * 12;
+    ctx.strokeStyle = "rgba(226,236,255,0.95)"; ctx.lineWidth = 6;
+    [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+        ctx.beginPath();
+        ctx.moveTo(cx, my2);
+        ctx.lineTo(cx + d[0] * MA, my2 + d[1] * MA);
+        ctx.stroke();
+    });
+    ctx.fillStyle = "rgba(238,244,255,0.95)";
+    [[0, 0], [0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+        ctx.beginPath(); ctx.arc(cx + d[0] * MA, my2 + d[1] * MA, MR, 0, Math.PI * 2); ctx.fill();
+    });
 
     // 발밑 마법진 (세계정부 문양)
     ctx.globalAlpha = alpha;

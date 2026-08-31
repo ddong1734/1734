@@ -304,7 +304,8 @@ registerVisualFX('trail_ice', (ctx, fx, alpha, state) => {
 // 🧊 퍼잔트백 — 얼음 창 충격파
 // ────────────────────────────────────────────────────────────────────────────
 registerShockwave('pheasant_peck', (ctx, sw, state) => {
-    const alpha = Math.max(0, sw.life / 60);
+    // ⚡ life 38 기준. 앞부분은 진하게, 끝에서만 옅어진다.
+    const alpha = Math.min(1, Math.max(0, sw.life / 38) * 1.6);
     const pulse = 1 + Math.sin(state.mathNow / 50) * 0.12;
     const tt = state.mathNow / 1000;
 
@@ -314,20 +315,32 @@ registerShockwave('pheasant_peck', (ctx, sw, state) => {
         ctx.scale(sw.dir * pulse, pulse);
 
         // 바깥 냉기
-        mist(ctx, 40, 0, 230, alpha * 0.75);
+        mist(ctx, 70, 0, 260, alpha * 0.8);
 
-        // 🧊 거대한 얼음 창 (중앙)
+        // 💨 뒤로 끌리는 속도선
+        ctx.globalAlpha = alpha * 0.6;
+        for (let k = -2; k <= 2; k++) {
+            ctx.strokeStyle = I_PALE + "0.8)";
+            ctx.lineWidth = 6 - Math.abs(k) * 1.5;
+            ctx.beginPath();
+            ctx.moveTo(-260, k * 26);
+            ctx.lineTo(-40, k * 14);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = alpha;
+
+        // 🧊 거대한 얼음 창 (중앙) — 더 길고 날카롭다
         ctx.beginPath();
-        ctx.moveTo(-60, -46);
-        ctx.lineTo(120, -14);
-        ctx.lineTo(255, 0);
-        ctx.lineTo(120, 14);
-        ctx.lineTo(-60, 46);
+        ctx.moveTo(-90, -52);
+        ctx.lineTo(140, -12);
+        ctx.lineTo(330, 0);
+        ctx.lineTo(140, 12);
+        ctx.lineTo(-90, 52);
         ctx.closePath();
-        const sg = ctx.createLinearGradient(-60, 0, 255, 0);
-        sg.addColorStop(0, I_CORE + "0.95)");
-        sg.addColorStop(0.3, I_PALE + "0.95)");
-        sg.addColorStop(0.72, I_MAIN + "0.8)");
+        const sg = ctx.createLinearGradient(-90, 0, 330, 0);
+        sg.addColorStop(0, I_CORE + "1)");
+        sg.addColorStop(0.32, I_CORE + "0.98)");
+        sg.addColorStop(0.72, I_MAIN + "0.85)");
         sg.addColorStop(1, I_FADE);
         ctx.fillStyle = sg; ctx.fill();
         ctx.strokeStyle = I_CORE + "0.9)"; ctx.lineWidth = 3; ctx.stroke();
@@ -335,7 +348,7 @@ registerShockwave('pheasant_peck', (ctx, sw, state) => {
         // 창을 감싸는 곁가지 결정
         for (let k = -2; k <= 2; k++) {
             if (k === 0) continue;
-            shard(ctx, -20, k * 16, 190 - Math.abs(k) * 38, k * 0.13, 11, alpha * 0.9, false);
+            shard(ctx, -30, k * 18, 250 - Math.abs(k) * 46, k * 0.11, 13, alpha * 0.95, Math.abs(k) === 1);
         }
         // 뒤에서 밀려 나오는 파편
         ctx.globalCompositeOperation = "source-over";

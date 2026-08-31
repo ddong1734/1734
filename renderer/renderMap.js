@@ -797,6 +797,98 @@ export class RenderMap {
                 ctx.fillStyle = "#95a5a6"; ctx.fillRect(p.x, p.y, p.w, 8); 
             } 
         }
+        // ══════════════════════════════════════════════════════════════
+        // 💚 [구 · 뉴 마린 포드] 세계정부를 감싸는 회복 돔
+        //    · 구 마린 포드 : 초당 100 (은은한 연두)
+        //    · 뉴 마린 포드 : 초당 200 (진하고 화려한 청록 + 회전 고리)
+        // ══════════════════════════════════════════════════════════════
+        const drawHealDome = (nx, lv) => {
+            const R = 620;
+            const gy = groundY;
+            if (!this.isVisible(camX, camY, viewW, viewH, nx, gy - R * 0.5, R + 60, R + 60)) return;
+            const strong = (lv >= 200);
+            const pulse = 0.85 + Math.sin(mathNow / (strong ? 420 : 620)) * 0.15;
+
+            ctx.save();
+            ctx.globalCompositeOperation = "screen";
+
+            // ── 돔 안쪽을 채우는 빛 ────────────────────────────
+            ctx.globalAlpha = (strong ? 0.30 : 0.18) * pulse;
+            const g = ctx.createRadialGradient(nx, gy, R * 0.15, nx, gy, R);
+            if (strong) {
+                g.addColorStop(0, "rgba(120,255,220,0.55)");
+                g.addColorStop(0.55, "rgba(60,220,190,0.32)");
+                g.addColorStop(1, "rgba(20,150,140,0)");
+            } else {
+                g.addColorStop(0, "rgba(160,255,180,0.40)");
+                g.addColorStop(0.6, "rgba(90,210,140,0.20)");
+                g.addColorStop(1, "rgba(30,140,90,0)");
+            }
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(nx, gy, R, Math.PI, Math.PI * 2);   // 반구(돔) 모양
+            ctx.closePath();
+            ctx.fill();
+
+            // ── 돔 테두리 ──────────────────────────────────────
+            ctx.globalAlpha = (strong ? 0.9 : 0.6) * pulse;
+            ctx.strokeStyle = strong ? "rgba(150,255,230,0.95)" : "rgba(170,255,190,0.8)";
+            ctx.lineWidth = strong ? 6 : 3.5;
+            ctx.beginPath();
+            ctx.arc(nx, gy, R, Math.PI, Math.PI * 2);
+            ctx.stroke();
+
+            // ── 격자 무늬 (돔 느낌) ────────────────────────────
+            ctx.globalAlpha = (strong ? 0.4 : 0.22) * pulse;
+            ctx.lineWidth = strong ? 2.4 : 1.6;
+            for (let k = 1; k <= (strong ? 4 : 3); k++) {
+                const rr = R * (k / (strong ? 4.6 : 3.6));
+                ctx.beginPath();
+                ctx.arc(nx, gy, rr, Math.PI, Math.PI * 2);
+                ctx.stroke();
+            }
+            for (let k = 1; k <= 6; k++) {
+                const a = Math.PI + (k / 7) * Math.PI;
+                ctx.beginPath();
+                ctx.moveTo(nx, gy);
+                ctx.lineTo(nx + Math.cos(a) * R, gy + Math.sin(a) * R);
+                ctx.stroke();
+            }
+
+            // ── ✨ 뉴 마린 포드 — 회전 고리와 떠오르는 빛 ──────
+            if (strong) {
+                ctx.globalAlpha = 0.75;
+                ctx.strokeStyle = "rgba(190,255,240,0.95)";
+                ctx.lineWidth = 4;
+                ctx.setLineDash([26, 18]);
+                for (let k = 0; k < 2; k++) {
+                    const rr = R * (0.55 + k * 0.28);
+                    ctx.lineDashOffset = (k % 2 ? 1 : -1) * mathNow / 26;
+                    ctx.beginPath();
+                    ctx.ellipse(nx, gy, rr, rr * 0.34, 0, Math.PI, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.setLineDash([]);
+            }
+
+            // ── 떠오르는 회복 입자 ─────────────────────────────
+            ctx.globalCompositeOperation = "source-over";
+            const N = strong ? 20 : 11;
+            for (let k = 0; k < N; k++) {
+                const f = ((mathNow / (strong ? 1500 : 2100)) + k / N) % 1;
+                const px = nx + Math.sin(k * 2.7) * R * 0.72;
+                const py = gy - f * R * 0.85;
+                ctx.globalAlpha = (1 - f) * (strong ? 0.85 : 0.55);
+                ctx.fillStyle = strong ? "#8fffdc" : "#b6ffc8";
+                const sz = (strong ? 5 : 3.5) * (1 - f * 0.4);
+                // 십자 모양 회복 표시
+                ctx.fillRect(px - sz, py - sz * 0.32, sz * 2, sz * 0.64);
+                ctx.fillRect(px - sz * 0.32, py - sz, sz * 0.64, sz * 2);
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+        };
+
         // 🎖️ 세계정부 스킬 웹 상태에 따라 포탑이 강화되고 대포가 선다
         const govOf = (tm) => {
             const gs = (typeof window !== 'undefined') ? window.govState : null;
@@ -806,6 +898,9 @@ export class RenderMap {
             return GT.bonusOf((gs.tree && gs.tree[tm]) || {});
         };
         const gb1 = govOf(1), gb2 = govOf(2);
+        // 💚 회복 돔 — 넥서스보다 먼저 그려 뒤에 깔리게 한다
+        if (gb1 && gb1.healZone > 0) drawHealDome(constants.BLUE_NEXUS_X, gb1.healZone);
+        if (gb2 && gb2.healZone > 0) drawHealDome(constants.RED_NEXUS_X, gb2.healZone);
         drawTurret(12500, groundY, 1, !!(gb1 && gb1.turretBoost > 0));
         drawTurret(19500, groundY, 2, !!(gb2 && gb2.turretBoost > 0));
         if (gb1 && gb1.cannon) drawCannon(constants.BLUE_NEXUS_X - 330, groundY, 1);
