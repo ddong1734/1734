@@ -484,18 +484,20 @@ function processGateCasts(now, ctx) {
         const g = State.gateCasts[id];
         const p = State.players[id];
 
+        /** ⏱️ 깨지면 쿨타임 200초가 돈다 */
+        const breakCast = () => {
+            delete State.gateCasts[id];
+            if (p) { p.gateCdEnd = now + GATE_CD; io.emit('syncPlayerFull', p); }
+            io.emit('gateCastEnd', { id: id, done: false, cd: true });
+        };
+
         // 시전자가 사라졌거나 죽으면 취소된다
-        if (!p || p.isDead) {
-            delete State.gateCasts[id];
-            io.emit('gateCastEnd', { id: id, done: false });
-            continue;
-        }
+        if (!p || p.isDead) { breakCast(); continue; }
         // 🚶 조금이라도 움직였으면 취소 (점프도 좌표가 바뀐다)
-        if (Math.hypot(p.x - g.x, p.y - g.y) > 12) {
-            delete State.gateCasts[id];
-            io.emit('gateCastEnd', { id: id, done: false });
-            continue;
-        }
+        if (Math.hypot(p.x - g.x, p.y - g.y) > 24) { breakCast(); continue; }
+        // 🩸 체력이 줄었으면 피해를 입은 것이다
+        if (g.hp !== undefined && p.hp < g.hp) { breakCast(); continue; }
+        g.hp = p.hp;
         if (now < g.endAt) continue;
 
         // ✨ 5초를 버텼다 — 아군 세계정부로 보낸다

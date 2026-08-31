@@ -811,7 +811,7 @@ io.on('connection', (socket) => {
 
         State.gateCasts[socket.id] = {
             id: socket.id, team: p.team, endAt: now + 5000,
-            x: p.x, y: p.y
+            x: p.x, y: p.y, hp: p.hp
         };
         io.emit('gateCastStart', { id: socket.id, x: p.x, y: p.y, durationMs: 5000 });
     });
@@ -820,7 +820,14 @@ io.on('connection', (socket) => {
     socket.on('gateCancel', () => {
         if (State.gateCasts[socket.id]) {
             delete State.gateCasts[socket.id];
-            io.emit('gateCastEnd', { id: socket.id, done: false });
+            const p = State.players[socket.id];
+            // ⏱️ 깨져도 쿨타임 200초가 돈다
+            if (p) {
+                const GE = require('./govEffects.js');
+                p.gateCdEnd = Date.now() + GE.GATE_CD;
+                io.emit('syncPlayerFull', p);
+            }
+            io.emit('gateCastEnd', { id: socket.id, done: false, cd: true });
         }
     });
 
