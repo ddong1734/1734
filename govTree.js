@@ -112,21 +112,31 @@
         // ── 사법 기관에서 세 갈래로 뻗는다 ────────────────────
         //   ⚠️ 정의의 문이 세 갈래를 모두 받아야 해서 부채꼴이 넓어야 한다.
         //      위·아래를 크게 벌려야 '뉴 마린 포드' 가 들어갈 자리가 생긴다.
-        enies:   { id: 'enies',   name: '에니에스 로비',  cost: 6000, x: -2.9,  y: -1.8,  parents: ['law'] },
-        oldMari: { id: 'oldMari', name: '구 마린 포드',   cost: 6000, x: -2.95, y: 0.15,  parents: ['law'] },
-        impel:   { id: 'impel',   name: '임펠 다운',      cost: 6000, x: -2.9,  y: 2.1,   parents: ['law'] },
+        enies:   { id: 'enies',   name: '에니에스 로비',  cost: 6000, x: -2.9,  y: -1.8,  parents: ['law'],
+                   desc: '상대를 처치하면 그 상대의 경험치 10% 를 빼앗는다.', effect: { stealXp: 0.10 } },
+        oldMari: { id: 'oldMari', name: '구 마린 포드',   cost: 6000, x: -2.95, y: 0.15,  parents: ['law'],
+                   desc: '세계정부를 감싸는 회복 돔이 생긴다. 아군이 초당 100 회복한다.', effect: { healZone: 100 } },
+        impel:   { id: 'impel',   name: '임펠 다운',      cost: 6000, x: -2.9,  y: 2.1,   parents: ['law'],
+                   desc: '내가 처치한 상대는 부활에 30초가 걸린다. (플레이어 처치에만 적용)', effect: { impelDown: 1 } },
         // 각 갈래에서 하나씩 더 뻗는다
-        tower:   { id: 'tower',   name: '사법의 탑',      cost: 9000, x: -2.7,  y: -2.9,  parents: ['enies'] },
-        newMari: { id: 'newMari', name: '뉴 마린 포드',   cost: 9000, x: -3.9,  y: -0.42, parents: ['oldMari'] },
+        tower:   { id: 'tower',   name: '사법의 탑',      cost: 9000, x: -2.7,  y: -2.9,  parents: ['enies'],
+                   desc: '상대를 처치하면 그 상대의 골드 10% 를 빼앗는다.', effect: { stealGold: 0.10 } },
+        newMari: { id: 'newMari', name: '뉴 마린 포드',   cost: 9000, x: -3.9,  y: -0.42, parents: ['oldMari'],
+                   desc: '회복 돔이 강해진다. 초당 회복량이 200 이 된다.', effect: { healZone: 100 } },
         // ⛩️ 정의의 문 — 세 곳을 모두 열어야 한다 (부채꼴이 모이는 끝)
-        gate:    { id: 'gate',    name: '정의의 문',      cost: 12000, x: -5.3, y: 0.15, parents: ['enies', 'oldMari', 'impel'] },
+        gate:    { id: 'gate',    name: '정의의 문',      cost: 12000, x: -5.3, y: 0.15, parents: ['enies', 'oldMari', 'impel'],
+                   desc: '새 스킬이 열린다. 5초를 버티면 아군 세계정부로 순간이동한다. 쿨타임 200초.', effect: { gateSkill: 1 } },
 
         // ── 🕵️ 남 : 첩보 및 정보 수집 기관 ──────────────────────
         intel:   { id: 'intel',   name: '첩보 및\n정보 수집 기관', cost: 3000, x: 0,     y: 1.8,  parents: ['wg'] },
-        rokushiki: { id: 'rokushiki', name: '육식',      cost: 5000, x: -0.95, y: 2.6,  parents: ['intel'] },
-        cp18:    { id: 'cp18',    name: 'CP1-8',         cost: 5000, x: 1.1,   y: 2.65, parents: ['intel'] },
-        cp9:     { id: 'cp9',     name: 'CP9',           cost: 8000, x: -0.9,  y: 3.5,  parents: ['rokushiki'] },
-        cp0:     { id: 'cp0',     name: 'CP0',           cost: 12000, x: 0.2,  y: 3.8,  parents: ['cp9', 'cp18'] }
+        rokushiki: { id: 'rokushiki', name: '육식',      cost: 5000, x: -0.95, y: 2.6,  parents: ['intel'],
+                   desc: '육식을 갖췄을 때 비로소 초인이 된다.' },
+        cp18:    { id: 'cp18',    name: 'CP1-8',         cost: 5000, x: 1.1,   y: 2.65, parents: ['intel'],
+                   desc: '아군 군함·파시피스타의 위치와 생존 여부가 미니맵에 드러난다.', effect: { seeUnits: 1 } },
+        cp9:     { id: 'cp9',     name: 'CP9',           cost: 8000, x: -0.9,  y: 3.5,  parents: ['rokushiki'],
+                   desc: '몬스터와 보스의 위치·생존 여부가 아군 미니맵에 드러난다.', effect: { seeMobs: 1 } },
+        cp0:     { id: 'cp0',     name: 'CP0',           cost: 12000, x: 0.2,  y: 3.8,  parents: ['cp9', 'cp18'],
+                   desc: '상대 플레이어의 위치와 생존 여부까지 미니맵에 드러난다.', effect: { seeEnemies: 1 } }
     };
 
     // 효과가 아직 없는 노드에는 기본 설명을 채워 넣는다
@@ -171,7 +181,15 @@
             pacifista3: 0,       // 🤖 마크 Ⅲ 출격
             warlord: 0,          // ⚔️ 칠무해
             seraph: 0,           // 👼 세라핌 (칠무해를 대체)
-            buster: 0            // 🚢 버스터 콜
+            buster: 0,           // 🚢 버스터 콜
+            healZone: 0,         // 💚 회복 돔 (초당 회복량)
+            impelDown: 0,        // ⛓️ 처치한 상대의 부활 시간 연장
+            stealXp: 0,          // 📚 처치 시 경험치 강탈 비율
+            stealGold: 0,        // 💰 처치 시 골드 강탈 비율
+            gateSkill: 0,        // ⛩️ 정의의 문 스킬
+            seeMobs: 0,          // 🔍 몬스터·보스 미니맵 표시
+            seeUnits: 0,         // 🔍 아군 유닛 미니맵 표시
+            seeEnemies: 0        // 🔍 적 플레이어 미니맵 표시
         };
         if (!unlocked) return b;
         for (const id in NODES) {
@@ -189,6 +207,14 @@
             b.warlord += (e.warlord || 0);
             b.seraph += (e.seraph || 0);
             b.buster += (e.buster || 0);
+            b.healZone += (e.healZone || 0);
+            b.impelDown += (e.impelDown || 0);
+            b.stealXp += (e.stealXp || 0);
+            b.stealGold += (e.stealGold || 0);
+            b.gateSkill += (e.gateSkill || 0);
+            b.seeMobs += (e.seeMobs || 0);
+            b.seeUnits += (e.seeUnits || 0);
+            b.seeEnemies += (e.seeEnemies || 0);
         }
         return b;
     }

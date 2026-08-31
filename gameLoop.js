@@ -161,23 +161,26 @@ module.exports = {
 
                 let rd = Math.random() * 100;
                 // 🎁 유물 등급 분포
-                //    ~60%  일반 (자담 · 펩시)
-                //    ~75%  희귀 상자
-                //     8%   🟡 황금        (전설)
-                //     8%   🎖️ 해군 코트   (전설)
-                //     2%   💎 해루석      (신화)
-                //     9%   🍎 열매 6종 — 모두 같은 확률 (각 1.5%)
-                //          번쩍번쩍 · 쿠릉쿠릉 · 빙빙 · 마그마그
-                //          새새 열매 · 자기자기열매
-                //          └ 뒤의 둘은 여기가 유일한 획득처다.
+                //    🎖️ 등급에 맞춰 확률을 잡는다.
+                //       희귀는 흔하게, 전설은 드물게.
+                //
+                //    55%  일반 (자담 · 펩시)
+                //    12%  희귀 상자        (희귀)
+                //    12%  🟡 황금          (희귀)
+                //     6%  🎖️ 해군 코트     (전설)
+                //     6%  💎 해루석        (전설)
+                //     9%  🍎 열매 6종      (전설, 각 1.5%)
+                //         번쩍번쩍 · 쿠릉쿠릉 · 빙빙 · 마그마그
+                //         새새 열매 · 자기자기열매
+                //         └ 뒤의 둘은 여기가 유일한 획득처다.
                 const FRUITS = ['pika_fruit', 'goro_fruit', 'hie_fruit', 'magu_fruit',
                                 'phoenix_fruit', 'magnet_fruit'];
                 let aid;
-                if (rd < 60)      aid = (Math.random() < 0.5 ? 'jadam' : 'pepsi_art');
-                else if (rd < 73) aid = 'rare_box';
-                else if (rd < 81) aid = 'gold';        // 🟡 8%
-                else if (rd < 89) aid = 'navy_coat';   // 🎖️ 8%
-                else if (rd < 91) aid = 'haeru';       // 💎 2%
+                if (rd < 55)      aid = (Math.random() < 0.5 ? 'jadam' : 'pepsi_art');
+                else if (rd < 67) aid = 'rare_box';     // 희귀 12%
+                else if (rd < 79) aid = 'gold';         // 🟡 희귀 12%
+                else if (rd < 85) aid = 'navy_coat';    // 🎖️ 전설 6%
+                else if (rd < 91) aid = 'haeru';        // 💎 전설 6%
                 else aid = FRUITS[Math.floor(Math.random() * FRUITS.length)];
                 d.chest.push({ uid: Math.random().toString(36).substr(2, 9), id: aid });
                 d.nextMineTime = now + 30000;   // ⛏️ 탐지 30초
