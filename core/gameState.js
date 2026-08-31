@@ -121,6 +121,8 @@ window.warlordCountdown = {};
 // ⚔️ 칠무해·세라핌 · 🚢 군함
 window.warlords = {};
 window.warships = [];
+// ⛩️ 정의의 문 채널링
+window.gateCasts = {};
 window.daidoComboCount = 0;
 window.daidoLastComboTime = 0; 
 window.borsLastComboTime = 0; 

@@ -85,6 +85,77 @@ window.registerNetModule('world', function (socket, U) {
         });
     });
 
+    // ⛓️ [임펠 다운] 수감 문구
+    socket.on('impelDown', (d) => {
+        const el = document.getElementById('impelBanner');
+        if (!el) return;
+        el.style.display = 'block';
+        clearTimeout(window._impelT);
+        window._impelT = setTimeout(function () { el.style.display = 'none'; }, (d && d.ms) || 30000);
+    });
+
+    // 🧾 [세계정부] 빼앗긴 쪽 — 부활할 때까지 화면에 남는다
+    socket.on('govRobbed', (d) => {
+        if (!d) return;
+        const box = document.getElementById('robbedBanner');
+        if (!box) return;
+
+        const isGold = (d.kind === 'gold');
+        const line = document.createElement('div');
+        line.dataset.kind = d.kind;
+        line.style.cssText =
+            'background:rgba(18,14,10,0.94); border:3px solid ' + (isGold ? '#f1c40f' : '#5dade2')
+          + '; border-radius:11px; color:' + (isGold ? '#ffe27a' : '#a9dcff')
+          + '; font-weight:bold; font-size:18px; padding:11px 22px;'
+          + ' box-shadow:0 6px 20px rgba(0,0,0,0.65); white-space:nowrap;';
+        line.textContent = isGold
+            ? ('💰 사법의 탑의 능력으로 10%의 돈이 빼앗겼습니다 (-'
+               + (d.amount || 0).toLocaleString() + ' G)')
+            : ('📚 에니에스 로비의 능력으로 10%의 경험치가 빼앗겼습니다 (-'
+               + (d.amount || 0) + ')');
+
+        // 같은 종류가 이미 떠 있으면 갈아 끼운다
+        const dup = box.querySelector('[data-kind="' + d.kind + '"]');
+        if (dup) box.removeChild(dup);
+        box.appendChild(line);
+        box.style.display = 'flex';
+
+        // 부활하면 사라진다
+        clearTimeout(line._t);
+        line._t = setTimeout(function () {
+            if (line.parentNode) line.parentNode.removeChild(line);
+            if (box.children.length === 0) box.style.display = 'none';
+        }, (d.ms || 15000));
+    });
+
+    // 💰📚 [세계정부] 강탈 알림
+    socket.on('govSteal', (d) => {
+        if (!d || typeof window.showAlert !== 'function') return;
+        window.showAlert(d.kind === 'gold'
+            ? ('💰 ' + d.amount.toLocaleString() + ' G 강탈!')
+            : ('📚 경험치 ' + d.amount + ' 강탈!'));
+    });
+
+    // ⛩️ [정의의 문] 채널링
+    socket.on('gateCastStart', (d) => {
+        if (!d) return;
+        window.gateCasts = window.gateCasts || {};
+        window.gateCasts[d.id] = { endAt: Date.now() + (d.durationMs || 5000), x: d.x, y: d.y };
+        window.visualFX.push({
+            id: d.id, type: 'gate_channel', x: d.x, y: d.y,
+            durationMs: d.durationMs || 5000, life: 300, maxLife: 300
+        });
+    });
+    socket.on('gateCastEnd', (d) => {
+        if (!d) return;
+        if (window.gateCasts) delete window.gateCasts[d.id];
+        U.clearFXByType('gate_channel', d.id);
+        if (d.done) {
+            window.visualFX.push({ type: 'gate_warp', x: d.x, y: d.y, durationMs: 700, life: 42, maxLife: 42 });
+            if (d.id === window.myId) window.myPlayer.gateCdEnd = Date.now() + 200000;
+        }
+    });
+
     // 🏛️ [세계정부] 진영 · 스킬 웹 상태
     socket.on('govSync', (d) => {
         if (!d) return;

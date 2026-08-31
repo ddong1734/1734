@@ -432,7 +432,31 @@ setInterval(() => {
                 }
             }
 
-            // 🚢 버스터 콜 버튼 — 세계정부 근처이고 노드를 열었을 때만 보인다
+            // ⛩️ 정의의 문 버튼 — 노드를 열었으면 어디서든 보인다
+        try {
+            const gEl = document.getElementById('btn-gate');
+            if (gEl) {
+                let show = false;
+                if (!pObj.isDead && window.GovTree && window.govState) {
+                    const tm = pObj.team;
+                    if ((window.govState.gov || {})[tm] === 'wg') {
+                        const b = window.GovTree.bonusOf((window.govState.tree && window.govState.tree[tm]) || {});
+                        show = !!(b && b.gateSkill);
+                    }
+                }
+                gEl.style.display = show ? 'flex' : 'none';
+                if (show) {
+                    const ov = gEl.querySelector('.cd-overlay');
+                    const left = (pObj.gateCdEnd || 0) - loopNow;
+                    if (ov) {
+                        if (left > 0) { ov.style.display = 'flex'; ov.innerText = Math.ceil(left / 1000); }
+                        else ov.style.display = 'none';
+                    }
+                }
+            }
+        } catch (e) { console.error('[GATE BTN]', e); }
+
+        // 🚢 버스터 콜 버튼 — 세계정부 근처이고 노드를 열었을 때만 보인다
         //    ⚠️ nearGov 는 이 아래(통합 버튼 쪽)에서 선언된다.
         //       여기서 그대로 쓰면 ReferenceError 가 나서 물리 갱신·미니맵까지
         //       통째로 멈춘다. 그래서 거리를 직접 다시 구한다.

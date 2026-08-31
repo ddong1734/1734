@@ -130,6 +130,7 @@ window.initControls = (socket) => {
             || (window.myPlayer.isCasting && !isSkill3Aiming())
             || window.myPlayer.skill1Dashing;
 
+        if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
         activeId = e.pointerId; zone.setPointerCapture(e.pointerId); moveKnob(e, lockedNow);
     });
 
@@ -177,7 +178,7 @@ window.initControls = (socket) => {
     window.addEventListener('blur', forceRelease);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') forceRelease(); });
 
-    document.getElementById('btn-jump').addEventListener('pointerdown', (e) => { 
+    document.getElementById('btn-jump').addEventListener('pointerdown', (e) => { if (typeof window.cancelGateCast === 'function') window.cancelGateCast(); 
         e.preventDefault();
         if (Date.now() < window.myPlayer.frozenUntil || window.myPlayer.isDead || window.myPlayer.isCasting || window.myPlayer.skill1Dashing) return; 
         if (Date.now() < (window.myPlayer.raigoPullUntil || 0)) return; 
@@ -339,7 +340,7 @@ window.initControls = (socket) => {
         }
     };
     
-    document.getElementById('btn-attack').addEventListener('pointerdown', (e) => { e.preventDefault(); clearInterval(window.autoAttackInterval); triggerAttack(); window.autoAttackInterval = setInterval(triggerAttack, 100); });
+    document.getElementById('btn-attack').addEventListener('pointerdown', (e) => { if (typeof window.cancelGateCast === 'function') window.cancelGateCast(); e.preventDefault(); clearInterval(window.autoAttackInterval); triggerAttack(); window.autoAttackInterval = setInterval(triggerAttack, 100); });
     const stopAtk = (e) => { e.preventDefault(); clearInterval(window.autoAttackInterval); };
     document.getElementById('btn-attack').addEventListener('pointerup', stopAtk); document.getElementById('btn-attack').addEventListener('pointercancel', stopAtk); document.getElementById('btn-attack').addEventListener('pointerleave', stopAtk);
 
@@ -357,8 +358,28 @@ window.initControls = (socket) => {
         return window.GameData.Skills[slot === 1 ? 'KASHIMO_A1' : 'KASHIMO_A2'] || {};
     };
 
+    // ── ⛩️ 정의의 문 ─────────────────────────────────────────────────
+    const gateBtn = document.getElementById('btn-gate');
+    if (gateBtn) {
+        gateBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (window.myPlayer.isDead) return;
+            const now = Date.now();
+            if (window.myPlayer.gateCdEnd && now < window.myPlayer.gateCdEnd) return;
+            socket.emit('gateCast');
+        });
+    }
+    /** ⛩️ 채널링을 깨뜨린다 (움직임 · 점프 · 스킬 · 평타 · 피격) */
+    window.cancelGateCast = function () {
+        if (!window.gateCasts || !window.myId) return;
+        if (!window.gateCasts[window.myId]) return;
+        delete window.gateCasts[window.myId];
+        socket.emit('gateCancel');
+    };
+
     // ── 1번 스킬 ────────────────────────────────────────────────────
     document.getElementById('btn-skill1').addEventListener('pointerdown', (e) => {
+        if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
         e.preventDefault(); let now = Date.now();
         if (window.myPlayer.isDead || window.myPlayer.isCasting || window.myPlayer.yataActive || window.myPlayer.skill1Dashing || now < window.myPlayer.frozenUntil || now < window.myPlayer.cd1) return;
         if (now < (window.myPlayer.raigoPullUntil || 0)) return; 
@@ -438,6 +459,7 @@ window.initControls = (socket) => {
 
     // ── 2번 스킬 ────────────────────────────────────────────────────
     document.getElementById('btn-skill2').addEventListener('pointerdown', (e) => {
+        if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
         e.preventDefault(); let now = Date.now();
         let charType = window.myPlayer.characterType || 'BORSALINO';
 
@@ -556,6 +578,7 @@ window.initControls = (socket) => {
 
     // ── 3번 스킬 ────────────────────────────────────────────────────
     document.getElementById('btn-skill3').addEventListener('pointerdown', (e) => {
+        if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
         e.preventDefault(); let now = Date.now();
         let charTypePre = window.myPlayer.characterType || 'BORSALINO';
 

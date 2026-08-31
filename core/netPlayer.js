@@ -369,6 +369,13 @@ window.registerNetModule('player', function (socket, U) {
 
     // ── 💫 부활 ─────────────────────────────────────────────────────
     socket.on('player_respawned', (pData) => {
+        // 🧾 부활하면 세계정부 강탈·수감 문구를 지운다
+        if (data && data.id === window.myId) {
+            const rb = document.getElementById('robbedBanner');
+            if (rb) { rb.innerHTML = ''; rb.style.display = 'none'; }
+            const ib = document.getElementById('impelBanner');
+            if (ib) ib.style.display = 'none';
+        }
         if (!pData) return;
         U.clearSurgeFX(pData.id);
         U.clearAmberFX(pData.id);
@@ -456,6 +463,8 @@ window.registerNetModule('player', function (socket, U) {
 
     // ── 💢 피해 ─────────────────────────────────────────────────────
     socket.on('takeDamage', (dmg) => {
+        // ⛩️ 피해를 입으면 정의의 문 채널링이 깨진다
+        if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
         if (window.myPlayer.isDead) return;
         if (!Number.isFinite(dmg)) return;
         window.myPlayer.hp -= dmg;
