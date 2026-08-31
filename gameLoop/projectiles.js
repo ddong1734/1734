@@ -359,11 +359,16 @@ module.exports = {
                 let d = Math.hypot(ok.x - turret.x, ok.y - turret.y);
                 if (d < minDist) { minDist = d; target = ok; }
             });
-            // 🤖 적 파시피스타도 포탑·대포의 표적이 된다
+            // 🤖🚢 적 파시피스타 · 군함도 포탑·대포의 표적이 된다
             (State.pacifistas || []).forEach(pf => {
                 if (pf.hp <= 0 || pf.team === turret.team) return;
                 const d = Math.hypot(pf.x - turret.x, pf.y - turret.y);
                 if (d < minDist) { minDist = d; target = pf; }
+            });
+            (State.warships || []).forEach(ws => {
+                if (ws.hp <= 0 || ws.team === turret.team) return;
+                const d = Math.hypot(ws.x - turret.x, ws.y - turret.y);
+                if (d < minDist) { minDist = d; target = ws; }
             });
             // 🛡️ [마르코] 보호막 안에 숨은 대상은 맞힐 수 없다.
             //    ⚠️ 예전에는 target 을 비워 포탑이 아예 멈춰 버렸다.
@@ -384,11 +389,16 @@ module.exports = {
                     const d2 = Math.hypot(ok.x - turret.x, ok.y - turret.y);
                     if (d2 < minDist) { minDist = d2; target = ok; }
                 });
-                // 🤖 적 파시피스타도 표적이다
+                // 🤖🚢 적 파시피스타 · 군함도 표적이다
                 (State.pacifistas || []).forEach(pf => {
                     if (pf.hp <= 0 || pf.team === turret.team) return;
                     const d2 = Math.hypot(pf.x - turret.x, pf.y - turret.y);
                     if (d2 < minDist) { minDist = d2; target = pf; }
+                });
+                (State.warships || []).forEach(ws => {
+                    if (ws.hp <= 0 || ws.team === turret.team) return;
+                    const d2 = Math.hypot(ws.x - turret.x, ws.y - turret.y);
+                    if (d2 < minDist) { minDist = d2; target = ws; }
                 });
             }
             if (!target) return;
