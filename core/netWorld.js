@@ -150,9 +150,12 @@ window.registerNetModule('world', function (socket, U) {
         if (!d) return;
         if (window.gateCasts) delete window.gateCasts[d.id];
         U.clearFXByType('gate_channel', d.id);
+        if (d.id === window.myId) {
+            // 성공이든 실패든 쿨타임 200초가 돈다
+            if (d.done || d.cd) window.myPlayer.gateCdEnd = Date.now() + 200000;
+        }
         if (d.done) {
             window.visualFX.push({ type: 'gate_warp', x: d.x, y: d.y, durationMs: 700, life: 42, maxLife: 42 });
-            if (d.id === window.myId) window.myPlayer.gateCdEnd = Date.now() + 200000;
         }
     });
 
