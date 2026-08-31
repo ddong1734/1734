@@ -71,17 +71,30 @@
 
         // ── 🏛️ 북 : 최고 통치 및 의사결정 기관 ──────────────────
         rule:    { id: 'rule',    name: '최고 통치 및\n의사결정 기관', cost: 3000,  x: 0,     y: -1.75, parents: ['wg'] },
-        // 🏔️ 마리조아 — 성지 (예전 '레벨리' 자리)
-        mariejois: { id: 'mariejois', name: '마리조아',  cost: 5000,  x: -1.15, y: -2.45, parents: ['rule'] },
-        celest:  { id: 'celest',  name: '천룡인',        cost: 5000,  x: 1.0,   y: -2.15, parents: ['rule'] },
+        // 🏔️ 마리조아 — 성지
+        mariejois: { id: 'mariejois', name: '마리조아',  cost: 5000,  x: -1.4,  y: -2.4,  parents: ['rule'] },
+        celest:  { id: 'celest',  name: '천룡인',        cost: 5000,  x: 2.6,   y: -2.4,  parents: ['rule'] },
         // 🎯 인간 사냥 — 천룡인을 열면 나타난다
-        hunt:    { id: 'hunt',    name: '인간 사냥',      cost: 7000,  x: 1.95,  y: -1.7,  parents: ['celest'] },
-        knights: { id: 'knights', name: '신의 기사단',    cost: 7000,  x: 1.5,   y: -2.9,  parents: ['celest'] },
-        gorosei: { id: 'gorosei', name: '오로성',        cost: 9000,  x: 0.7,   y: -3.35, parents: ['knights'] },
-        // 🏛️ 레벨리 — 오로성과 마리조아를 모두 열어야 한다
-        reverie: { id: 'reverie', name: '레벨리',        cost: 11000, x: -0.4,  y: -3.3,  parents: ['gorosei', 'mariejois'] },
-        // 👑 임 — 오로성과 레벨리를 모두 열어야 한다
-        imu:     { id: 'imu',     name: '임',            cost: 15000, x: -1.5,  y: -4.2,  parents: ['gorosei', 'reverie'] },
+        hunt:    { id: 'hunt',    name: '인간 사냥',      cost: 7000,  x: 3.55,  y: -3.25, parents: ['celest'] },
+
+        // ── 📜 계약 계보 : 최고 통치 기관에서 위로 뻗는다 ─────
+        pactSky:  { id: 'pactSky',  name: '천해계약',     cost: 6000, x: 0.35, y: -3.0,  parents: ['rule'] },
+        seal:     { id: 'seal',     name: '신의 종인',     cost: 7000, x: 0.7,  y: -4.05, parents: ['pactSky'] },
+        pactDeep: { id: 'pactDeep', name: '심해계약',     cost: 8000, x: 1.0,  y: -5.1,  parents: ['seal'] },
+        pactAbyss:{ id: 'pactAbyss',name: '심심해계약',   cost: 9000, x: 1.9,  y: -5.75, parents: ['pactDeep'] },
+
+        // 🛡️ 신의 기사단 — 심해계약 + 천룡인을 모두 열어야 한다
+        knights: { id: 'knights', name: '신의 기사단',    cost: 9000,  x: 2.0,   y: -4.3,  parents: ['pactDeep', 'celest'] },
+        // ⭐ 오로성 — 심심해계약 + 천룡인을 모두 열어야 한다
+        gorosei: { id: 'gorosei', name: '오로성',        cost: 11000, x: 3.0,   y: -6.2,  parents: ['pactAbyss', 'celest'] },
+
+        // ✴️ 오망성(어비스) — 오로성과 신의 기사단을 모두 열어야 한다
+        abyss5:  { id: 'abyss5',  name: '오망성\n(어비스)',  cost: 14000, x: 3.75, y: -5.05, parents: ['gorosei', 'knights'] },
+
+        // 🏛️ 레벨리 — 오로성과 마리조아
+        reverie: { id: 'reverie', name: '레벨리',        cost: 12000, x: -0.6,  y: -6.3,  parents: ['gorosei', 'mariejois'] },
+        // 👑 임 — 오로성과 레벨리
+        imu:     { id: 'imu',     name: '임',            cost: 16000, x: -1.9,  y: -7.2,  parents: ['gorosei', 'reverie'] },
 
         // ── ⚓ 동 : 군사 및 치안 유지 기관 ──────────────────────
         army:    { id: 'army',    name: '군사 및\n치안 유지 기관', cost: 3000,  x: 1.7,  y: -0.15, parents: ['wg'] },
@@ -152,8 +165,15 @@
      */
     const EDGES = [
         // 🏛️ 북
-        ['wg', 'rule'], ['rule', 'mariejois'], ['rule', 'celest'],
-        ['celest', 'knights'], ['celest', 'hunt'], ['knights', 'gorosei'],
+        ['wg', 'rule'], ['rule', 'mariejois'], ['rule', 'celest'], ['celest', 'hunt'],
+        // 📜 계약 계보
+        ['rule', 'pactSky'], ['pactSky', 'seal'], ['seal', 'pactDeep'], ['pactDeep', 'pactAbyss'],
+        // 🛡️⭐ 계약 + 천룡인 을 모두 열어야 한다
+        ['pactDeep', 'knights'], ['celest', 'knights'],
+        ['pactAbyss', 'gorosei'], ['celest', 'gorosei'],
+        // ⚠️ 신의 기사단 → 오망성 선은 천룡인→오로성 선과 겹쳐서 그리지 않는다.
+        //    해금 조건에는 그대로 들어 있고, 설명 패널의 '필요한 노드' 가 알려 준다.
+        ['gorosei', 'abyss5'],
         ['gorosei', 'reverie'], ['mariejois', 'reverie'],
         ['gorosei', 'imu'], ['reverie', 'imu'],
         // ⚓ 동

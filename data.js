@@ -88,7 +88,7 @@ window.GameData = {
         'BORSALINO_S1': { type: 'beam', cd: 15000, damage: 150, range: 1500, effect: 'borsalino_beam' },
         'BORSALINO_S2': { type: 'beam_dash', cd: 25000, castTime: 3000, moveRange: 2600, beamDamage: 80, explosionDamage: 200, explosionRadius: 300, pathEffect: 'yata_mirror_path', expEffect: 'yata_explosion' },
         'BORSALINO_S3': { type: 'channel_barrage', cd: 45000, damage: 40, castTime: 3000, fireRate: 60, speed: 45, projType: 'magatama' },
-        'KUZAN_S1': { type: 'shockwave', cd: 20000, damage: 100, kb: 40, speed: 15, freeze: 2000, effect: 'pheasant_peck' },
+        'KUZAN_S1': { type: 'shockwave', cd: 20000, damage: 100, kb: 40, speed: 26, freeze: 2000, effect: 'pheasant_peck' },
         'KUZAN_S2': { type: 'homing_proj', cd: 25000, damage: 70, freeze: 2000, count: 3, effect: 'partisan', spawnInterval: 150 },
         'KUZAN_S3': { type: 'aoe_freeze', cd: 45000, damage: 200, radius: 600, freeze: 5000, castTime: 1000, effect: 'ice_age' },
         
