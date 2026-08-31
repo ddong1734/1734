@@ -287,7 +287,7 @@ registerVisualFX('warship_shot', (ctx, fx, alpha, state) => {
     // 탄속은 넥서스 포탑과 같다 (15)
     const travel = Math.min(L, 15 * (fx.maxLife || 40) * t);
     const px = fx.x + ux * travel, py = fx.y + uy * travel;
-    const rr = isC ? 15 : 6;      // 대포알이 2.5배 크다
+    const rr = isC ? 25 : 10;     // 🔫 총알을 키우고 대포알은 그 2.5배
 
     ctx.save();
     if (isC) {
@@ -304,16 +304,45 @@ registerVisualFX('warship_shot', (ctx, fx, alpha, state) => {
         ctx.fillStyle = "#2a2e38";
         ctx.beginPath(); ctx.arc(px, py, rr, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = "#0d0f14"; ctx.lineWidth = 2.5; ctx.stroke();
-        // 착탄 폭발
-        if (travel >= L - 6) {
+        // 💥 착탄 폭발 — 크게 터지고 불티가 사방으로 튄다
+        if (travel >= L - 8) {
+            const bt = Math.min(1, (travel - (L - 8)) / 8 + (1 - alpha));
+            const br = 150 * (1 - Math.pow(1 - bt, 2.2));
             ctx.globalCompositeOperation = "screen";
-            const br = 90 * (1 - alpha);
-            const bg = ctx.createRadialGradient(fx.tx, fx.ty, 3, fx.tx, fx.ty, br);
+            ctx.globalAlpha = alpha;
+            const bg = ctx.createRadialGradient(fx.tx, fx.ty, 4, fx.tx, fx.ty, br);
             bg.addColorStop(0, "rgba(255,255,255,1)");
-            bg.addColorStop(0.3, "rgba(255,200,90,0.9)");
-            bg.addColorStop(1, "rgba(180,70,20,0)");
+            bg.addColorStop(0.22, "rgba(255,228,140,0.97)");
+            bg.addColorStop(0.55, "rgba(240,130,40,0.75)");
+            bg.addColorStop(1, "rgba(120,45,10,0)");
             ctx.fillStyle = bg;
             ctx.beginPath(); ctx.arc(fx.tx, fx.ty, br, 0, Math.PI * 2); ctx.fill();
+            // 충격 고리
+            ctx.strokeStyle = "rgba(255,238,190,0.9)";
+            ctx.lineWidth = 6 * (1 - bt) + 1.5;
+            ctx.beginPath(); ctx.arc(fx.tx, fx.ty, br * 0.9, 0, Math.PI * 2); ctx.stroke();
+            // 튀는 불티
+            for (let k = 0; k < 10; k++) {
+                const a = (k / 10) * Math.PI * 2 + bt * 0.6;
+                const d = br * (0.55 + (k % 3) * 0.2);
+                ctx.strokeStyle = "rgba(255,200,90," + (0.85 * alpha) + ")";
+                ctx.lineWidth = 4 * (1 - bt) + 1;
+                ctx.beginPath();
+                ctx.moveTo(fx.tx + Math.cos(a) * br * 0.35, fx.ty + Math.sin(a) * br * 0.35);
+                ctx.lineTo(fx.tx + Math.cos(a) * d, fx.ty + Math.sin(a) * d);
+                ctx.stroke();
+            }
+            // 검은 연기
+            ctx.globalCompositeOperation = "source-over";
+            ctx.globalAlpha = alpha * 0.45;
+            ctx.fillStyle = "#2e2a26";
+            for (let k = 0; k < 5; k++) {
+                const a = (k / 5) * Math.PI * 2 + 0.5;
+                ctx.beginPath();
+                ctx.arc(fx.tx + Math.cos(a) * br * 0.45, fx.ty + Math.sin(a) * br * 0.42 - bt * 22,
+                        br * 0.24, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
     } else {
         // 🔫 총알 — 노랗고 가늘다
@@ -322,12 +351,15 @@ registerVisualFX('warship_shot', (ctx, fx, alpha, state) => {
         const ang = Math.atan2(uy, ux);
         ctx.save();
         ctx.translate(px, py); ctx.rotate(ang);
-        const g = ctx.createLinearGradient(-22, 0, 6, 0);
+        const g = ctx.createLinearGradient(-34, 0, 10, 0);
         g.addColorStop(0, "rgba(255,220,80,0)");
-        g.addColorStop(0.6, "rgba(255,225,110,0.9)");
+        g.addColorStop(0.55, "rgba(255,225,110,0.9)");
         g.addColorStop(1, "rgba(255,255,220,1)");
         ctx.fillStyle = g;
-        ctx.fillRect(-22, -2.2, 28, 4.4);
+        ctx.fillRect(-34, -3.6, 44, 7.2);
+        // 탄두 끝의 밝은 점
+        ctx.fillStyle = "rgba(255,255,235,1)";
+        ctx.beginPath(); ctx.arc(9, 0, 3.6, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
     ctx.restore();
@@ -345,5 +377,88 @@ registerVisualFX('warship_down', (ctx, fx, alpha, state) => {
     g.addColorStop(1, "rgba(150,50,20,0)");
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(fx.x, fx.y, R, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// ⛩️ 정의의 문 — 5초 채널링 · 순간이동
+// ────────────────────────────────────────────────────────────────────────────
+registerVisualFX('gate_channel', (ctx, fx, alpha, state) => {
+    const o = state.players[fx.id] || (fx.id === state.myId ? state.myPlayer : null);
+    const cx = o ? o.x : fx.x, cy = o ? o.y : fx.y;
+    const t = 1 - alpha;                    // 0 → 1 (5초)
+    const tt = state.mathNow / 1000;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+
+    // 발밑에서 차오르는 빛 기둥
+    const h = 60 + t * 300;
+    const g = ctx.createLinearGradient(cx, cy + 50, cx, cy + 50 - h);
+    g.addColorStop(0, "rgba(255,255,255," + (0.85 * alpha) + ")");
+    g.addColorStop(0.4, "rgba(200,215,255," + (0.6 * alpha) + ")");
+    g.addColorStop(1, "rgba(120,140,255,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(cx - 46, cy + 50 - h, 92, h);
+
+    // 모여드는 빛 조각
+    ctx.globalAlpha = alpha * 0.9;
+    for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2 + tt * 1.6;
+        const d = 200 * (1 - t) + 26;
+        const px = cx + Math.cos(a) * d, py = cy + Math.sin(a) * d * 0.6;
+        ctx.fillStyle = "rgba(220,230,255,0.95)";
+        ctx.beginPath(); ctx.arc(px, py, 5 - t * 2, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // 발밑 마법진 (세계정부 문양)
+    ctx.globalAlpha = alpha;
+    const R = 74;
+    ctx.strokeStyle = "rgba(180,200,255,0.9)"; ctx.lineWidth = 4;
+    ctx.setLineDash([16, 10]); ctx.lineDashOffset = -tt * 60;
+    ctx.beginPath(); ctx.ellipse(cx, cy + 48, R, R * 0.36, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = 6;
+    [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + 48);
+        ctx.lineTo(cx + d[0] * R * 0.62, cy + 48 + d[1] * R * 0.22);
+        ctx.stroke();
+    });
+
+    ctx.globalCompositeOperation = "source-over";
+    // ⏱️ 머리 위 카운트다운
+    const left = Math.max(0, 5 - t * 5);
+    ctx.font = "bold 34px sans-serif"; ctx.textAlign = "center";
+    ctx.lineWidth = 7; ctx.lineJoin = "round";
+    ctx.strokeStyle = "rgba(10,12,26,0.92)";
+    ctx.strokeText(left.toFixed(1), cx, cy - 92);
+    ctx.fillStyle = (left < 1.5) ? "#ffe27a" : "#cfe0ff";
+    ctx.fillText(left.toFixed(1), cx, cy - 92);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+});
+
+registerVisualFX('gate_warp', (ctx, fx, alpha, state) => {
+    const t = 1 - alpha;
+    const R = 260 * (1 - Math.pow(1 - Math.min(1, t / 0.4), 2.2));
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = alpha;
+    const g = ctx.createRadialGradient(fx.x, fx.y, 4, fx.x, fx.y, R);
+    g.addColorStop(0, "rgba(255,255,255,1)");
+    g.addColorStop(0.3, "rgba(200,215,255,0.9)");
+    g.addColorStop(1, "rgba(110,130,240,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(fx.x, fx.y, R, 0, Math.PI * 2); ctx.fill();
+    for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2;
+        ctx.strokeStyle = "rgba(230,238,255," + (0.85 * alpha) + ")";
+        ctx.lineWidth = 5 * (1 - t) + 1;
+        ctx.beginPath();
+        ctx.moveTo(fx.x + Math.cos(a) * R * 0.3, fx.y + Math.sin(a) * R * 0.3);
+        ctx.lineTo(fx.x + Math.cos(a) * R * 1.15, fx.y + Math.sin(a) * R * 1.15);
+        ctx.stroke();
+    }
     ctx.restore();
 });

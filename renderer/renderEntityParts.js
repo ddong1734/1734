@@ -308,3 +308,108 @@ function drawDaburaLightBody(ctx, px, py, mathNow, team, facing, square) {
 }
 
 export { drawHpTicks, drawKashimoCharge, drawAmberBody, drawDaburaLightBody };
+
+/**
+ * 🧊 [쿠잔(해적) · 아이스 타임] 돌진 중 전신이 얼음으로 변한 모습.
+ *    · 각진 얼음 결정면으로 뒤덮인 몸
+ *    · 몸을 감도는 냉기와 사방으로 삐죽 솟은 얼음 가시
+ *    · 뒤로 흩날리는 서리 조각
+ */
+export function drawIceBody(ctx, cx, cy, mathNow, team, dirX, dirY) {
+    const R = 46;
+    const tt = mathNow / 1000;
+    const dx = (dirX === undefined) ? 1 : dirX;
+    const dy = (dirY === undefined) ? 0 : dirY;
+
+    ctx.save();
+
+    // ── 뒤로 끌리는 냉기 잔상 ──────────────────────────────
+    ctx.globalCompositeOperation = "screen";
+    for (let k = 1; k <= 5; k++) {
+        const px = cx - dx * k * 26, py = cy - dy * k * 26;
+        const rr = R * (1.15 - k * 0.14);
+        if (rr <= 0) break;
+        const g = ctx.createRadialGradient(px, py, 2, px, py, rr);
+        g.addColorStop(0, "rgba(198,240,255,0.55)");
+        g.addColorStop(0.6, "rgba(77,216,255,0.28)");
+        g.addColorStop(1, "rgba(8,60,120,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(px, py, rr, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // ── 몸을 감싼 냉기 ─────────────────────────────────────
+    const ag = ctx.createRadialGradient(cx, cy, R * 0.3, cx, cy, R * 1.9);
+    ag.addColorStop(0, "rgba(255,255,255,0.5)");
+    ag.addColorStop(0.5, "rgba(150,225,255,0.3)");
+    ag.addColorStop(1, "rgba(30,120,200,0)");
+    ctx.fillStyle = ag;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.9, 0, Math.PI * 2); ctx.fill();
+
+    // ── 얼음 몸통 ──────────────────────────────────────────
+    ctx.globalCompositeOperation = "source-over";
+    const bg = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+    bg.addColorStop(0, "#ffffff");
+    bg.addColorStop(0.38, "#bfe9ff");
+    bg.addColorStop(0.72, "#5fb8e8");
+    bg.addColorStop(1, "#2273b0");
+    ctx.fillStyle = bg;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#eaf8ff"; ctx.lineWidth = 4; ctx.stroke();
+    ctx.strokeStyle = "rgba(20,80,130,0.7)"; ctx.lineWidth = 2; ctx.stroke();
+
+    // 결정면 (각진 조각으로 갈라진 표면)
+    ctx.strokeStyle = "rgba(255,255,255,0.75)"; ctx.lineWidth = 2.2;
+    for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2 + 0.35;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a) * R * 0.94, cy + Math.sin(a) * R * 0.94);
+        ctx.stroke();
+    }
+    // 표면 하이라이트
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.beginPath();
+    ctx.ellipse(cx - R * 0.3, cy - R * 0.36, R * 0.26, R * 0.15, -0.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ── 사방으로 솟은 얼음 가시 ────────────────────────────
+    ctx.globalCompositeOperation = "screen";
+    for (let k = 0; k < 10; k++) {
+        const a = (k / 10) * Math.PI * 2 + tt * 1.1;
+        const len = R * (0.52 + ((k * 31) % 10) / 26);
+        ctx.save();
+        ctx.translate(cx, cy); ctx.rotate(a);
+        ctx.beginPath();
+        ctx.moveTo(R * 0.7, -7);
+        ctx.lineTo(R * 0.7 + len, 0);
+        ctx.lineTo(R * 0.7, 7);
+        ctx.closePath();
+        const sg = ctx.createLinearGradient(R * 0.7, 0, R * 0.7 + len, 0);
+        sg.addColorStop(0, "rgba(255,255,255,0.95)");
+        sg.addColorStop(0.5, "rgba(190,238,255,0.9)");
+        sg.addColorStop(1, "rgba(60,170,230,0)");
+        ctx.fillStyle = sg; ctx.fill();
+        ctx.restore();
+    }
+
+    // ── 흩날리는 서리 조각 ─────────────────────────────────
+    ctx.globalCompositeOperation = "source-over";
+    for (let k = 0; k < 8; k++) {
+        const f = ((mathNow / 230) + k / 8) % 1;
+        const px = cx - dx * f * 190 + Math.sin(k * 2.1 + tt * 5) * 26;
+        const py = cy - dy * f * 190 + Math.cos(k * 1.7 + tt * 4) * 24;
+        ctx.globalAlpha = (1 - f) * 0.85;
+        ctx.strokeStyle = "rgba(214,245,255,0.95)";
+        ctx.lineWidth = 2;
+        const rr = 8 * (1 - f * 0.5);
+        for (let j = 0; j < 3; j++) {
+            const a2 = (j / 3) * Math.PI + tt + k;
+            ctx.beginPath();
+            ctx.moveTo(px - Math.cos(a2) * rr, py - Math.sin(a2) * rr);
+            ctx.lineTo(px + Math.cos(a2) * rr, py + Math.sin(a2) * rr);
+            ctx.stroke();
+        }
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+}

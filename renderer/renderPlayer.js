@@ -9,7 +9,7 @@
 
 import { RenderUtils } from './renderUtils.js';
 import { drawKidStack, drawGolemBody } from './fxkid.js';
-import { drawHpTicks, drawKashimoCharge, drawAmberBody, drawDaburaLightBody } from './renderEntityParts.js';
+import { drawHpTicks, drawKashimoCharge, drawAmberBody, drawDaburaLightBody, drawIceBody } from './renderEntityParts.js';
 import { drawNpc } from './renderNpc.js';
 import { drawPortal, drawPortalCountdown, drawDarkPortalCountdown } from './renderPortal.js';
 
@@ -112,6 +112,9 @@ export function drawPlayers(ctx, state, z) {
             // ⚡🔮 환수호박 / ⬛💫 아광속 발차기 상태면 몸을 특수하게 그린다
             if (amberOn) {
                 drawAmberBody(ctx, p.x, p.y, mathNow, p.team);
+            } else if (p.kzDashEnd && mathNow < p.kzDashEnd) {
+                // 🧊 [쿠잔(해적) · 아이스 타임] 돌진 중에는 전신이 얼음이다
+                drawIceBody(ctx, p.x, p.y, mathNow, p.team, p.kzDashDX, p.kzDashDY);
             } else if (dKickFly) {
                 drawDaburaLightBody(ctx, p.x, p.y, mathNow, p.team, p.lastFacing, hasSq);
             } else {
