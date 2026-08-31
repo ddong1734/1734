@@ -11,7 +11,8 @@ function useSkill(p, data, ctx) {
         addShockwave({
             id: getNextProjId(), ownerId: p.id, team: p.team, 
             x: p.x + (data.dir * 60), y: p.y - 45, 
-            dir: data.dir, speed: enhancedHie ? KS1.speed * 3 : KS1.speed, life: 60, hitIds: [], 
+            // ⚡ 즉발감을 위해 빠르게 나간다 (속도 26 · 사거리는 예전과 비슷)
+            dir: data.dir, speed: enhancedHie ? KS1.speed * 2 : KS1.speed, life: 38, hitIds: [], 
             damage: KS1.damage + (totalDamage * 1.5), kb: data.dir * KS1.kb, 
             type: 'pheasant_peck', freeze: enhancedHie ? 3000 : KS1.freeze, hasHie: enhancedHie
         });
