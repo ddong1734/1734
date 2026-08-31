@@ -98,26 +98,86 @@
         ctx.strokeRect(mx(13400), my(-2400), mx(18600) - mx(13400), my(-1340) - my(-2400));
         ctx.setLineDash([]);
 
-        // ── 🔵 아군 위치 (나 포함) ─────────────────────────────
+        // 🕵️ [세계정부] 첩보 기관을 열면 미니맵에 더 많은 것이 보인다
         const me = window.myPlayer;
         const myTeam = me && me.team;
-        const all = window.players || {};
-        const dot = function (p, isMe) {
-            if (!p || p.isDead) return;
+        let intel = { seeMobs: 0, seeUnits: 0, seeEnemies: 0 };
+        try {
+            const gs = window.govState;
+            if (gs && gs.gov && myTeam && gs.gov[myTeam] === 'wg' && window.GovTree) {
+                const b = window.GovTree.bonusOf((gs.tree && gs.tree[myTeam]) || {});
+                if (b) intel = b;
+            }
+        } catch (e) { }
+
+        /** 점 하나 찍기 */
+        const dot = function (x, y, r, fill, stroke, lw) {
             ctx.beginPath();
-            ctx.arc(mx(p.x), my(p.y), isMe ? 2.6 : 2, 0, Math.PI * 2);
-            ctx.fillStyle = isMe ? "#8fd4ff" : "#3498db";
-            ctx.fill();
-            ctx.strokeStyle = isMe ? "#ffffff" : "rgba(255,255,255,0.7)";
-            ctx.lineWidth = isMe ? 1.1 : 0.7;
+            ctx.arc(mx(x), my(y), r, 0, Math.PI * 2);
+            ctx.fillStyle = fill; ctx.fill();
+            ctx.strokeStyle = stroke; ctx.lineWidth = lw;
             ctx.stroke();
         };
+
+        // ── 🟣 CP9 : 몬스터 · 보스 ─────────────────────────────
+        //    살아 있는 것만 그린다 (죽으면 저절로 사라진다)
+        if (intel.seeMobs > 0) {
+            const mobs = [];
+            const push = (o, c, r) => { if (o && o.hp > 0) mobs.push({ x: o.x, y: o.y, c: c, r: r }); };
+            push(window.serverMonster, "#c0392b", 2.4);
+            push(window.serverHinbeom, "#e67e22", 2.6);
+            push(window.serverBlackbeard, "#8e44ad", 2.6);
+            push(window.serverBurgess, "#9b59b6", 2.2);
+            push(window.serverSukuna, "#e74c3c", 2.8);
+            (window.serverMinions || []).forEach(m => push(m, "#d35400", 1.6));
+            (window.serverOkras || []).forEach(o => push(o, o.isHaeru ? "#2fd8c8" : (o.isGolden ? "#f1c40f" : "#7f8c8d"), 1.5));
+            mobs.forEach(m => dot(m.x, m.y, m.r, m.c, "rgba(0,0,0,0.55)", 0.7));
+        }
+
+        // ── 🟡 CP1-8 : 아군 군함 · 파시피스타 ──────────────────
+        if (intel.seeUnits > 0) {
+            (window.pacifistas || []).forEach(u => {
+                if (!u || u.hp <= 0 || u.team !== myTeam) return;
+                dot(u.x, u.y, u.isMk3 ? 2.8 : 2.4, u.isMk3 ? "#ff9f6e" : "#ffd88f", "rgba(0,0,0,0.6)", 0.8);
+            });
+            (window.warships || []).forEach(w => {
+                if (!w || w.hp <= 0 || w.team !== myTeam) return;
+                dot(w.x, w.y, 3, "#9ecbff", "rgba(0,0,0,0.6)", 0.8);
+            });
+            const wls = window.warlords || {};
+            for (const k in wls) {
+                const w = wls[k];
+                if (!w || w.team !== myTeam) continue;
+                if (!w.infinite && w.hp <= 0) continue;
+                dot(w.x, w.y, 2.6, w.kind === 'seraph' ? "#ffd05a" : "#ff8f88", "rgba(0,0,0,0.6)", 0.8);
+            }
+        }
+
+        // ── 🔴 CP0 : 적 플레이어 ───────────────────────────────
+        const all = window.players || {};
+        if (intel.seeEnemies > 0) {
+            for (const id in all) {
+                const p = all[id];
+                if (!p || p.team === myTeam) continue;
+                if (p.isDead) continue;              // 죽으면 사라진다
+                dot(p.x, p.y, 2.2, "#ff6b6b", "rgba(255,255,255,0.75)", 0.8);
+            }
+        }
+
+        // ── 🔵 아군 위치 (나 포함) ─────────────────────────────
+        //    죽으면 미니맵에서 사라지고, 되살아나면 다시 나타난다
         for (const id in all) {
             const p = all[id];
-            if (!p || p.team !== myTeam) continue;      // 아군만
-            dot(p, id === window.myId);
+            if (!p || p.team !== myTeam || p.isDead) continue;
+            const isMe = (id === window.myId);
+            dot(p.x, p.y, isMe ? 2.6 : 2,
+                isMe ? "#8fd4ff" : "#3498db",
+                isMe ? "#ffffff" : "rgba(255,255,255,0.7)",
+                isMe ? 1.1 : 0.7);
         }
-        if (me && !(window.myId in all)) dot(me, true);
+        if (me && !me.isDead && !(window.myId in all)) {
+            dot(me.x, me.y, 2.6, "#8fd4ff", "#ffffff", 1.1);
+        }
     };
 
     window.showMiniMap = function (on) {
