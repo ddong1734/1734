@@ -432,7 +432,24 @@ setInterval(() => {
                 }
             }
 
-            // ⛩️ 정의의 문 버튼 — 노드를 열었으면 어디서든 보인다
+            // ⛩️ [정의의 문] 채널링 감시 — 롤 귀환처럼 조금이라도 움직이거나
+        //    맞으면 즉시 끊긴다. 버튼 입력만으로는 놓치는 경우가 있어
+        //    매 프레임 좌표·체력을 직접 본다.
+        try {
+            const gc = window.gateCasts && window.myId ? window.gateCasts[window.myId] : null;
+            if (gc) {
+                if (gc.lx === undefined) { gc.lx = pObj.x; gc.ly = pObj.y; gc.lhp = pObj.hp; }
+                const moved = Math.hypot(pObj.x - gc.lx, pObj.y - gc.ly) > 3;
+                const hurt = (pObj.hp < gc.lhp - 0.5);
+                const jumped = (Math.abs(pObj.vy || 0) > 0.5);
+                if (pObj.isDead || moved || hurt || jumped) {
+                    if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
+                }
+                gc.lhp = pObj.hp;
+            }
+        } catch (e) { }
+
+        // ⛩️ 정의의 문 버튼 — 노드를 열었으면 어디서든 보인다
         try {
             const gEl = document.getElementById('btn-gate');
             if (gEl) {

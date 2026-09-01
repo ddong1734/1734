@@ -155,6 +155,16 @@ window.registerNetModule('world', function (socket, U) {
             if (d.done || d.cd) window.myPlayer.gateCdEnd = Date.now() + 200000;
         }
         if (d.done) {
+            // ⚠️ 내 좌표는 클라가 들고 있다. 서버가 옮겨도 여기서 직접 반영해야 한다.
+            //    (예전엔 서버만 옮겨서 화면에서는 제자리였다)
+            if (d.id === window.myId && window.myPlayer) {
+                window.myPlayer.x = d.x;
+                window.myPlayer.y = d.y;
+                window.myPlayer.vy = 0;
+                window.myPlayer.knockbackForce = 0;
+                window.myPlayer.moveX = 0;
+                window.myPlayer.moveY = 0;
+            }
             window.visualFX.push({ type: 'gate_warp', x: d.x, y: d.y, durationMs: 700, life: 42, maxLife: 42 });
         }
     });
