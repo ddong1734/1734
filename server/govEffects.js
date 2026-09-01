@@ -88,7 +88,7 @@ function syncNexus(team, gb, now, io) {
  * 💚 [구/뉴 마린 포드] 세계정부를 감싸는 회복 돔.
  *    돔 안의 아군은 1초마다 회복한다.
  */
-const HEAL_ZONE_R = 620;   // 세계정부를 덮고도 남는 크기
+const HEAL_ZONE_R = 480;   // 세계정부를 덮는 크기
 
 let _healAt = 0;
 function processHealZone(now, ctx) {
@@ -395,7 +395,7 @@ function processWarships(now, ctx) {
         const foe = State.bases[w.team === 1 ? 2 : 1];
         const baseIn = foe && foe.hp > 0 && Math.hypot(foe.x - w.x, foe.y - w.y) <= w.range;
 
-        // 사거리 안 적 플레이어
+        // 사거리 안 적 — 플레이어 · 파시피스타 · 군함 모두 노린다
         let tgt = null, best = w.range;
         for (const pid in State.players) {
             const p = State.players[pid];
@@ -403,6 +403,16 @@ function processWarships(now, ctx) {
             const d = Math.hypot(p.x - w.x, p.y - w.y);
             if (d < best) { best = d; tgt = p; }
         }
+        (State.pacifistas || []).forEach(function (u) {
+            if (u.hp <= 0 || u.team === w.team) return;
+            const d = Math.hypot(u.x - w.x, u.y - w.y);
+            if (d < best) { best = d; tgt = u; }
+        });
+        (State.warships || []).forEach(function (o) {
+            if (o === w || o.hp <= 0 || o.team === w.team) return;
+            const d = Math.hypot(o.x - w.x, o.y - w.y);
+            if (d < best) { best = d; tgt = o; }
+        });
 
         if (!baseIn && !tgt) {
             // 아무것도 없으면 적 넥서스 쪽으로 나아간다
@@ -460,6 +470,9 @@ function hitPlayer(t, dmg, ctx) {
     act = S.absorbShield(t, act);
     t.hp -= act;
     if (typeof ctx.emitDamageText === 'function') ctx.emitDamageText(t.x, t.y, act);
+    // 🤖🚢 파시피스타·군함은 플레이어가 아니라 개별 통지가 없다
+    const isPlayer = !!(t.id && State.players[t.id] === t);
+    if (!isPlayer) { if (t.hp < 0) t.hp = 0; return; }
     ctx.io.to(t.id).emit('takeDamage', act);
     if (t.hp <= 0 && typeof ctx.checkPlayerDeath === 'function') ctx.checkPlayerDeath(t, null);
     else ctx.io.emit('syncPlayerFull', t);
