@@ -803,7 +803,7 @@ export class RenderMap {
         //    · 뉴 마린 포드 : 초당 200 (진하고 화려한 청록 + 회전 고리)
         // ══════════════════════════════════════════════════════════════
         const drawHealDome = (nx, lv) => {
-            const R = 620;
+            const R = 480;   // 🔽 서버 HEAL_ZONE_R 과 같아야 한다
             const gy = groundY;
             if (!this.isVisible(camX, camY, viewW, viewH, nx, gy - R * 0.5, R + 60, R + 60)) return;
             const strong = (lv >= 200);
@@ -813,16 +813,16 @@ export class RenderMap {
             ctx.globalCompositeOperation = "screen";
 
             // ── 돔 안쪽을 채우는 빛 ────────────────────────────
-            ctx.globalAlpha = (strong ? 0.30 : 0.18) * pulse;
+            ctx.globalAlpha = (strong ? 0.55 : 0.38) * pulse;
             const g = ctx.createRadialGradient(nx, gy, R * 0.15, nx, gy, R);
             if (strong) {
-                g.addColorStop(0, "rgba(120,255,220,0.55)");
-                g.addColorStop(0.55, "rgba(60,220,190,0.32)");
-                g.addColorStop(1, "rgba(20,150,140,0)");
+                g.addColorStop(0, "rgba(150,255,235,0.85)");
+                g.addColorStop(0.55, "rgba(70,235,200,0.60)");
+                g.addColorStop(1, "rgba(20,170,155,0.10)");
             } else {
-                g.addColorStop(0, "rgba(160,255,180,0.40)");
-                g.addColorStop(0.6, "rgba(90,210,140,0.20)");
-                g.addColorStop(1, "rgba(30,140,90,0)");
+                g.addColorStop(0, "rgba(185,255,205,0.70)");
+                g.addColorStop(0.6, "rgba(105,230,160,0.45)");
+                g.addColorStop(1, "rgba(35,165,110,0.08)");
             }
             ctx.fillStyle = g;
             ctx.beginPath();
@@ -831,16 +831,16 @@ export class RenderMap {
             ctx.fill();
 
             // ── 돔 테두리 ──────────────────────────────────────
-            ctx.globalAlpha = (strong ? 0.9 : 0.6) * pulse;
+            ctx.globalAlpha = (strong ? 1 : 0.9) * pulse;
             ctx.strokeStyle = strong ? "rgba(150,255,230,0.95)" : "rgba(170,255,190,0.8)";
-            ctx.lineWidth = strong ? 6 : 3.5;
+            ctx.lineWidth = strong ? 8 : 5.5;
             ctx.beginPath();
             ctx.arc(nx, gy, R, Math.PI, Math.PI * 2);
             ctx.stroke();
 
             // ── 격자 무늬 (돔 느낌) ────────────────────────────
-            ctx.globalAlpha = (strong ? 0.4 : 0.22) * pulse;
-            ctx.lineWidth = strong ? 2.4 : 1.6;
+            ctx.globalAlpha = (strong ? 0.6 : 0.4) * pulse;
+            ctx.lineWidth = strong ? 3.2 : 2.4;
             for (let k = 1; k <= (strong ? 4 : 3); k++) {
                 const rr = R * (k / (strong ? 4.6 : 3.6));
                 ctx.beginPath();
