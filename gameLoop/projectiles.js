@@ -404,10 +404,10 @@ module.exports = {
             if (!target) return;
 
             turret.lastShot = now;
-            // 💣 대포는 포신 끝에서, 일반 포탑은 코어에서 나간다
-            //    (예전엔 대포도 코어 높이라 몸통 밖에서 튀어나와 보였다)
-            const muzX = isCannon ? (turret.x + (turret.team === 1 ? 96 : -96)) : turret.x;
-            const muzY = isCannon ? (turret.y - 82) : (turret.y - 60);
+            // 🎯 [수정] 포탑·대포 모두 '몸통 한가운데' 에서 나간다.
+            //    포구 끝에서 쏘면 몸 밖에서 튀어나온 것처럼 보였다.
+            const muzX = turret.x;
+            const muzY = isCannon ? (turret.y - 62) : (turret.y - 120);
             let dirX = target.x - muzX;
             let dirY = (target.y - 45) - muzY;
             let dist = Math.hypot(dirX, dirY) || 1;
@@ -497,6 +497,7 @@ module.exports = {
 
             if (hit || p.life <= 0) {
                 // 💣 [대포] 맞으면 그 자리에서 터져 주변을 함께 친다
+                //    (플레이어·유닛뿐 아니라 넥서스에 맞아도 터진다)
                 if (p.blast > 0 && hit) {
                     io.emit('cannonBlast', { x: p.x, y: p.y, radius: p.blast });
                     // 포탑 발사체라 주인이 없다 → 팀만 보고 적을 친다
