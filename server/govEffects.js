@@ -211,6 +211,8 @@ function process(now, ctx) {
     processHealZone(now, ctx);
     // ⛩️ 정의의 문
     processGateCasts(now, ctx);
+    // 💰🎯 천상금 · 인간 사냥
+    processTax(now, ctx);
     // ⚔️ 칠무해 · 세라핌
     [1, 2].forEach(function (team) { syncWarlord(team, bonusOf(team), now, io); });
     processWarlords(now, ctx);
@@ -501,7 +503,11 @@ function processGateCasts(now, ctx) {
         const breakCast = () => {
             delete State.gateCasts[id];
             if (p) { p.gateCdEnd = now + GATE_CD; io.emit('syncPlayerFull', p); }
-            io.emit('gateCastEnd', { id: id, done: false, cd: true });
+            // 📡 좌표를 함께 보내야 '남의 화면' 에서도 깨지는 연출을 그릴 수 있다
+            io.emit('gateCastEnd', {
+                id: id, done: false, cd: true,
+                x: p ? p.x : g.x, y: p ? p.y : g.y
+            });
         };
 
         // 시전자가 사라졌거나 죽으면 취소된다
@@ -528,3 +534,41 @@ function processGateCasts(now, ctx) {
 
 module.exports.processGateCasts = processGateCasts;
 module.exports.GATE_CD = GATE_CD;
+
+// ============================================================================
+// 💰🎯 천상금 · 인간 사냥 — 30초마다 아군 전원에게 지급
+//
+//   ⚠️ 여기서 주는 몫은 '천룡인 5% 증가' 를 받지 않는다.
+//      골드는 직접 더하고, 경험치는 gainXp(..., raw=true) 로 준다.
+// ============================================================================
+const TAX_INTERVAL = 30000;
+let _taxAt = { 1: 0, 2: 0 };
+
+function processTax(now, ctx) {
+    const io = ctx.io;
+    [1, 2].forEach(function (team) {
+        const gb = bonusOf(team);
+        if (!gb || (!gb.taxGold && !gb.huntXp)) { _taxAt[team] = 0; return; }
+        if (!_taxAt[team]) { _taxAt[team] = now + TAX_INTERVAL; return; }
+        if (now < _taxAt[team]) return;
+        _taxAt[team] = now + TAX_INTERVAL;
+
+        for (const pid in State.players) {
+            const p = State.players[pid];
+            if (!p || p.team !== team) continue;
+            if (gb.taxGold > 0) {
+                p.gold = (p.gold || 0) + gb.taxGold;      // 증가율 미적용
+                io.to(pid).emit('updateGold', p.gold);
+            }
+            if (gb.huntXp > 0 && typeof ctx.gainXp === 'function') {
+                ctx.gainXp(p, gb.huntXp, true);           // raw = 증가율 미적용
+            }
+        }
+        if (gb.taxGold > 0 || gb.huntXp > 0) {
+            io.emit('govTax', { team: team, gold: gb.taxGold || 0, xp: gb.huntXp || 0 });
+        }
+    });
+}
+
+module.exports.processTax = processTax;
+module.exports.TAX_INTERVAL = TAX_INTERVAL;

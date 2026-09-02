@@ -152,6 +152,7 @@ module.exports = (deps) => {
         if (kind === 'player') {
             // 🗡️ [세계를 가르는 참격] 등 방어 무시 공격은 defense 를 적용하지 않는다
             let actual = opts.ignoreDefense ? damage : damage * (1 - (obj.defense || 0));
+            actual = S.absorbShield(obj, actual);
             obj.hp -= actual;
             emitDamageText(obj.x, obj.y, actual);
             if (opts.onPlayerExtra) opts.onPlayerExtra(obj, id, actual);
@@ -166,6 +167,7 @@ module.exports = (deps) => {
         //     모두 이 hurt() 를 거치므로 광역 계열은 이 한 줄로 전부 커버된다)
         damage = S.toemaDmg(attacker, damage);
 
+        damage = S.absorbShield(obj, damage);
         obj.hp -= damage;
         emitDamageText(obj.x, obj.y, damage);
         if (opts.onMobExtra) opts.onMobExtra(obj, kind, id);

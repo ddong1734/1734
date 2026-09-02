@@ -244,6 +244,7 @@ module.exports = (deps) => {
                     if (b.targetKind === 'player') {
                         let actual = C.P_YAMI_TICK_DMG * (1 - (tgt.defense || 0));
                         if (S.shieldAt && S.shieldAt(tgt.x, tgt.y)) { io.emit('marcoShieldHit', { x: tgt.x, y: tgt.y }); return; }
+                        actual = S.absorbShield(tgt, actual);
                         tgt.hp -= actual;
                         emitDamageText(tgt.x, tgt.y, actual);
                         if (tgt.hp <= 0) { checkPlayerDeath(tgt, b.ownerId); break; }
@@ -252,6 +253,7 @@ module.exports = (deps) => {
                         // ⚔️ 퇴마의 검 : 몬스터 전용 30% 추가 피해
                         let yamiMobDmg = S.toemaDmgById(b.ownerId, C.P_YAMI_TICK_DMG);
                         if (S.shieldAt && S.shieldAt(tgt.x, tgt.y)) { io.emit('marcoShieldHit', { x: tgt.x, y: tgt.y }); return; }
+                        yamiMobDmg = S.absorbShield(tgt, yamiMobDmg);
                         tgt.hp -= yamiMobDmg;
                         emitDamageText(tgt.x, tgt.y, yamiMobDmg);
                         if (b.targetKind === 'hinbeom') recordHinbeomDamage(b.ownerId, yamiMobDmg);

@@ -827,7 +827,10 @@ io.on('connection', (socket) => {
                 p.gateCdEnd = Date.now() + GE.GATE_CD;
                 io.emit('syncPlayerFull', p);
             }
-            io.emit('gateCastEnd', { id: socket.id, done: false, cd: true });
+            io.emit('gateCastEnd', {
+                id: socket.id, done: false, cd: true,
+                x: p ? p.x : 0, y: p ? p.y : 0
+            });
         }
     });
 

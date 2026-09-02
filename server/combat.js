@@ -72,6 +72,8 @@ function processBurns(now) {
 
         if (kind === 'player') {
             let actual = dmg * (1 - (entity.defense || 0));
+            actual = S.absorbShield(entity, actual);
+            actual = S.absorbShield(entity, actual);
             entity.hp -= actual;
             emitDamageText(entity.x, entity.y, actual);
             io.to(key).emit('takeDamage', actual);
@@ -86,6 +88,8 @@ function processBurns(now) {
         //    (lastOwner = 마지막으로 화상을 건 플레이어)
         let burnMobDmg = S.toemaDmgById(lastOwner, dmg);
 
+        burnMobDmg = S.absorbShield(entity, burnMobDmg);
+        burnMobDmg = S.absorbShield(entity, burnMobDmg);
         entity.hp -= burnMobDmg;
         emitDamageText(entity.x, entity.y, burnMobDmg);
         if (kind === 'hinbeom') Bosses.recordHinbeomDamage(lastOwner, burnMobDmg);
@@ -266,6 +270,8 @@ function tryDomainBasicAttack(socket, attacker) {
             } else {
                 // ⚔️ 퇴마의 검 보정은 몬스터에게만 적용된다
                 let dmg = (typeof S.toemaDmg === 'function') ? S.toemaDmg(attacker, myDamage) : myDamage;
+                dmg = S.absorbShield(o, dmg);
+                dmg = S.absorbShield(o, dmg);
                 o.hp -= dmg;
                 emitDamageText(o.x, o.y, dmg);
                 if (t.kind === 'hinbeom' && Bosses && typeof Bosses.recordHinbeomDamage === 'function') {
@@ -362,6 +368,8 @@ function handleBasicAttack(socket, attacker, actionData) {
         if (Math.hypot(actionData.x - t.x, actionData.y - t.y) >= hitRadius) continue;
 
         let actual = myDamage * (1 - (t.defense || 0));
+        actual = S.absorbShield(t, actual);
+        actual = S.absorbShield(t, actual);
         t.hp -= actual;
         emitDamageText(t.x, t.y, actual);
 
@@ -628,6 +636,8 @@ function processDomainLight(now) {
                 io.emit('syncPlayerFull', o);
             } else {
                 let dmg = (typeof S.toemaDmg === 'function') ? S.toemaDmg(p, DLIGHT_TICK_DMG) : DLIGHT_TICK_DMG;
+                dmg = S.absorbShield(o, dmg);
+                dmg = S.absorbShield(o, dmg);
                 o.hp -= dmg;
                 emitDamageText(o.x, o.y, dmg);
                 if (t.kind === 'hinbeom' && Bosses && typeof Bosses.recordHinbeomDamage === 'function') {

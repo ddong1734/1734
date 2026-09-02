@@ -12,7 +12,7 @@
 //    (아래 let 변수들은 wire() 호출 전까지 null 이다)
 // ============================================================================
 
-let io, C, S, State, compressors, Characters, Skills, Items;
+let io, C, S, State, govGold, compressors, Characters, Skills, Items;
 let emitDamageText, gainXp, isNum, isInDarkZone;
 let makeMonster, makeBases, makeTurrets, makeNpcs, makeHinbeom, makeBlackbeard, makeBurgess;
 let makeSukuna;
@@ -21,6 +21,7 @@ let Bosses, Fruits, clearBurns;
 /** 🔗 index.js 가 모든 모듈을 만든 뒤 호출한다 */
 function wire(d) {
     io = d.io; C = d.C; S = d.S; State = d.State; compressors = d.compressors;
+    govGold = d.govGold;
     Characters = d.Characters; Skills = d.Skills; Items = d.Items;
     emitDamageText = d.emitDamageText; gainXp = d.gainXp; isNum = d.isNum;
     isInDarkZone = d.isInDarkZone;
@@ -337,7 +338,7 @@ function checkPlayerDeath(targetPlayer, attackerId) {
 
     if (attackerId && State.players[attackerId] && attackerId !== targetPlayer.id) {
         const killer = State.players[attackerId];
-        killer.gold += 800;
+        killer.gold += (typeof govGold==='function'? govGold(killer,800) : 800);
         io.to(attackerId).emit('updateGold', killer.gold);
         gainXp(killer, Math.max(1, targetPlayer.level) * 10);
         // 🔯 법진 : 적 플레이어 처치도 스택에 포함된다 (자살 · 아군 오폭은 제외)
