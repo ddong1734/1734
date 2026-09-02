@@ -490,3 +490,33 @@ registerVisualFX('gate_warp', (ctx, fx, alpha, state) => {
     }
     ctx.restore();
 });
+
+// ⛩️💥 정의의 문 — 채널링이 깨질 때
+registerVisualFX('gate_break', (ctx, fx, alpha, state) => {
+    const t = 1 - alpha;
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = alpha;
+    // 짧게 번쩍인 뒤 흩어진다
+    const R = 130 * (1 - Math.pow(1 - Math.min(1, t / 0.3), 2.2));
+    const g = ctx.createRadialGradient(fx.x, fx.y, 3, fx.x, fx.y, R);
+    g.addColorStop(0, "rgba(255,255,255,1)");
+    g.addColorStop(0.35, "rgba(200,215,255,0.85)");
+    g.addColorStop(1, "rgba(110,130,240,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(fx.x, fx.y, R, 0, Math.PI * 2); ctx.fill();
+    // 흩어지는 빛 조각
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = alpha * 0.9;
+    ctx.fillStyle = "#cfe0ff";
+    for (let k = 0; k < 10; k++) {
+        const a = (k / 10) * Math.PI * 2 + 0.3;
+        const d = 40 + t * 150;
+        ctx.beginPath();
+        ctx.arc(fx.x + Math.cos(a) * d, fx.y + Math.sin(a) * d * 0.8 + t * 40,
+                4 * (1 - t), 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+});
