@@ -150,6 +150,19 @@ window.registerNetModule('world', function (socket, U) {
         if (!d) return;
         if (window.gateCasts) delete window.gateCasts[d.id];
         U.clearFXByType('gate_channel', d.id);
+
+        // 💥 깨졌을 때의 연출.
+        //    · 남의 것 : 여기서 그린다
+        //    · 내 것   : 보통 클라가 먼저 그리지만(반응 속도),
+        //               서버가 먼저 끊은 경우엔 여기서 그려야 빠지지 않는다
+        const justDrew = (d.id === window.myId)
+                      && (Date.now() - (window._gateBreakAt || 0) < 600);
+        if (!d.done && !justDrew && Number.isFinite(d.x)) {
+            window.visualFX.push({
+                type: 'gate_break', x: d.x, y: d.y,
+                durationMs: 480, life: 29, maxLife: 29
+            });
+        }
         if (d.id === window.myId) {
             // 성공이든 실패든 쿨타임 200초가 돈다
             if (d.done || d.cd) window.myPlayer.gateCdEnd = Date.now() + 200000;

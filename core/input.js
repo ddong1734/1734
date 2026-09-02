@@ -374,6 +374,16 @@ window.initControls = (socket) => {
         if (!window.gateCasts || !window.myId) return;
         if (!window.gateCasts[window.myId]) return;
         delete window.gateCasts[window.myId];
+        // ✨ 서버 응답을 기다리지 않고 그 자리에서 카운트다운을 지운다
+        if (window.NetUtils && typeof window.NetUtils.clearFXByType === 'function') {
+            window.NetUtils.clearFXByType('gate_channel', window.myId);
+        }
+        // 💥 빛나며 흩어지는 연출 (내 화면은 즉시 반응해야 한다)
+        window._gateBreakAt = Date.now();
+        window.visualFX.push({
+            type: 'gate_break', x: window.myPlayer.x, y: window.myPlayer.y,
+            durationMs: 480, life: 29, maxLife: 29
+        });
         socket.emit('gateCancel');
     };
 

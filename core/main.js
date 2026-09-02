@@ -439,10 +439,11 @@ setInterval(() => {
             const gc = window.gateCasts && window.myId ? window.gateCasts[window.myId] : null;
             if (gc) {
                 if (gc.lx === undefined) { gc.lx = pObj.x; gc.ly = pObj.y; gc.lhp = pObj.hp; }
-                const moved = Math.hypot(pObj.x - gc.lx, pObj.y - gc.ly) > 3;
+                const moved = Math.hypot(pObj.x - gc.lx, pObj.y - gc.ly) > 1.5;
                 const hurt = (pObj.hp < gc.lhp - 0.5);
-                const jumped = (Math.abs(pObj.vy || 0) > 0.5);
-                if (pObj.isDead || moved || hurt || jumped) {
+                const jumped = (Math.abs(pObj.vy || 0) > 0.3);
+                const pressing = (Math.abs(pObj.moveX || 0) > 0.05 || Math.abs(pObj.moveY || 0) > 0.05);
+                if (pObj.isDead || moved || hurt || jumped || pressing) {
                     if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
                 }
                 gc.lhp = pObj.hp;
