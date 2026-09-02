@@ -111,10 +111,37 @@ function getRequiredXp(level) {
     return req;
 }
 
-function gainXp(p, amount) {
+/**
+ * 👑 [천룡인] 세계정부 골드 획득량 증가율을 적용한 값을 돌려준다.
+ *    천상금은 이 함수를 거치지 않으므로 증폭되지 않는다.
+ */
+function govGold(p, amount) {
+    try {
+        const GT = require('./govTree.js');
+        const b = (State.bases[p.team] && State.bases[p.team].govType === 'wg')
+                ? GT.bonusOf(State.govTree[p.team]) : null;
+        if (b && b.gainPct > 0) return Math.round(amount * (1 + b.gainPct));
+    } catch (e) { }
+    return amount;
+}
+
+/**
+ * @param raw true 면 세계정부 증가율을 적용하지 않는다.
+ *            (천상금·인간 사냥으로 주는 몫은 증폭되면 안 된다)
+ */
+function gainXp(p, amount, raw) {
     if (!p) return;
     if (p.level >= 50) return;
     if (!isNum(amount)) return;
+    // 👑 [천룡인] 아군 전체의 경험치 획득량 5% 증가
+    if (!raw) {
+        try {
+            const GT = require('./govTree.js');
+            const b = (State.bases[p.team] && State.bases[p.team].govType === 'wg')
+                    ? GT.bonusOf(State.govTree[p.team]) : null;
+            if (b && b.gainPct > 0) amount = Math.round(amount * (1 + b.gainPct));
+        } catch (e) { }
+    }
     p.xp += amount;
     let leveledUp = false;
     while (p.level < 50 && p.xp >= p.maxXp) { p.xp -= p.maxXp; p.level++; p.maxXp = getRequiredXp(p.level); leveledUp = true; }
@@ -190,7 +217,7 @@ const serverContext = Object.assign({
     getBlackbeard: () => State.blackbeard, getBurgess: () => State.burgess,
     // 🗣️ NPC
     getNpcs: () => State.npcs, getNpc,
-    emitDamageText, checkPlayerDeath, gainXp, recalcStats, applyBaseDamage,
+    emitDamageText, checkPlayerDeath, gainXp, govGold, recalcStats, applyBaseDamage,
     // ⚫🔥 별세계 경계 제한 (야타의 거울 등 서버가 좌표를 직접 미는 곳에서 쓴다)
     clampSpecialArea,
     // 🔯 법진 : 처치 스택 증가 · ⚔️ 퇴마의 검 : 몬스터 피해 30% 보정
@@ -271,6 +298,7 @@ const serverContext = Object.assign({
 const wireBag = {
     get io() { return io; },
     C, S, State, compressors,
+    govGold,
     get Characters() { return Characters; },
     get Skills() { return Skills; },
     get Items() { return Items; },

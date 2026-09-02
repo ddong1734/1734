@@ -75,24 +75,33 @@
         mariejois: { id: 'mariejois', name: '마리조아',  cost: 5000,  x: -1.4,  y: -2.4,  parents: ['rule'] },
         // 🏰 판게아 성 계열 — 마리조아에서 왼쪽으로
         pangaea: { id: 'pangaea', name: '판게아 성',      cost: 8000,  x: -2.0,  y: -3.65, parents: ['mariejois'] },
-        emptyTh: { id: 'emptyTh', name: '허의 옥좌',      cost: 10000, x: -3.55, y: -3.15, parents: ['pangaea'] },
-        flowerR: { id: 'flowerR', name: '꽃의 방',        cost: 10000, x: -3.5,  y: -4.45, parents: ['pangaea'] },
+        emptyTh: { id: 'emptyTh', name: '허의 옥좌',      cost: 10000, x: -2.4,  y: -5.15, parents: ['pangaea'] },
+        flowerR: { id: 'flowerR', name: '꽃의 방',        cost: 10000, x: -3.85, y: -3.6,  parents: ['pangaea'] },
         powerR:  { id: 'powerR',  name: '권력의 방',      cost: 10000, x: -1.65, y: -4.75, parents: ['pangaea'] },
 
-        celest:  { id: 'celest',  name: '천룡인',        cost: 5000,  x: 2.6,   y: -2.4,  parents: ['rule'] },
+        celest:  { id: 'celest',  name: '천룡인',        cost: 5000,  x: 2.6,   y: -2.4,  parents: ['rule'],
+                   desc: '아군 전체의 골드·경험치 획득량 5% 증가 (천상금·인간 사냥으로 받는 것에는 적용되지 않습니다)',
+                   effect: { gainPct: 0.05 } },
+        // 💰 천상금 — 천룡인을 열면 나타난다
+        heavenTax: { id: 'heavenTax', name: '천상금',     cost: 9000,  x: 1.75,  y: -2.85, parents: ['celest'],
+                   desc: '30초마다 아군 전원이 1,500 골드를 받는다.', effect: { taxGold: 1500 } },
         // 🎯 인간 사냥 — 천룡인을 열면 나타난다
-        hunt:    { id: 'hunt',    name: '인간 사냥',      cost: 7000,  x: 3.55,  y: -3.25, parents: ['celest'] },
+        hunt:    { id: 'hunt',    name: '인간 사냥',      cost: 7000,  x: 3.55,  y: -3.25, parents: ['celest'],
+                   desc: '30초마다 아군 전원이 경험치 50 을 받는다.', effect: { huntXp: 50 } },
 
         // ── 📜 계약 계보 : 최고 통치 기관에서 위로 뻗는다 ─────
-        pactSky:  { id: 'pactSky',  name: '천해계약',     cost: 6000, x: 0.35, y: -3.0,  parents: ['rule'] },
-        seal:     { id: 'seal',     name: '신의 종인',     cost: 7000, x: 0.7,  y: -4.05, parents: ['pactSky'] },
-        pactDeep: { id: 'pactDeep', name: '심해계약',     cost: 8000, x: 1.0,  y: -5.1,  parents: ['seal'] },
-        pactAbyss:{ id: 'pactAbyss',name: '심심해계약',   cost: 9000, x: 1.9,  y: -5.25, parents: ['pactDeep'] },
+        pactSky:  { id: 'pactSky',  name: '천해계약',     cost: 6000, x: 0.35, y: -3.0,  parents: ['rule'],
+                    desc: '소소한 결연' },
+        seal:     { id: 'seal',     name: '신의 종인',     cost: 7000, x: 0.25,  y: -3.85, parents: ['pactSky'] },
+        pactDeep: { id: 'pactDeep', name: '심해계약',     cost: 8000, x: 1.0,  y: -5.1,  parents: ['seal'],
+                    desc: '신과의 계약' },
+        pactAbyss:{ id: 'pactAbyss',name: '심심해계약',   cost: 9000, x: 1.7,  y: -5.7,  parents: ['pactDeep'],
+                    desc: '신과의 계약' },
 
         // 🛡️ 신의 기사단 — 심해계약 + 천룡인을 모두 열어야 한다
-        knights: { id: 'knights', name: '신의 기사단',    cost: 9000,  x: 2.0,   y: -4.3,  parents: ['pactDeep', 'celest'] },
+        knights: { id: 'knights', name: '신의 기사단',    cost: 9000,  x: 2.0,   y: -4.3,  parents: ['pactDeep', 'celest', 'abyss5'] },
         // ⭐ 오로성 — 심심해계약 + 천룡인을 모두 열어야 한다
-        gorosei: { id: 'gorosei', name: '오로성',        cost: 11000, x: 3.0,   y: -6.2,  parents: ['pactAbyss', 'celest', 'powerR'] },
+        gorosei: { id: 'gorosei', name: '오로성',        cost: 11000, x: 3.0,   y: -6.2,  parents: ['pactAbyss', 'celest', 'powerR', 'abyss5'] },
 
         // ☄️ 우라노스 — 임을 열면 나타난다
         uranus:  { id: 'uranus',  name: '우라노스',      cost: 20000, x: -2.6,  y: -8.35, parents: ['imu'] },
@@ -100,12 +109,12 @@
         // ✴️ 오망성(어비스) — 오로성과 신의 기사단을 모두 열어야 한다
         // ⚠️ 신의 기사단→오망성 선은 천룡인→오로성 선과 한 번 교차한다.
         //    여러 배치를 시도했지만 이 자리가 나머지가 가장 깨끗하다.
-        abyss5:  { id: 'abyss5',  name: '오망성\n(어비스)',  cost: 14000, x: 3.75, y: -5.05, parents: ['gorosei', 'knights'] },
+        abyss5:  { id: 'abyss5',  name: '오망성\n(어비스)',  cost: 14000, x: 1.15, y: -4.05, parents: ['pactDeep'] },
 
         // 🏛️ 레벨리 — 오로성과 마리조아
         reverie: { id: 'reverie', name: '레벨리',        cost: 12000, x: -0.6,  y: -6.3,  parents: ['gorosei', 'mariejois'] },
         // 👑 임 — 오로성과 레벨리
-        imu:     { id: 'imu',     name: '임',            cost: 16000, x: -1.9,  y: -7.2,  parents: ['gorosei', 'reverie', 'flowerR'] },
+        imu:     { id: 'imu',     name: '임',            cost: 16000, x: -1.9,  y: -7.2,  parents: ['gorosei', 'reverie', 'flowerR', 'emptyTh'] },
 
         // ── ⚓ 동 : 군사 및 치안 유지 기관 ──────────────────────
         army:    { id: 'army',    name: '군사 및\n치안 유지 기관', cost: 3000,  x: 1.7,  y: -0.15, parents: ['wg'] },
@@ -121,9 +130,11 @@
         warlord: { id: 'warlord', name: '왕하 칠무해',    cost: 5000,  x: 2.8,  y: 1.35,  parents: ['army'],
                    desc: '세계정부에서 칠무해가 싸운다. 쓰러지면 4분 뒤 되살아난다.', effect: { warlord: 1 } },
         // 🔬 SSG 연구 계열
-        punkRec: { id: 'punkRec', name: '펑크 레코드',    cost: 7000,  x: 5.5,  y: -0.5,  parents: ['ssg'] },
-        powerPl: { id: 'powerPl', name: '파워 플랜트',    cost: 7000,  x: 6.3,  y: 0.15,  parents: ['ssg'] },
-        motherF: { id: 'motherF', name: '마더 플레임',    cost: 13000, x: 6.6,  y: -1.0,  parents: ['punkRec', 'powerPl'] },
+        punkRec: { id: 'punkRec', name: '펑크 레코드',    cost: 7000,  x: 5.75, y: -0.25, parents: ['ssg'],
+                   desc: "초고도 연구 데이터를 저장·연산하는 거대 중앙 클라우드 데이터베이스 서버" },
+        powerPl: { id: 'powerPl', name: '파워 플랜트',    cost: 7000,  x: 6.5,  y: -1.0,  parents: ['ssg'],
+                   desc: "우라노스 가동을 위한 주에너지인 '마더 플레임'을 생산 및 정제하는 핵심 융합로" },
+        motherF: { id: 'motherF', name: '마더 플레임',    cost: 13000, x: 6.85, y: 0.15, parents: ['punkRec', 'powerPl'] },
 
         pacif:   { id: 'pacif',   name: '파시피스타',    cost: 7000,  x: 3.7,  y: 0.55,  parents: ['ssg'],
                    desc: '3분마다 파시피스타가 출격한다. 적 넥서스만 노려 빛 레이저를 쏜다.', effect: { pacifista: 1 } },
@@ -150,7 +161,7 @@
         // 각 갈래에서 하나씩 더 뻗는다
         tower:   { id: 'tower',   name: '사법의 탑',      cost: 9000, x: -2.7,  y: -2.9,  parents: ['enies'],
                    desc: '상대를 처치하면 그 상대의 골드 10% 를 빼앗는다.', effect: { stealGold: 0.10 } },
-        newMari: { id: 'newMari', name: '뉴 마린 포드',   cost: 9000, x: -3.9,  y: -0.42, parents: ['oldMari'],
+        newMari: { id: 'newMari', name: '뉴 마린 포드',   cost: 9000, x: -3.75,  y: 0.75, parents: ['oldMari'],
                    desc: '회복 돔이 강해진다. 초당 회복량이 200 이 된다.', effect: { healZone: 100 } },
         // ⛩️ 정의의 문 — 세 곳을 모두 열어야 한다 (부채꼴이 모이는 끝)
         gate:    { id: 'gate',    name: '정의의 문',      cost: 12000, x: -5.3, y: 0.15, parents: ['enies', 'oldMari', 'impel'],
@@ -184,17 +195,20 @@
         ['wg', 'rule'], ['rule', 'mariejois'],
         // 🏰 판게아 성 계열
         ['mariejois', 'pangaea'], ['pangaea', 'emptyTh'], ['pangaea', 'flowerR'], ['pangaea', 'powerR'],
-        ['flowerR', 'imu'],
-        // 🏰 권력의 방 → 오로성 (트리를 가로지르는 긴 선)
-        ['powerR', 'gorosei'],
+        ['flowerR', 'imu'], ['emptyTh', 'imu'],
+        // ⚠️ 권력의 방 → 오로성 은 트리를 가로지르는 긴 선이라
+        //    심심해계약 옆을 스치고 마리조아-레벨리 선과도 겹친다.
+        //    해금 조건에는 그대로 있고, 설명 패널의 '필요한 노드' 가 알려 준다.
         // ☄️ 우라노스
         ['imu', 'uranus'], ['rule', 'celest'], ['celest', 'hunt'],
         // 📜 계약 계보
         ['rule', 'pactSky'], ['pactSky', 'seal'], ['seal', 'pactDeep'], ['pactDeep', 'pactAbyss'],
         // 🛡️⭐ 계약 + 천룡인 을 모두 열어야 한다
-        ['pactDeep', 'knights'], ['celest', 'knights'],
+        // ⚠️ 심해계약 → 신의 기사단 선은 심해계약→오망성→신의 기사단 으로
+        //    이미 이어져 있고, 그으면 오망성-오로성 선과 겹친다. 조건은 그대로다.
+        ['celest', 'knights'],
         ['pactAbyss', 'gorosei'], ['celest', 'gorosei'],
-        ['gorosei', 'abyss5'], ['knights', 'abyss5'],
+        ['pactDeep', 'abyss5'], ['abyss5', 'knights'], ['abyss5', 'gorosei'],
         ['gorosei', 'reverie'], ['mariejois', 'reverie'],
         ['gorosei', 'imu'], ['reverie', 'imu'],
         // ⚓ 동
@@ -232,7 +246,10 @@
             gateSkill: 0,        // ⛩️ 정의의 문 스킬
             seeMobs: 0,          // 🔍 몬스터·보스 미니맵 표시
             seeUnits: 0,         // 🔍 아군 유닛 미니맵 표시
-            seeEnemies: 0        // 🔍 적 플레이어 미니맵 표시
+            seeEnemies: 0,       // 🔍 적 플레이어 미니맵 표시
+            gainPct: 0,          // 💠 골드·경험치 획득량 증가
+            taxGold: 0,          // 💰 천상금 (30초마다)
+            huntXp: 0            // 🎯 인간 사냥 (30초마다)
         };
         if (!unlocked) return b;
         for (const id in NODES) {
@@ -258,6 +275,9 @@
             b.seeMobs += (e.seeMobs || 0);
             b.seeUnits += (e.seeUnits || 0);
             b.seeEnemies += (e.seeEnemies || 0);
+            b.gainPct += (e.gainPct || 0);
+            b.taxGold += (e.taxGold || 0);
+            b.huntXp += (e.huntXp || 0);
         }
         return b;
     }
