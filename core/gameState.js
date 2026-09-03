@@ -123,6 +123,8 @@ window.warlords = {};
 window.warships = [];
 // ⛩️ 정의의 문 채널링
 window.gateCasts = {};
+// ✴️ 어비스 시전
+window.abyssCasts = {};
 window.daidoComboCount = 0;
 window.daidoLastComboTime = 0; 
 window.borsLastComboTime = 0; 

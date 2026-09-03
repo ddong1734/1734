@@ -136,13 +136,44 @@ window.registerNetModule('world', function (socket, U) {
             : ('📚 경험치 ' + d.amount + ' 강탈!'));
     });
 
+    // ✴️ [어비스] 마방진 — 시전자 자리와 목적지 양쪽에 펼쳐진다
+    socket.on('abyssCastStart', (d) => {
+        if (!d) return;
+        window.abyssCasts = window.abyssCasts || {};
+        window.abyssCasts[d.id] = { endAt: Date.now() + (d.durationMs || 3000), tx: d.tx, ty: d.ty };
+        const life = Math.max(1, Math.round((d.durationMs || 3000) / (1000 / 60)));
+        window.visualFX.push({
+            type: 'abyss_circle', ownerId: d.id, x: d.x, y: d.y, R: 170,
+            durationMs: d.durationMs || 3000, life: life, maxLife: life
+        });
+        window.visualFX.push({
+            type: 'abyss_circle', ownerId: d.id + '_t', x: d.tx, y: d.ty, R: 170,
+            durationMs: d.durationMs || 3000, life: life, maxLife: life
+        });
+    });
+    socket.on('abyssCastEnd', (d) => {
+        if (!d) return;
+        if (window.abyssCasts) delete window.abyssCasts[d.id];
+        U.clearFXByType('abyss_circle', d.id);
+        U.clearFXByType('abyss_circle', d.id + '_t');
+        if (d.done) {
+            if (d.id === window.myId && window.myPlayer) {
+                window.myPlayer.x = d.x; window.myPlayer.y = d.y;
+                window.myPlayer.vy = 0; window.myPlayer.knockbackForce = 0;
+                window.myPlayer.moveX = 0; window.myPlayer.moveY = 0;
+            }
+            window.visualFX.push({ type: 'abyss_warp', x: d.x, y: d.y, durationMs: 700, life: 42, maxLife: 42 });
+        }
+    });
+
     // ⛩️ [정의의 문] 채널링
     socket.on('gateCastStart', (d) => {
         if (!d) return;
         window.gateCasts = window.gateCasts || {};
         window.gateCasts[d.id] = { endAt: Date.now() + (d.durationMs || 5000), x: d.x, y: d.y };
+        // ⚠️ clearFXByType 은 ownerId 로 찾는다. id 만 넣으면 영영 안 지워진다.
         window.visualFX.push({
-            id: d.id, type: 'gate_channel', x: d.x, y: d.y,
+            id: d.id, ownerId: d.id, type: 'gate_channel', x: d.x, y: d.y,
             durationMs: d.durationMs || 5000, life: 300, maxLife: 300
         });
     });

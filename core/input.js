@@ -130,6 +130,7 @@ window.initControls = (socket) => {
             || (window.myPlayer.isCasting && !isSkill3Aiming())
             || window.myPlayer.skill1Dashing;
 
+        if (window.isAbyssLocked && window.isAbyssLocked()) return;
         if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
         activeId = e.pointerId; zone.setPointerCapture(e.pointerId); moveKnob(e, lockedNow);
     });
@@ -178,7 +179,8 @@ window.initControls = (socket) => {
     window.addEventListener('blur', forceRelease);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') forceRelease(); });
 
-    document.getElementById('btn-jump').addEventListener('pointerdown', (e) => { if (typeof window.cancelGateCast === 'function') window.cancelGateCast(); 
+    document.getElementById('btn-jump').addEventListener('pointerdown', (e) => {         if (window.isAbyssLocked && window.isAbyssLocked()) return;
+if (typeof window.cancelGateCast === 'function') window.cancelGateCast(); 
         e.preventDefault();
         if (Date.now() < window.myPlayer.frozenUntil || window.myPlayer.isDead || window.myPlayer.isCasting || window.myPlayer.skill1Dashing) return; 
         if (Date.now() < (window.myPlayer.raigoPullUntil || 0)) return; 
@@ -340,7 +342,8 @@ window.initControls = (socket) => {
         }
     };
     
-    document.getElementById('btn-attack').addEventListener('pointerdown', (e) => { if (typeof window.cancelGateCast === 'function') window.cancelGateCast(); e.preventDefault(); clearInterval(window.autoAttackInterval); triggerAttack(); window.autoAttackInterval = setInterval(triggerAttack, 100); });
+    document.getElementById('btn-attack').addEventListener('pointerdown', (e) => {         if (window.isAbyssLocked && window.isAbyssLocked()) return;
+if (typeof window.cancelGateCast === 'function') window.cancelGateCast(); e.preventDefault(); clearInterval(window.autoAttackInterval); triggerAttack(); window.autoAttackInterval = setInterval(triggerAttack, 100); });
     const stopAtk = (e) => { e.preventDefault(); clearInterval(window.autoAttackInterval); };
     document.getElementById('btn-attack').addEventListener('pointerup', stopAtk); document.getElementById('btn-attack').addEventListener('pointercancel', stopAtk); document.getElementById('btn-attack').addEventListener('pointerleave', stopAtk);
 
@@ -364,19 +367,37 @@ window.initControls = (socket) => {
         gateBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault(); e.stopPropagation();
             if (window.myPlayer.isDead) return;
+            if (window.isAbyssLocked && window.isAbyssLocked()) return;
             const now = Date.now();
             if (window.myPlayer.gateCdEnd && now < window.myPlayer.gateCdEnd) return;
             socket.emit('gateCast');
         });
     }
+    /** ✴️ 어비스 경직 중인가 — 이동·점프·스킬·평타가 모두 막힌다 */
+    window.isAbyssLocked = function () {
+        const a = window.abyssCasts && window.myId ? window.abyssCasts[window.myId] : null;
+        return !!(a && Date.now() < a.endAt);
+    };
+
     /** ⛩️ 채널링을 깨뜨린다 (움직임 · 점프 · 스킬 · 평타 · 피격) */
     window.cancelGateCast = function () {
         if (!window.gateCasts || !window.myId) return;
         if (!window.gateCasts[window.myId]) return;
         delete window.gateCasts[window.myId];
         // ✨ 서버 응답을 기다리지 않고 그 자리에서 카운트다운을 지운다
+        // 🛟 NetUtils 가 없을 수도 있으니 직접 끄는 길도 둔다
+        let cleared = false;
         if (window.NetUtils && typeof window.NetUtils.clearFXByType === 'function') {
             window.NetUtils.clearFXByType('gate_channel', window.myId);
+            cleared = true;
+        }
+        if (!cleared && window.visualFX) {
+            for (let i = 0; i < window.visualFX.length; i++) {
+                const t = window.visualFX[i];
+                if (t && t.type === 'gate_channel' && (t.ownerId === window.myId || t.id === window.myId)) {
+                    t.active = false;
+                }
+            }
         }
         // 💥 빛나며 흩어지는 연출 (내 화면은 즉시 반응해야 한다)
         window._gateBreakAt = Date.now();
@@ -389,6 +410,7 @@ window.initControls = (socket) => {
 
     // ── 1번 스킬 ────────────────────────────────────────────────────
     document.getElementById('btn-skill1').addEventListener('pointerdown', (e) => {
+        if (window.isAbyssLocked && window.isAbyssLocked()) return;
         if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
         e.preventDefault(); let now = Date.now();
         if (window.myPlayer.isDead || window.myPlayer.isCasting || window.myPlayer.yataActive || window.myPlayer.skill1Dashing || now < window.myPlayer.frozenUntil || now < window.myPlayer.cd1) return;
@@ -469,6 +491,7 @@ window.initControls = (socket) => {
 
     // ── 2번 스킬 ────────────────────────────────────────────────────
     document.getElementById('btn-skill2').addEventListener('pointerdown', (e) => {
+        if (window.isAbyssLocked && window.isAbyssLocked()) return;
         if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
         e.preventDefault(); let now = Date.now();
         let charType = window.myPlayer.characterType || 'BORSALINO';
@@ -588,6 +611,7 @@ window.initControls = (socket) => {
 
     // ── 3번 스킬 ────────────────────────────────────────────────────
     document.getElementById('btn-skill3').addEventListener('pointerdown', (e) => {
+        if (window.isAbyssLocked && window.isAbyssLocked()) return;
         if (typeof window.cancelGateCast === 'function') window.cancelGateCast();
         e.preventDefault(); let now = Date.now();
         let charTypePre = window.myPlayer.characterType || 'BORSALINO';

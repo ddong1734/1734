@@ -474,6 +474,31 @@ setInterval(() => {
             }
         } catch (e) { console.error('[GATE BTN]', e); }
 
+        // ✴️ 어비스 버튼 — 세계정부 근처이고 노드를 열었을 때만 보인다
+        try {
+            const abEl = document.getElementById('abyssBtn');
+            if (abEl) {
+                let show = false;
+                if (!pObj.isDead && window.GovTree && window.govState && window.serverBases) {
+                    const tm = pObj.team;
+                    const gm = window.govState.gov || {};
+                    const bs = window.serverBases[tm];
+                    if (gm[tm] === 'wg' && bs && Math.hypot(pObj.x - bs.x, pObj.y - bs.y) < 280) {
+                        const b = window.GovTree.bonusOf((window.govState.tree && window.govState.tree[tm]) || {});
+                        show = !!(b && b.abyssWarp);
+                    }
+                }
+                abEl.style.display = show ? 'flex' : 'none';
+                if (show && !abEl._bound) {
+                    abEl._bound = true;
+                    abEl.addEventListener('pointerdown', function (e) {
+                        e.preventDefault(); e.stopPropagation();
+                        if (typeof window.openAbyss === 'function') window.openAbyss();
+                    });
+                }
+            }
+        } catch (e) { console.error('[ABYSS BTN]', e); }
+
         // 🚢 버스터 콜 버튼 — 세계정부 근처이고 노드를 열었을 때만 보인다
         //    ⚠️ nearGov 는 이 아래(통합 버튼 쪽)에서 선언된다.
         //       여기서 그대로 쓰면 ReferenceError 가 나서 물리 갱신·미니맵까지
