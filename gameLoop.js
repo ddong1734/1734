@@ -154,10 +154,26 @@ module.exports = {
         // ── 탐지기 채굴 ────────────────────────────────────────────────
         safe('detectors', () => {
             let detUp = false;
+            /**
+             * ⛏️ 유물 탐지 주기 — 기본 1분.
+             *    🏛️ [레벨리] 를 열었으면 10초 줄어든다.
+             */
+            const detectDelay = (d) => {
+                let ms = 60000;
+                try {
+                    const GT = require('./govTree.js');
+                    const tm = d.team;
+                    if (State.bases[tm] && State.bases[tm].govType === 'wg') {
+                        const b = GT.bonusOf(State.govTree[tm]);
+                        if (b && b.detectCut > 0) ms -= b.detectCut;
+                    }
+                } catch (e) { }
+                return Math.max(5000, ms);
+            };
             detectors.forEach(d => {
                 if (now < d.nextMineTime) return;
                 if (!Array.isArray(d.chest)) d.chest = [];
-                if (d.chest.length >= DETECTOR_CHEST_MAX) { d.nextMineTime = now + 30000; return; }
+                if (d.chest.length >= DETECTOR_CHEST_MAX) { d.nextMineTime = now + detectDelay(d); return; }
 
                 let rd = Math.random() * 100;
                 // 🎁 유물 등급 분포
@@ -183,7 +199,7 @@ module.exports = {
                 else if (rd < 91) aid = 'haeru';        // 💎 전설 6%
                 else aid = FRUITS[Math.floor(Math.random() * FRUITS.length)];
                 d.chest.push({ uid: Math.random().toString(36).substr(2, 9), id: aid });
-                d.nextMineTime = now + 30000;   // ⛏️ 탐지 30초
+                d.nextMineTime = now + detectDelay(d);   // ⛏️ 탐지 1분 (레벨리를 열면 줄어든다)
                 detUp = true;
             });
             if (detUp || now - _lastDetectorSync >= 1000) { _lastDetectorSync = now; io.emit('syncDetectors', detectors); }

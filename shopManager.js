@@ -1,5 +1,23 @@
 // shopManager.js - 상점 구매, 장비 탈착, 팀 창고, 합성 등을 전담
 
+// ══════════════════════════════════════════════════════════════════
+// 🏛️ [세계정부] 마리조아 · 판게아 성 보정
+//   · 마리조아   : 아이템 판매가 10% 증가
+//   · 판게아 성  : 인벤토리 한도 10 증가
+// ══════════════════════════════════════════════════════════════════
+function govShop(p, State) {
+    try {
+        const GT = require('./govTree.js');
+        if (State.bases[p.team] && State.bases[p.team].govType === 'wg') {
+            const b = GT.bonusOf(State.govTree[p.team]);
+            if (b) return b;
+        }
+    } catch (e) { }
+    return { sellPct: 0, invSlots: 0 };
+}
+/** 이 사람의 인벤토리 한도 */
+function invMax(p, State) { return 20 + (govShop(p, State).invSlots || 0); }
+
 const Items = require('./items.js');
 
 const DETECTOR_SPOTS = { 1: [8600, 9600, 10600], 2: [21400, 22400, 23400] };
@@ -11,7 +29,7 @@ module.exports = {
 
         socket.on('shopBuy', (type) => { 
             let p = State.players[socket.id]; if (!p || p.isDead) return; 
-            if (p.inventory.length >= 20) return socket.emit('buyFail', '인벤토리가 가득 찼습니다!'); 
+            if (p.inventory.length >= invMax(p, State)) return socket.emit('buyFail', '인벤토리가 가득 찼습니다!'); 
             
             let itemData = Items[type];
             if (!itemData || !itemData.buyPrice || itemData.buyPrice <= 0) return socket.emit('buyFail', '상점에서 살 수 없는 아이템입니다.');
@@ -29,7 +47,10 @@ module.exports = {
             
             let item = p.inventory[idxInv]; 
             let itemData = Items[item.id];
-            let sellAmount = itemData ? (itemData.sellPrice || 0) : 0; 
+            let sellAmount = itemData ? (itemData.sellPrice || 0) : 0;
+            // 🏔️ 마리조아 : 판매가 10% 증가
+            sellAmount = Math.round(sellAmount * (1 + (govShop(p, State).sellPct || 0)));
+            
             
             p.inventory.splice(idxInv, 1); 
             p.equippedUids = p.equippedUids.filter(u => u !== uid); 
@@ -49,7 +70,7 @@ module.exports = {
                         p.gold += (item.id === 'rare_box' ? 2000 : 10000); 
                         socket.emit('updateGold', p.gold); 
                     } else { 
-                        if (p.inventory.length >= 20) return socket.emit('buyFail', '인벤토리가 가득 찼습니다!');
+                        if (p.inventory.length >= invMax(p, State)) return socket.emit('buyFail', '인벤토리가 가득 찼습니다!');
                         d.chest.splice(idx, 1); 
                         p.inventory.push(item); 
                     } 
@@ -79,7 +100,7 @@ module.exports = {
             let tStorage = State.teamStorages[p.team]; 
             let idx = tStorage.findIndex(i => i.uid === uid); 
             if (idx === -1) return; 
-            if (p.inventory.length >= 20) return socket.emit('buyFail', '인벤토리가 가득 찼습니다!');
+            if (p.inventory.length >= invMax(p, State)) return socket.emit('buyFail', '인벤토리가 가득 찼습니다!');
             
             let item = tStorage[idx]; 
             tStorage.splice(idx, 1); 
@@ -175,7 +196,7 @@ module.exports = {
         // 🛠️ 테스트 창고 무한 획득 로직 추가
         socket.on('acquireFromTest', (itemId) => {
             let p = State.players[socket.id]; if (!p || p.isDead) return;
-            if (p.inventory.length >= 20) return socket.emit('buyFail', '인벤토리가 가득 찼습니다!');
+            if (p.inventory.length >= invMax(p, State)) return socket.emit('buyFail', '인벤토리가 가득 찼습니다!');
             let itemData = Items[itemId];
             if (!itemData) return socket.emit('buyFail', '존재하지 않는 아이템입니다.');
             

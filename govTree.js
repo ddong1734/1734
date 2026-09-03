@@ -72,22 +72,24 @@
         // ── 🏛️ 북 : 최고 통치 및 의사결정 기관 ──────────────────
         rule:    { id: 'rule',    name: '최고 통치 및\n의사결정 기관', cost: 3000,  x: 0,     y: -1.75, parents: ['wg'] },
         // 🏔️ 마리조아 — 성지
-        mariejois: { id: 'mariejois', name: '마리조아',  cost: 5000,  x: -1.4,  y: -2.4,  parents: ['rule'] },
+        mariejois: { id: 'mariejois', name: '마리조아',  cost: 5000,  x: -1.4,  y: -2.4,  parents: ['rule'],
+                   desc: '아이템 판매 가격 10% 증가', effect: { sellPct: 0.10 } },
         // 🏰 판게아 성 계열 — 마리조아에서 왼쪽으로
-        pangaea: { id: 'pangaea', name: '판게아 성',      cost: 8000,  x: -2.0,  y: -3.65, parents: ['mariejois'] },
+        pangaea: { id: 'pangaea', name: '판게아 성',      cost: 8000,  x: -2.0,  y: -3.65, parents: ['mariejois'],
+                   desc: '인벤토리 한도 10 증가', effect: { invSlots: 10 } },
         emptyTh: { id: 'emptyTh', name: '허의 옥좌',      cost: 10000, x: -2.4,  y: -5.15, parents: ['pangaea'] },
         flowerR: { id: 'flowerR', name: '꽃의 방',        cost: 10000, x: -3.85, y: -3.6,  parents: ['pangaea'] },
         powerR:  { id: 'powerR',  name: '권력의 방',      cost: 10000, x: -1.65, y: -4.75, parents: ['pangaea'] },
 
         celest:  { id: 'celest',  name: '천룡인',        cost: 5000,  x: 2.6,   y: -2.4,  parents: ['rule'],
-                   desc: '아군 전체의 골드·경험치 획득량 5% 증가 (천상금·인간 사냥으로 받는 것에는 적용되지 않습니다)',
+                   desc: '골드·경험치 획득량 5% 증가 (천상금·인간 사냥으로 받는 것에는 적용되지 않습니다)',
                    effect: { gainPct: 0.05 } },
         // 💰 천상금 — 천룡인을 열면 나타난다
         heavenTax: { id: 'heavenTax', name: '천상금',     cost: 9000,  x: 1.75,  y: -2.85, parents: ['celest'],
-                   desc: '30초마다 아군 전원이 1,500 골드를 받는다.', effect: { taxGold: 1500 } },
+                   desc: '30초마다 1,500 골드를 받는다.', effect: { taxGold: 1500 } },
         // 🎯 인간 사냥 — 천룡인을 열면 나타난다
         hunt:    { id: 'hunt',    name: '인간 사냥',      cost: 7000,  x: 3.55,  y: -3.25, parents: ['celest'],
-                   desc: '30초마다 아군 전원이 경험치 50 을 받는다.', effect: { huntXp: 50 } },
+                   desc: '30초마다 경험치 50 을 받는다.', effect: { huntXp: 50 } },
 
         // ── 📜 계약 계보 : 최고 통치 기관에서 위로 뻗는다 ─────
         pactSky:  { id: 'pactSky',  name: '천해계약',     cost: 6000, x: 0.35, y: -3.0,  parents: ['rule'],
@@ -95,7 +97,7 @@
         seal:     { id: 'seal',     name: '신의 종인',     cost: 7000, x: 0.25,  y: -3.85, parents: ['pactSky'] },
         pactDeep: { id: 'pactDeep', name: '심해계약',     cost: 8000, x: 1.0,  y: -5.1,  parents: ['seal'],
                     desc: '신과의 계약' },
-        pactAbyss:{ id: 'pactAbyss',name: '심심해계약',   cost: 9000, x: 1.7,  y: -5.7,  parents: ['pactDeep'],
+        pactAbyss:{ id: 'pactAbyss',name: '심심해계약',   cost: 9000, x: 2.5,  y: -7.0,  parents: ['pactDeep'],
                     desc: '신과의 계약' },
 
         // 🛡️ 신의 기사단 — 심해계약 + 천룡인을 모두 열어야 한다
@@ -109,10 +111,12 @@
         // ✴️ 오망성(어비스) — 오로성과 신의 기사단을 모두 열어야 한다
         // ⚠️ 신의 기사단→오망성 선은 천룡인→오로성 선과 한 번 교차한다.
         //    여러 배치를 시도했지만 이 자리가 나머지가 가장 깨끗하다.
-        abyss5:  { id: 'abyss5',  name: '오망성\n(어비스)',  cost: 14000, x: 1.15, y: -4.05, parents: ['pactDeep'] },
+        abyss5:  { id: 'abyss5',  name: '어비스\n(오망성)',  cost: 14000, x: 1.15, y: -4.05, parents: ['pactDeep'],
+                   desc: '세계정부 근처에서 좌표를 골라 순간이동할 수 있다. (3초 경직)', effect: { abyssWarp: 1 } },
 
         // 🏛️ 레벨리 — 오로성과 마리조아
-        reverie: { id: 'reverie', name: '레벨리',        cost: 12000, x: -0.6,  y: -6.3,  parents: ['gorosei', 'mariejois'] },
+        reverie: { id: 'reverie', name: '레벨리',        cost: 12000, x: -0.6,  y: -6.3,  parents: ['gorosei', 'mariejois'],
+                   desc: '유물 탐지 시간 10초 감소', effect: { detectCut: 10000 } },
         // 👑 임 — 오로성과 레벨리
         imu:     { id: 'imu',     name: '임',            cost: 16000, x: -1.9,  y: -7.2,  parents: ['gorosei', 'reverie', 'flowerR', 'emptyTh'] },
 
@@ -196,17 +200,14 @@
         // 🏰 판게아 성 계열
         ['mariejois', 'pangaea'], ['pangaea', 'emptyTh'], ['pangaea', 'flowerR'], ['pangaea', 'powerR'],
         ['flowerR', 'imu'], ['emptyTh', 'imu'],
-        // ⚠️ 권력의 방 → 오로성 은 트리를 가로지르는 긴 선이라
-        //    심심해계약 옆을 스치고 마리조아-레벨리 선과도 겹친다.
-        //    해금 조건에는 그대로 있고, 설명 패널의 '필요한 노드' 가 알려 준다.
+        // 🏰 권력의 방 → 오로성 (트리를 가로지르는 긴 선 — 다른 선과는 겹쳐도 된다)
+        ['powerR', 'gorosei'],
         // ☄️ 우라노스
-        ['imu', 'uranus'], ['rule', 'celest'], ['celest', 'hunt'],
+        ['imu', 'uranus'], ['rule', 'celest'], ['celest', 'hunt'], ['celest', 'heavenTax'],
         // 📜 계약 계보
         ['rule', 'pactSky'], ['pactSky', 'seal'], ['seal', 'pactDeep'], ['pactDeep', 'pactAbyss'],
         // 🛡️⭐ 계약 + 천룡인 을 모두 열어야 한다
-        // ⚠️ 심해계약 → 신의 기사단 선은 심해계약→오망성→신의 기사단 으로
-        //    이미 이어져 있고, 그으면 오망성-오로성 선과 겹친다. 조건은 그대로다.
-        ['celest', 'knights'],
+        ['pactDeep', 'knights'], ['celest', 'knights'],
         ['pactAbyss', 'gorosei'], ['celest', 'gorosei'],
         ['pactDeep', 'abyss5'], ['abyss5', 'knights'], ['abyss5', 'gorosei'],
         ['gorosei', 'reverie'], ['mariejois', 'reverie'],
@@ -224,6 +225,20 @@
         // 🕵️ 남
         ['wg', 'intel'], ['intel', 'rokushiki'], ['intel', 'cp18'],
         ['rokushiki', 'cp9'], ['cp9', 'cp0'], ['cp0', 'cp18']
+    ];
+
+    /**
+     * ✴️ [어비스(오망성)] 순간이동 가능한 7개 좌표.
+     *    화면 위쪽 바구니부터 아래 지면까지 고루 퍼져 있다.
+     */
+    const ABYSS_SPOTS = [
+        { id: 'a1', name: '바구니',      x: 16000, y: -1445 },
+        { id: 'a2', name: '좌측 발판',   x: 12400, y: -45 },
+        { id: 'a3', name: '우측 발판',   x: 19600, y: -45 },
+        { id: 'a4', name: '중앙 고지',   x: 16000, y: 855 },
+        { id: 'a5', name: '좌측 지면',   x: 13000, y: 1955 },
+        { id: 'a6', name: '중앙 지면',   x: 16000, y: 1955 },
+        { id: 'a7', name: '우측 지면',   x: 19000, y: 1955 }
     ];
 
     /** 열려 있는 노드로 계산한 팀 보너스 */
@@ -249,7 +264,11 @@
             seeEnemies: 0,       // 🔍 적 플레이어 미니맵 표시
             gainPct: 0,          // 💠 골드·경험치 획득량 증가
             taxGold: 0,          // 💰 천상금 (30초마다)
-            huntXp: 0            // 🎯 인간 사냥 (30초마다)
+            huntXp: 0,           // 🎯 인간 사냥 (30초마다)
+            sellPct: 0,          // 🏔️ 아이템 판매가 증가
+            invSlots: 0,         // 🏰 인벤토리 한도 증가
+            detectCut: 0,        // 🏛️ 유물 탐지 시간 감소(ms)
+            abyssWarp: 0         // ✴️ 어비스(오망성) 좌표 이동
         };
         if (!unlocked) return b;
         for (const id in NODES) {
@@ -278,6 +297,10 @@
             b.gainPct += (e.gainPct || 0);
             b.taxGold += (e.taxGold || 0);
             b.huntXp += (e.huntXp || 0);
+            b.sellPct += (e.sellPct || 0);
+            b.invSlots += (e.invSlots || 0);
+            b.detectCut += (e.detectCut || 0);
+            b.abyssWarp += (e.abyssWarp || 0);
         }
         return b;
     }
@@ -306,5 +329,5 @@
         return (n.parents || []).filter(function (pid) { return !(unlocked && unlocked[pid]); });
     }
 
-    return { FACTION, decideGov, NODES, EDGES, bonusOf, canUnlock, missingParents };
+    return { FACTION, decideGov, NODES, EDGES, ABYSS_SPOTS, bonusOf, canUnlock, missingParents };
 }));
