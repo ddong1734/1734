@@ -213,6 +213,8 @@ function process(now, ctx) {
     processGateCasts(now, ctx);
     // 💰🎯 천상금 · 인간 사냥
     processTax(now, ctx);
+    // ✴️ 어비스(오망성)
+    processAbyssCasts(now, ctx);
     // ⚔️ 칠무해 · 세라핌
     [1, 2].forEach(function (team) { syncWarlord(team, bonusOf(team), now, io); });
     processWarlords(now, ctx);
@@ -572,3 +574,43 @@ function processTax(now, ctx) {
 
 module.exports.processTax = processTax;
 module.exports.TAX_INTERVAL = TAX_INTERVAL;
+
+// ============================================================================
+// ✴️ 어비스(오망성) — 3초 경직 후 고른 좌표로 순간이동
+//
+//   · 경직 중에는 이동 · 점프 · 스킬 · 평타가 모두 막힌다
+//   · 도중에 죽으면 취소된다
+// ============================================================================
+function processAbyssCasts(now, ctx) {
+    const io = ctx.io;
+    for (const id in State.abyssCasts) {
+        const a = State.abyssCasts[id];
+        const p = State.players[id];
+
+        // 죽으면 취소
+        if (!p || p.isDead) {
+            delete State.abyssCasts[id];
+            io.emit('abyssCastEnd', { id: id, done: false });
+            continue;
+        }
+        if (now < a.endAt) continue;
+
+        // ✨ 3초를 버텼다 — 고른 자리로 보낸다
+        delete State.abyssCasts[id];
+        p.x = a.tx;
+        p.y = a.ty;
+        p.vy = 0;
+        p.knockbackForce = 0;
+        io.emit('abyssCastEnd', { id: id, done: true, x: a.tx, y: a.ty });
+        io.emit('syncPlayerFull', p);
+    }
+}
+
+/** 🔒 경직 중인가 (이동·점프·스킬·평타 봉인) */
+function isAbyssLocked(pid) {
+    const a = State.abyssCasts[pid];
+    return !!(a && Date.now() < a.endAt);
+}
+
+module.exports.processAbyssCasts = processAbyssCasts;
+module.exports.isAbyssLocked = isAbyssLocked;

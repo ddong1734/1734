@@ -267,6 +267,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('playerMove', (data) => {
+        // ✴️ [어비스] 경직 중에는 움직일 수 없다
+        try { if (require('./govEffects.js').isAbyssLocked(socket.id)) return; } catch (e) {}
         let p = State.players[socket.id];
         if (!p || p.isDead) return;
         if (!data || !isNum(data.x) || !isNum(data.y)) return;
@@ -832,6 +834,34 @@ io.on('connection', (socket) => {
                 x: p ? p.x : 0, y: p ? p.y : 0
             });
         }
+    });
+
+    // ✴️ [어비스(오망성)] 좌표 순간이동 — 3초 경직 후 이동
+    socket.on('abyssWarp', (spotId) => {
+        const p = State.players[socket.id];
+        if (!p || p.isDead) return;
+        if (State.bases[p.team].govType !== 'wg') { socket.emit('buyFail', '세계정부가 아닙니다.'); return; }
+        const GT = require('../govTree.js');
+        const b = GT.bonusOf(State.govTree[p.team]);
+        if (!b || !b.abyssWarp) { socket.emit('buyFail', '어비스를 아직 열지 않았습니다.'); return; }
+        const base = State.bases[p.team];
+        if (Math.hypot(p.x - base.x, p.y - base.y) > 280) { socket.emit('buyFail', '세계정부에 더 가까이 가야 합니다.'); return; }
+
+        const spot = GT.ABYSS_SPOTS.find(s => s.id === spotId);
+        if (!spot) return;
+        if (State.abyssCasts[socket.id]) return;
+
+        const now = Date.now();
+        State.abyssCasts[socket.id] = {
+            id: socket.id, team: p.team, endAt: now + 3000,
+            tx: spot.x, ty: spot.y
+        };
+        // 🔮 시전자 자리와 목적지 양쪽에 마방진이 펼쳐진다
+        io.emit('abyssCastStart', {
+            id: socket.id, x: p.x, y: p.y,
+            tx: spot.x, ty: spot.y, durationMs: 3000
+        });
+        io.emit('syncPlayerFull', p);
     });
 
     socket.on('disconnect', () => {
