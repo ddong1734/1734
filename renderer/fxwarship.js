@@ -520,3 +520,175 @@ registerVisualFX('gate_break', (ctx, fx, alpha, state) => {
     ctx.globalAlpha = 1;
     ctx.restore();
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// ✴️ 어비스(오망성) — 마방진
+//
+//   🎨 참고 이미지의 특징을 뽑았다.
+//     · 청록빛 원형 진 위에 분홍/자홍으로 빛나는 오각별(펜타그램)
+//     · 바깥에 두 겹의 고리와 그 사이를 채운 룬 문자열
+//     · 각 변마다 안쪽을 향한 화살촉
+//     · 전체가 천천히 돌면서 맥동하고, 중심에서 빛기둥이 솟는다
+// ────────────────────────────────────────────────────────────────────────────
+const AB_CYAN = "rgba(90, 240, 235, ";
+const AB_PINK = "rgba(255, 105, 210, ";
+const AB_MAG = "rgba(210, 70, 255, ";
+const AB_WHITE = "rgba(255, 255, 255, ";
+
+/** 룬처럼 보이는 짧은 획들 */
+function abyssRunes(ctx, r, count, seed, alpha) {
+    ctx.save();
+    ctx.strokeStyle = AB_CYAN + (0.9 * alpha) + ")";
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = "round";
+    for (let k = 0; k < count; k++) {
+        const a = (k / count) * Math.PI * 2;
+        ctx.save();
+        ctx.rotate(a);
+        const h = 9 + ((k * 7 + seed) % 5) * 2.2;
+        const w = 5 + ((k * 11 + seed) % 3) * 2;
+        // 세로획 + 가로획 조합으로 문자처럼 보이게 한다
+        ctx.beginPath();
+        ctx.moveTo(r - h / 2, -w / 2); ctx.lineTo(r + h / 2, -w / 2);
+        ctx.moveTo(r, -w / 2); ctx.lineTo(r, w / 2);
+        if ((k + seed) % 3 === 0) { ctx.moveTo(r - h / 2, w / 2); ctx.lineTo(r + h / 2, w / 2); }
+        if ((k + seed) % 4 === 1) { ctx.moveTo(r - h / 2, -w / 2); ctx.lineTo(r - h / 2, w / 2); }
+        ctx.stroke();
+        ctx.restore();
+    }
+    ctx.restore();
+}
+
+/** 🔮 마방진 하나 (바닥에 눕힌 타원 원근) */
+export function drawAbyssCircle(ctx, cx, cy, R, t, alpha, mathNow) {
+    const spin = mathNow / 2600;
+    const pulse = 0.88 + Math.sin(mathNow / 190) * 0.12;
+    const grow = Math.min(1, t / 0.25);          // 처음 0.25 구간에 펼쳐진다
+    const rr = R * grow * pulse;
+    if (rr <= 1) return;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(1, 0.42);                          // 바닥에 눕힌 느낌
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = alpha;
+
+    // ── 진 안쪽을 채우는 빛 ────────────────────────────────
+    const g = ctx.createRadialGradient(0, 0, rr * 0.05, 0, 0, rr);
+    g.addColorStop(0, AB_WHITE + (0.35 * alpha) + ")");
+    g.addColorStop(0.45, AB_CYAN + (0.30 * alpha) + ")");
+    g.addColorStop(0.85, AB_MAG + (0.22 * alpha) + ")");
+    g.addColorStop(1, "rgba(20,40,90,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.fill();
+
+    ctx.rotate(spin);
+
+    // ── 바깥 두 겹 고리 + 룬 ───────────────────────────────
+    ctx.strokeStyle = AB_CYAN + (0.95 * alpha) + ")";
+    ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, rr * 0.86, 0, Math.PI * 2); ctx.stroke();
+    abyssRunes(ctx, rr * 0.93, 26, 3, alpha);
+
+    // 반대로 도는 안쪽 고리
+    ctx.save();
+    ctx.rotate(-spin * 2.1);
+    ctx.strokeStyle = AB_PINK + (0.85 * alpha) + ")";
+    ctx.lineWidth = 2.6;
+    ctx.beginPath(); ctx.arc(0, 0, rr * 0.72, 0, Math.PI * 2); ctx.stroke();
+    abyssRunes(ctx, rr * 0.79, 18, 7, alpha * 0.8);
+    ctx.restore();
+
+    // ── ⭐ 오각별 (핵심) ───────────────────────────────────
+    const P = [];
+    for (let k = 0; k < 5; k++) {
+        const a = -Math.PI / 2 + (k / 5) * Math.PI * 2;
+        P.push([Math.cos(a) * rr * 0.68, Math.sin(a) * rr * 0.68]);
+    }
+    // 별을 이루는 다섯 선 (0-2-4-1-3-0)
+    const order = [0, 2, 4, 1, 3];
+    ctx.beginPath();
+    ctx.moveTo(P[order[0]][0], P[order[0]][1]);
+    for (let k = 1; k < 5; k++) ctx.lineTo(P[order[k]][0], P[order[k]][1]);
+    ctx.closePath();
+    // 안쪽 면
+    ctx.fillStyle = AB_CYAN + (0.22 * alpha) + ")";
+    ctx.fill();
+    // 선 — 굵은 분홍 위에 흰 심
+    ctx.strokeStyle = AB_PINK + (0.95 * alpha) + ")";
+    ctx.lineWidth = 7; ctx.lineJoin = "round";
+    ctx.stroke();
+    ctx.strokeStyle = AB_WHITE + (0.9 * alpha) + ")";
+    ctx.lineWidth = 2.4;
+    ctx.stroke();
+
+    // 별을 감싸는 원
+    ctx.strokeStyle = AB_PINK + (0.8 * alpha) + ")";
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, rr * 0.68, 0, Math.PI * 2); ctx.stroke();
+
+    // ── 각 변 안쪽을 향한 화살촉 ───────────────────────────
+    for (let k = 0; k < 5; k++) {
+        const a = -Math.PI / 2 + (k / 5) * Math.PI * 2 + Math.PI / 5;
+        const bx = Math.cos(a) * rr * 0.5, by = Math.sin(a) * rr * 0.5;
+        ctx.save();
+        ctx.translate(bx, by); ctx.rotate(a + Math.PI);
+        ctx.strokeStyle = AB_PINK + (0.95 * alpha) + ")";
+        ctx.lineWidth = 4.5; ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(-rr * 0.14, 0); ctx.lineTo(rr * 0.12, 0);
+        ctx.moveTo(rr * 0.12, 0); ctx.lineTo(rr * 0.03, -rr * 0.07);
+        ctx.moveTo(rr * 0.12, 0); ctx.lineTo(rr * 0.03, rr * 0.07);
+        ctx.stroke();
+        ctx.restore();
+    }
+    ctx.restore();
+
+    // ── 중심에서 솟는 빛기둥 ───────────────────────────────
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = alpha * 0.8;
+    const h = R * 2.4 * grow;
+    const pg = ctx.createLinearGradient(cx, cy, cx, cy - h);
+    pg.addColorStop(0, AB_WHITE + "0.9)");
+    pg.addColorStop(0.35, AB_CYAN + "0.5)");
+    pg.addColorStop(1, "rgba(60,120,220,0)");
+    ctx.fillStyle = pg;
+    ctx.beginPath();
+    ctx.moveTo(cx - R * 0.3, cy);
+    ctx.quadraticCurveTo(cx - R * 0.08, cy - h * 0.6, cx, cy - h);
+    ctx.quadraticCurveTo(cx + R * 0.08, cy - h * 0.6, cx + R * 0.3, cy);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+}
+
+registerVisualFX('abyss_circle', (ctx, fx, alpha, state) => {
+    const t = 1 - alpha;
+    drawAbyssCircle(ctx, fx.x, fx.y + 45, fx.R || 170, t, alpha, state.mathNow);
+});
+
+registerVisualFX('abyss_warp', (ctx, fx, alpha, state) => {
+    const t = 1 - alpha;
+    const R = 300 * (1 - Math.pow(1 - Math.min(1, t / 0.35), 2.3));
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = alpha;
+    const g = ctx.createRadialGradient(fx.x, fx.y, 4, fx.x, fx.y, R);
+    g.addColorStop(0, "rgba(255,255,255,1)");
+    g.addColorStop(0.28, AB_CYAN + "0.9)");
+    g.addColorStop(0.62, AB_PINK + "0.55)");
+    g.addColorStop(1, "rgba(40,60,140,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(fx.x, fx.y, R, 0, Math.PI * 2); ctx.fill();
+    for (let k = 0; k < 14; k++) {
+        const a = (k / 14) * Math.PI * 2;
+        ctx.strokeStyle = AB_WHITE + (0.85 * alpha) + ")";
+        ctx.lineWidth = 5 * (1 - t) + 1;
+        ctx.beginPath();
+        ctx.moveTo(fx.x + Math.cos(a) * R * 0.25, fx.y + Math.sin(a) * R * 0.25);
+        ctx.lineTo(fx.x + Math.cos(a) * R * 1.1, fx.y + Math.sin(a) * R * 1.1);
+        ctx.stroke();
+    }
+    ctx.restore();
+});
