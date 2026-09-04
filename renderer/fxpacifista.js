@@ -294,19 +294,52 @@ registerVisualFX('pacifista_down', (ctx, fx, alpha, state) => {
 // 💣 대포 폭발
 registerVisualFX('cannon_blast', (ctx, fx, alpha, state) => {
     const t = 1 - alpha;
-    const R = (fx.radius || 220) * (1 - Math.pow(1 - Math.min(1, t / 0.35), 2.3));
+    const R = (fx.radius || 220) * (1 - Math.pow(1 - Math.min(1, t / 0.32), 2.3));
+    const tt = (state ? state.mathNow : 0) / 1000;
     ctx.save();
     ctx.globalCompositeOperation = "screen";
     ctx.globalAlpha = alpha;
+
+    // 💥 중심 화구
     const g = ctx.createRadialGradient(fx.x, fx.y, 3, fx.x, fx.y, R);
     g.addColorStop(0, "rgba(255,255,255,1)");
-    g.addColorStop(0.25, "rgba(255,214,120,0.95)");
-    g.addColorStop(0.6, "rgba(232,124,40,0.7)");
-    g.addColorStop(1, "rgba(120,50,10,0)");
+    g.addColorStop(0.18, "rgba(255,240,180,1)");
+    g.addColorStop(0.45, "rgba(255,180,70,0.9)");
+    g.addColorStop(0.75, "rgba(226,96,26,0.6)");
+    g.addColorStop(1, "rgba(110,40,8,0)");
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(fx.x, fx.y, R, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "rgba(255,236,180,0.9)";
-    ctx.lineWidth = 5 * (1 - t) + 1.5;
-    ctx.beginPath(); ctx.arc(fx.x, fx.y, R * 0.92, 0, Math.PI * 2); ctx.stroke();
+
+    // 이중 충격 고리
+    for (let k = 0; k < 2; k++) {
+        ctx.strokeStyle = "rgba(255,238,190," + (0.9 * alpha * (1 - k * 0.4)) + ")";
+        ctx.lineWidth = (7 - k * 3) * (1 - t) + 1.5;
+        ctx.beginPath(); ctx.arc(fx.x, fx.y, R * (0.92 - k * 0.22), 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // 사방으로 튀는 불티
+    for (let k = 0; k < 14; k++) {
+        const a = (k / 14) * Math.PI * 2 + tt * 0.4;
+        const d = R * (0.5 + (k % 4) * 0.16);
+        ctx.strokeStyle = "rgba(255,200,90," + (0.9 * alpha) + ")";
+        ctx.lineWidth = 5 * (1 - t) + 1;
+        ctx.beginPath();
+        ctx.moveTo(fx.x + Math.cos(a) * R * 0.28, fx.y + Math.sin(a) * R * 0.28);
+        ctx.lineTo(fx.x + Math.cos(a) * d, fx.y + Math.sin(a) * d);
+        ctx.stroke();
+    }
+
+    // 검은 연기
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = alpha * 0.5;
+    ctx.fillStyle = "#2e2a26";
+    for (let k = 0; k < 7; k++) {
+        const a = (k / 7) * Math.PI * 2 + 0.4;
+        ctx.beginPath();
+        ctx.arc(fx.x + Math.cos(a) * R * 0.5, fx.y + Math.sin(a) * R * 0.45 - t * 30,
+                R * 0.22 * (0.6 + t * 0.6), 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
     ctx.restore();
 });
