@@ -852,6 +852,12 @@ io.on('connection', (socket) => {
         if (State.abyssCasts[socket.id]) return;
 
         const now = Date.now();
+        // ⏱️ 쿨타임 150초 — 팀 공용이다 (한 명이 쓰면 팀 전체가 기다린다)
+        if (State.abyssCd[p.team] && now < State.abyssCd[p.team]) {
+            socket.emit('buyFail', '아직 쿨타임입니다.');
+            return;
+        }
+        State.abyssCd[p.team] = now + 150000;
         State.abyssCasts[socket.id] = {
             id: socket.id, team: p.team, endAt: now + 3000,
             tx: spot.x, ty: spot.y

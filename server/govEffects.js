@@ -236,7 +236,13 @@ function process(now, ctx) {
         [1, 2].forEach(function (team) {
             wl[team] = Math.max(0, (State.warlordRespawn[team] || 0) - now);
         });
-        io.emit('pacifCountdown', { spawn: cd, warlord: wl });
+        // 🚢✴️ 버스터 콜 · 어비스 남은 쿨타임도 함께 보낸다 (둘 다 팀 공용)
+        const bc = {}, ab = {};
+        [1, 2].forEach(function (team) {
+            bc[team] = Math.max(0, (State.busterCd[team] || 0) - now);
+            ab[team] = Math.max(0, (State.abyssCd[team] || 0) - now);
+        });
+        io.emit('pacifCountdown', { spawn: cd, warlord: wl, buster: bc, abyss: ab });
     }
 }
 
@@ -434,7 +440,8 @@ function processWarships(now, ctx) {
             w.lastCannon = now;
             io.emit('warshipFire', {
                 id: w.id, kind: 'cannon', team: w.team,
-                x: w.x, y: w.y - 30, tx: aimX, ty: aimY
+                x: w.x, y: w.y - 30, tx: aimX, ty: aimY,
+                blast: 150      // 💥 닿으면 이 반경으로 터진다
             });
             // 💥 대포알은 터지므로 착탄 지점 주변을 함께 친다
             if (baseIn && typeof ctx.applyBaseDamage === 'function') ctx.applyBaseDamage(w.team, 40);
