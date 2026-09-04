@@ -102,6 +102,10 @@
            전장 인원 박스와 골드 박스 사이, 화면 위쪽에 가로로 긴 직사각형으로 띄운다.
            (골드 UI 아래를 가리던 기존 위치에서 옮겼다) */
         #goldenToast { position: fixed; top: 12px; left: 36%; width: 47%; background: rgba(46, 204, 113, 0.95); border: 3px solid #27ae60; color: #fff; font-weight: bold; font-size: 18px; padding: 10px 16px; border-radius: 10px; z-index: 1000; display: none; pointer-events: none; box-shadow: 0 5px 18px rgba(0,0,0,0.5); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* ⏱️ 세계정부 버튼의 남은 쿨타임 표시 */
+        .gov-cd { position: absolute; inset: 0; border-radius: 50%;
+                  background: rgba(0,0,0,0.68); color: #fff; font-size: 21px; font-weight: bold;
+                  display: none; align-items: center; justify-content: center; pointer-events: none; }
         .action-open-btn { position: absolute; bottom: 220px; left: 80px; width: 80px; height: 80px; background: rgba(241, 196, 15, 0.9); border: 4px solid #f39c12; border-radius: 50%; font-size: 22px; font-weight: bold; color: #000; text-shadow: 0 1px 2px rgba(255,255,255,0.5); display: none; align-items: center; justify-content: center; text-align: center; z-index: 15; pointer-events: auto; touch-action: manipulation; cursor: pointer; }
         .game-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(26, 30, 41, 0.95); border: 4px solid #3498db; border-radius: 15px; width: 750px; max-width: 95vw; height: 80vh; max-height: 600px; z-index: 100; display: none; flex-direction: row; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         #chestModal { border-color: #8e44ad; width: 600px; } 
@@ -471,11 +475,11 @@
         <div id="unifiedActionBtn" class="action-open-btn">열기</div>
         <!-- 🚢 버스터 콜 — 세계정부 근처에서 '열기' 버튼 위에 나타난다 -->
         <div id="abyssBtn" class="action-open-btn"
-             style="bottom:396px; left:80px; background:rgba(20,60,80,0.95); border-color:#2fd8d0;
-                    color:#a9f0ea; font-size:15px; line-height:1.15; text-shadow:0 1px 3px rgba(0,0,0,0.8);">어비스</div>
+             style="bottom:220px; left:258px; width:70px; height:70px; background:rgba(20,60,80,0.95); border-color:#2fd8d0;
+                    color:#a9f0ea; font-size:14px; line-height:1.15; text-shadow:0 1px 3px rgba(0,0,0,0.8);">어비스<span class="gov-cd"></span></div>
         <div id="busterCallBtn" class="action-open-btn"
-             style="bottom:312px; left:80px; background:rgba(52,73,120,0.95); border-color:#8fa9ff;
-                    color:#e8eeff; font-size:15px; line-height:1.15; text-shadow:0 1px 3px rgba(0,0,0,0.8);">버스터<br>콜</div>
+             style="bottom:220px; left:172px; width:70px; height:70px; background:rgba(52,73,120,0.95); border-color:#8fa9ff;
+                    color:#e8eeff; font-size:14px; line-height:1.15; text-shadow:0 1px 3px rgba(0,0,0,0.8);">버스터<br>콜<span class="gov-cd"></span></div>
         <div class="controls-left"><div class="joystick-container" id="joystickZone"><div class="joystick-knob" id="knob"></div></div></div>
         <div class="controls-right-action">
             <div class="btn action-jump" id="btn-jump">점프</div>
@@ -506,51 +510,51 @@
            - 3번 [아광속 발차기] : 2초 응축 후 5초 활공 (적중 시 500 대폭발)
          · ⬛ 신규 신화 아이템 [■] (어둠어둠열매 + 번쩍번쩍열매) -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="data.js?v=100000092"></script>
-    <script src="characters.js?v=100000092"></script>
-    <script src="skills.js?v=100000092"></script>
-    <script src="physics.js?v=100000092"></script>
-    <script type="module" src="renderer/renderEngine.js?v=100000092"></script>
+    <script src="data.js?v=100000095"></script>
+    <script src="characters.js?v=100000095"></script>
+    <script src="skills.js?v=100000095"></script>
+    <script src="physics.js?v=100000095"></script>
+    <script type="module" src="renderer/renderEngine.js?v=100000095"></script>
     <!-- 🎒 UI 모듈 — 반드시 아래 순서대로 로드해야 한다
          uiItems  : 아이템 DB · 상점 · 보관함 · 대장간
          uiNpc    : NPC 대화창 · 퀘스트 배너 · 보상 표시
          uiHud    : 알림 · 쿨타임 오버레이 · 열매 배지 · 통합버튼 · 핑
          uiSkill  : ⚡ 카시모 · ⬛ 다부라 스킬 버튼 상태 -->
-    <script src="ui/uiItems.js?v=100000092"></script>
-    <script src="ui/uiNpc.js?v=100000092"></script>
-    <script src="ui/uiHud.js?v=100000092"></script>
-    <script src="ui/uiSkillButtons.js?v=100000092"></script>
-    <script src="ui/uiCharSelect.js?v=100000092"></script>
-    <script src="ui/uiBlackMarket.js?v=100000092"></script>
-    <script src="ui/uiMiniMap.js?v=100000092"></script>
-    <script src="govTree.js?v=100000092"></script>
-    <script src="ui/uiAbyss.js?v=100000092"></script>
-    <script src="ui/uiGovTree.js?v=100000092"></script>
-    <script src="core/gameState.js?v=100000092"></script>
+    <script src="ui/uiItems.js?v=100000095"></script>
+    <script src="ui/uiNpc.js?v=100000095"></script>
+    <script src="ui/uiHud.js?v=100000095"></script>
+    <script src="ui/uiSkillButtons.js?v=100000095"></script>
+    <script src="ui/uiCharSelect.js?v=100000095"></script>
+    <script src="ui/uiBlackMarket.js?v=100000095"></script>
+    <script src="ui/uiMiniMap.js?v=100000095"></script>
+    <script src="govTree.js?v=100000095"></script>
+    <script src="ui/uiAbyss.js?v=100000095"></script>
+    <script src="ui/uiGovTree.js?v=100000095"></script>
+    <script src="core/gameState.js?v=100000095"></script>
 
     <!-- 🧩 네트워크 모듈 — netUtils 가 반드시 가장 먼저 로드되어야 한다.
          이후 net*.js 들이 registerNetModule 로 자신을 등록하고,
          마지막에 network.js 가 initNetwork 시점에 전부 실행한다. -->
-    <script src="core/netUtils.js?v=100000092"></script>
-    <script src="core/netLobby.js?v=100000092"></script>
-    <script src="core/netPlayer.js?v=100000092"></script>
-    <script src="core/netWorld.js?v=100000092"></script>
-    <script src="core/netBoss.js?v=100000092"></script>
-    <script src="core/netKashimo.js?v=100000092"></script>
-    <script src="core/netDabura.js?v=100000092"></script>
-    <script src="core/netNpc.js?v=100000092"></script>
-    <script src="core/netDomain.js?v=100000092"></script>
-    <script src="core/netSukuna.js?v=100000092"></script>
-    <script src="core/netDaido.js?v=100000092"></script>
-    <script src="core/netKurusu.js?v=100000092"></script>
-    <script src="core/netMarco.js?v=100000092"></script>
-    <script src="core/netKid.js?v=100000092"></script>
-    <script src="core/netKuzanP.js?v=100000092"></script>
-    <script src="core/netPing.js?v=100000092"></script>
-    <script src="core/network.js?v=100000092"></script>
+    <script src="core/netUtils.js?v=100000095"></script>
+    <script src="core/netLobby.js?v=100000095"></script>
+    <script src="core/netPlayer.js?v=100000095"></script>
+    <script src="core/netWorld.js?v=100000095"></script>
+    <script src="core/netBoss.js?v=100000095"></script>
+    <script src="core/netKashimo.js?v=100000095"></script>
+    <script src="core/netDabura.js?v=100000095"></script>
+    <script src="core/netNpc.js?v=100000095"></script>
+    <script src="core/netDomain.js?v=100000095"></script>
+    <script src="core/netSukuna.js?v=100000095"></script>
+    <script src="core/netDaido.js?v=100000095"></script>
+    <script src="core/netKurusu.js?v=100000095"></script>
+    <script src="core/netMarco.js?v=100000095"></script>
+    <script src="core/netKid.js?v=100000095"></script>
+    <script src="core/netKuzanP.js?v=100000095"></script>
+    <script src="core/netPing.js?v=100000095"></script>
+    <script src="core/network.js?v=100000095"></script>
 
-    <script src="core/input.js?v=100000092"></script>
-    <script src="core/main.js?v=100000092"></script>
+    <script src="core/input.js?v=100000095"></script>
+    <script src="core/main.js?v=100000095"></script>
 
     <!-- ★ 2-C 수정: 게임을 켤 때마다 1.5초 뒤 화면을 멈추던 디버그 alert 블록을 제거하고
          콘솔 출력으로 대체했습니다. (alert 은 메인 스레드를 완전히 정지시킴) -->
