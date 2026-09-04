@@ -134,15 +134,22 @@
             mobs.forEach(m => dot(m.x, m.y, m.r, m.c, "rgba(0,0,0,0.55)", 0.7));
         }
 
-        // ── 🟡 CP1-8 : 아군 군함 · 파시피스타 ──────────────────
+        // ── 🟡 CP1-8 : 군함 · 파시피스타 (아군 + 적군 모두) ────
+        //    아군은 노랑·하늘, 적군은 붉은 계열로 구분한다
         if (intel.seeUnits > 0) {
             (window.pacifistas || []).forEach(u => {
-                if (!u || u.hp <= 0 || u.team !== myTeam) return;
-                dot(u.x, u.y, u.isMk3 ? 2.8 : 2.4, u.isMk3 ? "#ff9f6e" : "#ffd88f", "rgba(0,0,0,0.6)", 0.8);
+                if (!u || u.hp <= 0) return;
+                const ally = (u.team === myTeam);
+                dot(u.x, u.y, u.isMk3 ? 2.8 : 2.4,
+                    ally ? (u.isMk3 ? "#ff9f6e" : "#ffd88f") : (u.isMk3 ? "#ff5a5a" : "#ff8f6e"),
+                    ally ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.8)", 0.8);
             });
             (window.warships || []).forEach(w => {
-                if (!w || w.hp <= 0 || w.team !== myTeam) return;
-                dot(w.x, w.y, 3, "#9ecbff", "rgba(0,0,0,0.6)", 0.8);
+                if (!w || w.hp <= 0) return;
+                const ally = (w.team === myTeam);
+                dot(w.x, w.y, 3,
+                    ally ? "#9ecbff" : "#ff7a7a",
+                    ally ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.8)", 0.8);
             });
             const wls = window.warlords || {};
             for (const k in wls) {
