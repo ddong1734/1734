@@ -250,6 +250,7 @@ function updateFallers(ctx, now, list, opts) {
 
             // ⚔️ 퇴마의 검 : 몬스터 전용 30% 추가 피해
             let fMobDmg = (typeof ctx.toemaDmgById === 'function') ? ctx.toemaDmgById(f.ownerId, f.damage) : f.damage;
+            fMobDmg = SB.absorbShield(t.obj, fMobDmg);
             t.obj.hp -= fMobDmg;
             emitDamageText(t.obj.x, t.obj.y, fMobDmg);
             if (t.kind === 'hinbeom' && typeof ctx.recordHinbeomDamage === 'function') ctx.recordHinbeomDamage(f.ownerId, fMobDmg);
@@ -473,7 +474,9 @@ module.exports = {
                     }
 
                     if (t.kind === 'player') {
-                        t.obj.hp -= p.damage;
+                        // 🫧 버블 보호막이 남아 있으면 보호막이 먼저 받는다
+                        const _dmg = SB.absorbShield(t.obj, p.damage);
+                        t.obj.hp -= _dmg;
                         emitDamageText(t.obj.x, t.obj.y, p.damage);
                         applyProjectileEffects(ctx, p, t);
                         if (t.obj.hp <= 0) checkPlayerDeath(t.obj, p.ownerId);
@@ -481,6 +484,7 @@ module.exports = {
                     } else {
                         // ⚔️ 퇴마의 검 : 몬스터 전용 30% 추가 피해
                         let pMobDmg = (typeof ctx.toemaDmgById === 'function') ? ctx.toemaDmgById(p.ownerId, p.damage) : p.damage;
+                        pMobDmg = SB.absorbShield(t.obj, pMobDmg);
                         t.obj.hp -= pMobDmg;
                         emitDamageText(t.obj.x, t.obj.y, pMobDmg);
                         if (t.kind === 'hinbeom' && typeof ctx.recordHinbeomDamage === 'function') ctx.recordHinbeomDamage(p.ownerId, pMobDmg);
@@ -628,6 +632,7 @@ module.exports = {
                     if (!canHit) continue;
                     sw.hitIds.push(key);
                     let actual = (sw.damage || 30) * (1 - (obj.defense || 0));
+                    actual = SB.absorbShield(obj, actual);
                     obj.hp -= actual;
                     emitDamageText(obj.x, obj.y, actual);
                     if (sw.freeze) {
@@ -648,6 +653,7 @@ module.exports = {
                 // ⚔️ 퇴마의 검 : 몬스터 전용 30% 추가 피해
                 //    (보스가 쓰는 충격파는 ownerId 가 플레이어가 아니므로 그대로 통과된다)
                 let swMobDmg = (typeof ctx.toemaDmgById === 'function') ? ctx.toemaDmgById(sw.ownerId, sw.damage) : sw.damage;
+                swMobDmg = SB.absorbShield(obj, swMobDmg);
                 obj.hp -= swMobDmg;
                 emitDamageText(obj.x, obj.y, swMobDmg);
                 if (sw.freeze) {
