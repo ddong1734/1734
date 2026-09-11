@@ -144,6 +144,7 @@ function projectileTargets(ctx, p, eR) {
     if (burgessAlive() && near(State.burgess, State.burgess.radius)) list.push({ obj: State.burgess, kind: 'burgess', id: 'burgess', key: 'burgess' });
     State.hinbeomMinions.forEach(mn => { if (mn.hp > 0 && near(mn, mn.radius)) list.push({ obj: mn, kind: 'minion', id: mn.id, key: 'minion_' + mn.id }); });
     State.okras.forEach(ok => { if (ok.hp > 0 && near(ok, ok.radius)) list.push({ obj: ok, kind: 'okra', id: ok.id, key: 'okra_' + ok.id }); });
+    // ⚔️ 어비스 동반 유닛은 체력이 무한이라 탄환에 맞지 않는다
     // ⚔️🚢 칠무해 · 세라핌 · 군함도 탄환에 맞는다
     for (const k in (State.warlords || {})) {
         const wl = State.warlords[k];
