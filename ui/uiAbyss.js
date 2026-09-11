@@ -13,10 +13,24 @@
     const Y0 = -2600, Y1 = 2200;
 
     let cv = null, ctx = null, hits = [], picked = null;
+    let escort = null;          // ⚔️ 동반 출격 : null | 'knights' | 'gorosei'
+    let escHits = [];
 
     function spots() {
         return (window.GovTree && window.GovTree.ABYSS_SPOTS) ? window.GovTree.ABYSS_SPOTS : [];
     }
+    /** ⚔️ 이 팀이 연 동반 유닛 목록 */
+    function escortList() {
+        const out = [];
+        try {
+            const tm = window.myPlayer && window.myPlayer.team;
+            const tree = (window.govState && window.govState.tree && window.govState.tree[tm]) || {};
+            if (tree.knights) out.push({ id: 'knights', name: '신의 기사단', color: '#ff8f88' });
+            if (tree.gorosei) out.push({ id: 'gorosei', name: '오로성', color: '#ffd05a' });
+        } catch (e) { }
+        return out;
+    }
+
     const mx = (x) => ((Math.max(X0, Math.min(X1, x)) - X0) / (X1 - X0)) * cv.width;
     const my = (y) => ((Math.max(Y0, Math.min(Y1, y)) - Y0) / (Y1 - Y0)) * cv.height;
 
@@ -104,6 +118,35 @@
             ctx.fillText(s.name, px, py + 34);
         });
 
+        // ── ⚔️ 동반 출격 칸 (화면 아래) ────────────────────
+        escHits = [];
+        const list = escortList();
+        if (list.length) {
+            const bw = 168, bh = 44, gap = 14;
+            const total = list.length * bw + (list.length - 1) * gap;
+            let bx = (W - total) / 2, by = H - bh - 10;
+
+            ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
+            ctx.fillStyle = "rgba(150,180,200,0.9)";
+            ctx.fillText("함께 출격 (하나만 고를 수 있습니다)", W / 2, by - 9);
+
+            list.forEach(function (e) {
+                const on = (escort === e.id);
+                escHits.push({ id: e.id, x: bx, y: by, w: bw, h: bh });
+                ctx.fillStyle = on ? "rgba(60,120,150,0.95)" : "rgba(22,32,52,0.9)";
+                ctx.beginPath();
+                ctx.roundRect ? ctx.roundRect(bx, by, bw, bh, 9) : ctx.rect(bx, by, bw, bh);
+                ctx.fill();
+                ctx.strokeStyle = on ? e.color : "rgba(120,150,175,0.6)";
+                ctx.lineWidth = on ? 3.5 : 2;
+                ctx.stroke();
+                ctx.fillStyle = on ? "#ffffff" : e.color;
+                ctx.font = "bold 15px sans-serif";
+                ctx.fillText((on ? "✔ " : "") + e.name, bx + bw / 2, by + bh / 2 + 5);
+                bx += bw + gap;
+            });
+        }
+
         // 내 위치
         const me = window.myPlayer;
         if (me && !me.isDead) {
@@ -118,6 +161,15 @@
         const r = cv.getBoundingClientRect();
         const sx = (e.clientX - r.left) * (cv.width / r.width);
         const sy = (e.clientY - r.top) * (cv.height / r.height);
+        // ⚔️ 동반 칸을 먼저 본다 (누르면 켜고 끈다, 서로 배타적)
+        for (let i = 0; i < escHits.length; i++) {
+            const h = escHits[i];
+            if (sx < h.x || sx > h.x + h.w || sy < h.y || sy > h.y + h.h) continue;
+            escort = (escort === h.id) ? null : h.id;
+            render();
+            return;
+        }
+
         for (let i = 0; i < hits.length; i++) {
             const h = hits[i];
             if (Math.hypot(sx - h.x, sy - h.y) > h.r) continue;
@@ -126,7 +178,10 @@
             // 확인 메시지
             const el = document.getElementById('abyssConfirm');
             const nm = document.getElementById('abyssSpotName');
-            if (nm) nm.textContent = h.name;
+            if (nm) {
+                const list2 = escortList().filter(function (e) { return e.id === escort; });
+                nm.textContent = h.name + (list2.length ? '  +  ' + list2[0].name : '');
+            }
             if (el) el.style.display = 'flex';
             return;
         }
@@ -135,7 +190,7 @@
     window.openAbyss = function () {
         const m = document.getElementById('abyssModal');
         if (!m) return;
-        picked = null;
+        picked = null; escort = null;
         m.style.display = 'flex';
         const c = document.getElementById('abyssCanvas');
         if (c && !c._bound) { c.addEventListener('pointerdown', onTap); c._bound = true; }
@@ -155,7 +210,7 @@
         picked = null;
     };
     window.abyssConfirmYes = function () {
-        if (picked && window.socket) window.socket.emit('abyssWarp', picked.id);
+        if (picked && window.socket) window.socket.emit('abyssWarp', picked.id, escort);
         window.closeAbyss();
     };
     window.abyssConfirmNo = function () {
