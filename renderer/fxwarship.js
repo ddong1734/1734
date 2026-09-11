@@ -125,7 +125,7 @@ export function drawWarlord(ctx, w, mathNow) {
 
     ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center";
     ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.lineWidth = 4; ctx.lineJoin = "round";
-    const nm = ser ? "세라핌" : "칠무해";
+    const nm = w.escortName || (ser ? "세라핌" : "칠무해");
     ctx.strokeText(nm, cx, by - 7);
     ctx.fillStyle = ser ? "#ffe9a8" : "#ffb8b0";
     ctx.fillText(nm, cx, by - 7);
@@ -643,6 +643,39 @@ export function drawAbyssCircle(ctx, cx, cy, R, t, alpha, mathNow) {
         ctx.stroke();
         ctx.restore();
     }
+    // ── ✨ 바깥으로 퍼지는 충격 고리 3겹 ──────────────────
+    for (let k = 0; k < 3; k++) {
+        const ph = ((mathNow / 900) + k / 3) % 1;
+        ctx.strokeStyle = AB_CYAN + (0.75 * alpha * (1 - ph)) + ")";
+        ctx.lineWidth = 4 * (1 - ph) + 1;
+        ctx.beginPath(); ctx.arc(0, 0, rr * (0.9 + ph * 0.5), 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // ── 🔯 별 꼭짓점마다 빛나는 결절 ──────────────────────
+    for (let k = 0; k < 5; k++) {
+        const pb = 0.7 + Math.sin(mathNow / 150 + k * 1.3) * 0.3;
+        const ng = ctx.createRadialGradient(P[k][0], P[k][1], 1, P[k][0], P[k][1], rr * 0.14 * pb);
+        ng.addColorStop(0, AB_WHITE + alpha + ")");
+        ng.addColorStop(0.45, AB_PINK + (0.9 * alpha) + ")");
+        ng.addColorStop(1, "rgba(180,40,200,0)");
+        ctx.fillStyle = ng;
+        ctx.beginPath(); ctx.arc(P[k][0], P[k][1], rr * 0.14 * pb, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+
+    // ── ⚡ 진 안에서 위로 솟는 빛 입자 ────────────────────
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = alpha * 0.9;
+    for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2 + spin * 2;
+        const f = ((mathNow / 800) + k / 16) % 1;
+        const d = R * (0.25 + (k % 4) * 0.18);
+        const px = cx + Math.cos(a) * d;
+        const py = cy + Math.sin(a) * d * 0.42 - f * R * 1.6;
+        ctx.fillStyle = (k % 3 === 0 ? AB_PINK : AB_CYAN) + (0.9 * (1 - f)) + ")";
+        ctx.beginPath(); ctx.arc(px, py, 4.5 * (1 - f * 0.6), 0, Math.PI * 2); ctx.fill();
+    }
     ctx.restore();
 
     // ── 중심에서 솟는 빛기둥 ───────────────────────────────
@@ -692,3 +725,51 @@ registerVisualFX('abyss_warp', (ctx, fx, alpha, state) => {
     }
     ctx.restore();
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// 🟣 동반 유닛의 보라 필드
+//   · 이 안에 들어온 것은 무엇이든 공격받는다
+//   · 유닛도 이 밖으로는 나가지 않는다
+// ────────────────────────────────────────────────────────────────────────────
+export function drawEscortField(ctx, cx, cy, R, mathNow) {
+    const pulse = 0.85 + Math.sin(mathNow / 380) * 0.15;
+    const spin = mathNow / 3200;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+
+    // 바닥에 깔린 보라 원
+    ctx.globalAlpha = 0.34 * pulse;
+    const g = ctx.createRadialGradient(cx, cy, R * 0.08, cx, cy, R);
+    g.addColorStop(0, "rgba(220,160,255,0.55)");
+    g.addColorStop(0.55, "rgba(150,70,230,0.38)");
+    g.addColorStop(1, "rgba(70,20,130,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(cx, cy, R, R * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+
+    // 테두리 두 겹
+    ctx.globalAlpha = 0.9 * pulse;
+    ctx.strokeStyle = "rgba(205,135,255,0.95)";
+    ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.ellipse(cx, cy, R, R * 0.42, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = "rgba(160,90,240,0.7)";
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([22, 14]);
+    ctx.lineDashOffset = -mathNow / 28;
+    ctx.beginPath(); ctx.ellipse(cx, cy, R * 0.88, R * 0.37, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 안쪽으로 모이는 보라 기운
+    ctx.globalAlpha = 0.55;
+    for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2 + spin;
+        const f = ((mathNow / 1400) + k / 12) % 1;
+        const d = R * (1 - f * 0.7);
+        ctx.fillStyle = "rgba(225,175,255," + (0.8 * (1 - f)) + ")";
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.42 - f * 40, 4 * (1 - f * 0.5), 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+}

@@ -10,7 +10,7 @@
 import { RenderUtils } from './renderUtils.js';
 import { drawKidStack, drawGolemBody } from './fxkid.js';
 import { drawPacifista } from './fxpacifista.js';
-import { drawWarlord, drawWarship } from './fxwarship.js';
+import { drawWarlord, drawWarship, drawEscortField } from './fxwarship.js';
 import { drawHpTicks, drawKashimoCharge, drawAmberBody, drawDaburaLightBody } from './renderEntityParts.js';
 import { drawNpc } from './renderNpc.js';
 import { drawPortal, drawPortalCountdown, drawDarkPortalCountdown } from './renderPortal.js';
@@ -42,6 +42,27 @@ export function drawMobs(ctx, state, z) {
             if (!RenderUtils.isVisible(state.camX, state.camY, state.viewW, state.viewH, w.x, w.y, 180, 260)) continue;
             drawWarship(ctx, w, state.mathNow);
         }
+        // ⚔️ 어비스 동반 유닛 (신의 기사단 3명 · 오로성 5명) + 🟣 보라 필드
+        const escs = (typeof window !== 'undefined' && window.escorts) ? window.escorts : {};
+        for (const k in escs) {
+            const grp = escs[k];
+            if (!grp || !grp.units) continue;
+
+            // 🟣 필드 먼저 (유닛 뒤에 깔린다)
+            if (RenderUtils.isVisible(state.camX, state.camY, state.viewW, state.viewH, grp.fx, grp.fy, grp.r + 80, grp.r + 80)) {
+                drawEscortField(ctx, grp.fx, grp.fy, grp.r, state.mathNow);
+            }
+            grp.units.forEach(function (e) {
+                if (!RenderUtils.isVisible(state.camX, state.camY, state.viewW, state.viewH, e.x, e.y, 120, 180)) return;
+                drawWarlord(ctx, {
+                    x: e.x, y: e.y, radius: e.radius, team: e.team,
+                    kind: (e.kind === 'gorosei') ? 'seraph' : 'warlord',
+                    hp: 1, maxHp: 1, infinite: true,
+                    escortName: (e.kind === 'gorosei') ? '오로성' : '신의 기사단'
+                }, state.mathNow);
+            });
+        }
+
         // ⚔️ 칠무해 · 세라핌
         const wls = (typeof window !== 'undefined' && window.warlords) ? window.warlords : {};
         for (const k in wls) {
