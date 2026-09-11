@@ -22,6 +22,8 @@ window.registerNetModule('world', function (socket, U) {
         if (!d) return;
         window.pacifCountdown = d.spawn || {};
         window.warlordCountdown = d.warlord || {};
+        window.busterCooldown = d.buster || {};
+        window.abyssCooldown = d.abyss || {};
     });
 
     // ⚔️ 칠무해 · 세라핌
@@ -50,10 +52,22 @@ window.registerNetModule('world', function (socket, U) {
         const ms = (d.kind === 'cannon') ? 900 : 620;
         const lf = Math.max(1, Math.round(ms / (1000 / 60)));
         window.visualFX.push({
-            type: 'warship_shot', kind: d.kind,
+            type: 'warship_shot', kind: d.kind, blast: d.blast || 0,
             x: d.x, y: d.y, tx: d.tx, ty: d.ty,
             durationMs: ms, life: lf, maxLife: lf
         });
+        // 💥 대포알은 닿으면 터진다 — 도착 시각에 맞춰 폭발을 띄운다
+        if (d.kind === 'cannon' && d.blast > 0) {
+            const L = Math.hypot(d.tx - d.x, d.ty - d.y);
+            const flyMs = Math.min(ms, (L / 15) * (1000 / 60));
+            setTimeout(function () {
+                if (!window.visualFX) return;
+                window.visualFX.push({
+                    type: 'cannon_blast', x: d.tx, y: d.ty, radius: d.blast,
+                    durationMs: 560, life: 34, maxLife: 34
+                });
+            }, flyMs);
+        }
     });
     socket.on('warshipDown', (d) => {
         if (!d) return;
@@ -136,6 +150,21 @@ window.registerNetModule('world', function (socket, U) {
             : ('📚 경험치 ' + d.amount + ' 강탈!'));
     });
 
+    // ⚔️ [어비스 동반] 신의 기사단 · 오로성
+    socket.on('syncEscorts', (m) => { window.escorts = m || {}; });
+    socket.on('escortStrike', (d) => {
+        if (!d) return;
+        window.visualFX.push({
+            type: 'warlord_strike', x: d.x, y: d.y, dir: d.dir,
+            kind: (d.kind === 'gorosei') ? 'seraph' : 'warlord',
+            durationMs: 320, life: 19, maxLife: 19
+        });
+    });
+    socket.on('escortDown', (d) => {
+        if (!d) return;
+        window.visualFX.push({ type: 'warlord_down', x: d.x, y: d.y, durationMs: 700, life: 42, maxLife: 42 });
+    });
+
     // ✴️ [어비스] 마방진 — 시전자 자리와 목적지 양쪽에 펼쳐진다
     socket.on('abyssCastStart', (d) => {
         if (!d) return;
@@ -150,12 +179,20 @@ window.registerNetModule('world', function (socket, U) {
             type: 'abyss_circle', ownerId: d.id + '_t', x: d.tx, y: d.ty, R: 170,
             durationMs: d.durationMs || 3000, life: life, maxLife: life
         });
+        // ⚔️ 동반 출격이면 목적지에 마방진이 하나 더 (360px 떨어져 안 겹친다)
+        if (d.escort) {
+            window.visualFX.push({
+                type: 'abyss_circle', ownerId: d.id + '_e', x: d.ex, y: d.ey, R: 170,
+                durationMs: d.durationMs || 3000, life: life, maxLife: life
+            });
+        }
     });
     socket.on('abyssCastEnd', (d) => {
         if (!d) return;
         if (window.abyssCasts) delete window.abyssCasts[d.id];
         U.clearFXByType('abyss_circle', d.id);
         U.clearFXByType('abyss_circle', d.id + '_t');
+        U.clearFXByType('abyss_circle', d.id + '_e');
         if (d.done) {
             if (d.id === window.myId && window.myPlayer) {
                 window.myPlayer.x = d.x; window.myPlayer.y = d.y;

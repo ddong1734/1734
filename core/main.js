@@ -489,10 +489,21 @@ setInterval(() => {
                     }
                 }
                 abEl.style.display = show ? 'flex' : 'none';
+                if (show) {
+                    // ⏱️ 남은 쿨타임 (150초)
+                    // ⏱️ 팀 공용이라 서버가 남은 시간을 알려 준다
+                    const cd = abEl.querySelector('.gov-cd');
+                    const left = (window.abyssCooldown && window.abyssCooldown[pObj.team]) || 0;
+                    if (cd) {
+                        if (left > 0) { cd.style.display = 'flex'; cd.textContent = Math.ceil(left / 1000); }
+                        else cd.style.display = 'none';
+                    }
+                }
                 if (show && !abEl._bound) {
                     abEl._bound = true;
                     abEl.addEventListener('pointerdown', function (e) {
                         e.preventDefault(); e.stopPropagation();
+                        if (((window.abyssCooldown || {})[window.myPlayer.team] || 0) > 0) return;
                         if (typeof window.openAbyss === 'function') window.openAbyss();
                     });
                 }
@@ -517,6 +528,21 @@ setInterval(() => {
                     }
                 }
                 bcEl.style.display = show ? 'flex' : 'none';
+                if (show) {
+                    // ⏱️ 남은 쿨타임 (9분) — 팀 공용이라 서버가 알려 준다
+                    const cd = bcEl.querySelector('.gov-cd');
+                    const left = (window.busterCooldown && window.busterCooldown[pObj.team]) || 0;
+                    if (cd) {
+                        if (left > 0) {
+                            cd.style.display = 'flex';
+                            const mm = Math.floor(left / 60000);
+                            cd.style.fontSize = (mm > 0) ? '15px' : '21px';
+                            cd.textContent = (mm > 0)
+                                ? (mm + ':' + String(Math.floor((left % 60000) / 1000)).padStart(2, '0'))
+                                : Math.ceil(left / 1000);
+                        } else cd.style.display = 'none';
+                    }
+                }
                 if (show && !bcEl._bound) {
                     bcEl._bound = true;
                     bcEl.addEventListener('pointerdown', function (e) {

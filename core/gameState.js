@@ -118,6 +118,8 @@ window.blackMarket = { x: 16000, y: 2000, discounts: {}, nextRollAt: 0 };
 window.pacifistas = [];
 window.pacifCountdown = {};
 window.warlordCountdown = {};
+window.busterCooldown = {};
+window.abyssCooldown = {};
 // ⚔️ 칠무해·세라핌 · 🚢 군함
 window.warlords = {};
 window.warships = [];
@@ -125,6 +127,8 @@ window.warships = [];
 window.gateCasts = {};
 // ✴️ 어비스 시전
 window.abyssCasts = {};
+// ⚔️ 어비스 동반 유닛
+window.escorts = {};
 window.daidoComboCount = 0;
 window.daidoLastComboTime = 0; 
 window.borsLastComboTime = 0; 
