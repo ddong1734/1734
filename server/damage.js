@@ -72,6 +72,7 @@ function forEachTarget(attacker, hitTest, cb, deps) {
         let ok = State.okras[i];
         if (ok.hp > 0 && hitTest(ok, ok.radius)) cb({ obj: ok, kind: 'okra', id: ok.id });
     }
+    // ⚔️ 어비스 동반 유닛은 체력이 무한이라 공격 대상이 아니다
     // ⚔️ 칠무해 · 세라핌 — 적 팀 것만 (세라핌은 체력 무한이라 죽지 않는다)
     for (const k in (State.warlords || {})) {
         const wl = State.warlords[k];
@@ -202,6 +203,8 @@ module.exports = (deps) => {
             if (obj.hp <= 0) killOkra(obj, attacker.id);
         } else if (kind === 'pacifista' || kind === 'warship') {
             // 🤖🚢 공성 유닛이라 반격하지 않는다. govEffects 가 정리한다.
+            if (obj.hp < 0) obj.hp = 0;
+        } else if (kind === 'escort') {
             if (obj.hp < 0) obj.hp = 0;
         } else if (kind === 'warlord') {
             // ⚔️ 칠무해는 맞으면 그 상대를 노린다. 👼 세라핌은 체력이 닳지 않는다.

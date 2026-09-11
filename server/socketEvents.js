@@ -837,7 +837,7 @@ io.on('connection', (socket) => {
     });
 
     // ✴️ [어비스(오망성)] 좌표 순간이동 — 3초 경직 후 이동
-    socket.on('abyssWarp', (spotId) => {
+    socket.on('abyssWarp', (spotId, escort) => {
         const p = State.players[socket.id];
         if (!p || p.isDead) return;
         if (State.bases[p.team].govType !== 'wg') { socket.emit('buyFail', '세계정부가 아닙니다.'); return; }
@@ -858,14 +858,22 @@ io.on('connection', (socket) => {
             return;
         }
         State.abyssCd[p.team] = now + 150000;
+        // ⚔️ 동반 출격 — 해금한 것만, 둘 중 하나만 가능하다
+        let esc = null;
+        const tree = State.govTree[p.team] || {};
+        if (escort === 'knights' && tree.knights) esc = 'knights';
+        else if (escort === 'gorosei' && tree.gorosei) esc = 'gorosei';
+
         State.abyssCasts[socket.id] = {
             id: socket.id, team: p.team, endAt: now + 3000,
-            tx: spot.x, ty: spot.y
+            tx: spot.x, ty: spot.y, escort: esc
         };
         // 🔮 시전자 자리와 목적지 양쪽에 마방진이 펼쳐진다
+        //    동반 출격이면 목적지에 마방진이 둘 (겹치지 않게 떨어뜨린다)
         io.emit('abyssCastStart', {
             id: socket.id, x: p.x, y: p.y,
-            tx: spot.x, ty: spot.y, durationMs: 3000
+            tx: spot.x, ty: spot.y, durationMs: 3000,
+            escort: esc, ex: spot.x + (esc ? 360 : 0), ey: spot.y
         });
         io.emit('syncPlayerFull', p);
     });

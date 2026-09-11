@@ -215,6 +215,8 @@ function process(now, ctx) {
     processTax(now, ctx);
     // ✴️ 어비스(오망성)
     processAbyssCasts(now, ctx);
+    // ⚔️ 동반 출격 유닛
+    processEscorts(now, ctx);
     // ⚔️ 칠무해 · 세라핌
     [1, 2].forEach(function (team) { syncWarlord(team, bonusOf(team), now, io); });
     processWarlords(now, ctx);
@@ -322,6 +324,10 @@ function processWarlords(now, ctx) {
             const d = Math.hypot(p.x - w.x, p.y - w.y);
             if (d < best) { best = d; tgt = p; }
         }
+
+        // 🏠 소환 위치에서 너무 멀어지면 쫓기를 멈추고 돌아간다
+        const LEASH = 900;
+        if (Math.abs(w.x - w.homeX) > LEASH) tgt = null;
 
         if (!tgt) {
             // 범위에서 벗어났다 — 추적을 포기하고 제자리로 돌아간다
@@ -608,7 +614,9 @@ function processAbyssCasts(now, ctx) {
         p.y = a.ty;
         p.vy = 0;
         p.knockbackForce = 0;
-        io.emit('abyssCastEnd', { id: id, done: true, x: a.tx, y: a.ty });
+        // ⚔️ 동반 출격이면 옆자리에 불러낸다
+        if (a.escort) spawnEscort(a.team, a.escort, a.tx + 360, a.ty, io);
+        io.emit('abyssCastEnd', { id: id, done: true, x: a.tx, y: a.ty, escort: a.escort || null });
         io.emit('syncPlayerFull', p);
     }
 }
@@ -621,3 +629,137 @@ function isAbyssLocked(pid) {
 
 module.exports.processAbyssCasts = processAbyssCasts;
 module.exports.isAbyssLocked = isAbyssLocked;
+
+// ============================================================================
+// ⚔️ 어비스 동반 출격 — 신의 기사단 · 오로성
+//
+//   · 어비스로 순간이동할 때 함께 나타난다 (둘 중 하나만)
+//   · 적 넥서스뿐 아니라 몬스터 · 보스 · 적 플레이어도 모두 적으로 본다
+// ============================================================================
+const ESCORT_SPEC = {
+    // 🛡️ 체력은 무한이다 (hp 는 표시용으로만 쓴다)
+    knights: { name: '신의 기사단', count: 3, damage: 200, atkCool: 600, radius: 62 },
+    gorosei: { name: '오로성',      count: 5, damage: 260, atkCool: 700, radius: 66 }
+};
+/** 🟣 보라 필드 반경 — 이 안에서만 싸우고, 밖으로는 나가지 않는다 */
+const ESCORT_FIELD_R = 700;
+
+/**
+ * 동반 유닛을 목적지에 불러낸다.
+ *   · 신의 기사단 3명 · 오로성 5명
+ *   · 소환 지점을 중심으로 보라 필드가 깔린다
+ */
+function spawnEscort(team, kind, x, y, io) {
+    const sp = ESCORT_SPEC[kind];
+    if (!sp) return;
+    const list = [];
+    for (let i = 0; i < sp.count; i++) {
+        // 좌우로 고르게 벌려 세운다
+        const off = (i - (sp.count - 1) / 2) * 120;
+        list.push({
+            id: 'esc' + team + '_' + i, team: team, kind: kind,
+            x: x + off, y: y,
+            hp: 9999, maxHp: 9999, infinite: true,   // 🛡️ 무한
+            damage: sp.damage, atkCool: sp.atkCool, radius: sp.radius,
+            range: ESCORT_FIELD_R, speedMult: 1.4, lastShot: 0,
+            fx: x, fy: y                              // 🟣 필드 중심
+        });
+    }
+    State.escorts[team] = { kind: kind, fx: x, fy: y, r: ESCORT_FIELD_R, units: list };
+    io.emit('syncEscorts', State.escorts);
+}
+
+/**
+ * ⚔️ 동반 유닛 이동·공격
+ *   · 🟣 보라 필드 안에 들어온 것은 무엇이든 친다
+ *     (적 넥서스 · 몬스터 · 보스 · 적 플레이어)
+ *   · 필드 밖으로는 한 걸음도 나가지 않는다
+ *   · 체력이 무한이라 죽지 않는다
+ */
+function processEscorts(now, ctx) {
+    const io = ctx.io;
+    let changed = false;
+
+    for (const team in State.escorts) {
+        const grp = State.escorts[team];
+        if (!grp || !grp.units || !grp.units.length) continue;
+
+        const tm = Number(team);
+        const foe = State.bases[tm === 1 ? 2 : 1];
+        // 🏛️ 적 넥서스가 필드 안에 있는가
+        const baseIn = foe && foe.hp > 0 &&
+            Math.hypot(foe.x - grp.fx, foe.y - grp.fy) < grp.r;
+
+        // 🟣 필드 안의 적을 모은다
+        const inField = [];
+        const push = (o, k) => {
+            if (!o || o.hp <= 0) return;
+            if (Math.hypot(o.x - grp.fx, o.y - grp.fy) > grp.r) return;
+            inField.push({ o: o, k: k });
+        };
+        for (const pid in State.players) {
+            const p = State.players[pid];
+            if (!p || p.isDead || p.team === tm) continue;
+            push(p, 'player');
+        }
+        push(State.monster, 'mob');
+        push(State.hinbeom, 'mob');
+        push(State.blackbeard, 'mob');
+        push(State.burgess, 'mob');
+        (State.okras || []).forEach(o => push(o, 'mob'));
+        (State.hinbeomMinions || []).forEach(o => push(o, 'mob'));
+
+        grp.units.forEach(function (e) {
+            // 가장 가까운 적
+            let tgt = null, kind = null, best = Infinity;
+            inField.forEach(function (it) {
+                const d = Math.hypot(it.o.x - e.x, it.o.y - e.y);
+                if (d < best) { best = d; tgt = it.o; kind = it.k; }
+            });
+
+            const aimX = tgt ? tgt.x : (baseIn ? foe.x : null);
+            if (aimX === null) {
+                // 🏠 적이 없으면 제자리로 돌아간다
+                const dh = e.fx - e.x;
+                if (Math.abs(dh) > 10) { e.x += Math.sign(dh) * 4.5 * e.speedMult; changed = true; }
+                return;
+            }
+
+            const dx = aimX - e.x;
+            if (Math.abs(dx) > 80) {
+                let nx = e.x + Math.sign(dx) * 4.5 * e.speedMult;
+                // 🟣 필드 밖으로는 나갈 수 없다
+                if (Math.abs(nx - grp.fx) > grp.r) nx = grp.fx + Math.sign(nx - grp.fx) * grp.r;
+                if (nx !== e.x) { e.x = nx; changed = true; }
+                return;
+            }
+            if (now - e.lastShot < e.atkCool) return;
+
+            e.lastShot = now;
+            io.emit('escortStrike', { team: tm, x: e.x, y: e.y, dir: Math.sign(dx) || 1, kind: e.kind });
+
+            if (!tgt) {
+                if (typeof ctx.applyBaseDamage === 'function') ctx.applyBaseDamage(tm, e.damage);
+            } else if (kind === 'player') {
+                let act = e.damage * (1 - (tgt.defense || 0));
+                act = S.absorbShield(tgt, act);
+                tgt.hp -= act;
+                if (typeof ctx.emitDamageText === 'function') ctx.emitDamageText(tgt.x, tgt.y, act);
+                io.to(tgt.id).emit('takeDamage', act);
+                if (tgt.hp <= 0 && typeof ctx.checkPlayerDeath === 'function') ctx.checkPlayerDeath(tgt, null);
+                else io.emit('syncPlayerFull', tgt);
+            } else {
+                let act = S.absorbShield(tgt, e.damage);
+                tgt.hp -= act;
+                if (typeof ctx.emitDamageText === 'function') ctx.emitDamageText(tgt.x, tgt.y, act);
+            }
+            changed = true;
+        });
+    }
+    if (changed) io.emit('syncEscorts', State.escorts);
+}
+
+module.exports.spawnEscort = spawnEscort;
+module.exports.processEscorts = processEscorts;
+module.exports.ESCORT_SPEC = ESCORT_SPEC;
+module.exports.ESCORT_FIELD_R = ESCORT_FIELD_R;
