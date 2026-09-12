@@ -25,8 +25,10 @@
         try {
             const tm = window.myPlayer && window.myPlayer.team;
             const tree = (window.govState && window.govState.tree && window.govState.tree[tm]) || {};
-            if (tree.knights) out.push({ id: 'knights', name: '신의 기사단', color: '#ff8f88' });
-            if (tree.gorosei) out.push({ id: 'gorosei', name: '오로성', color: '#ffd05a' });
+            const used = (window.escortUsed && window.escortUsed[tm]) || {};
+            // 🚫 이미 출격한 것은 '출격 완료' 로 표시하고 고를 수 없게 한다
+            if (tree.knights) out.push({ id: 'knights', name: '신의 기사단', color: '#ff8f88', used: !!used.knights });
+            if (tree.gorosei) out.push({ id: 'gorosei', name: '오로성', color: '#ffd05a', used: !!used.gorosei });
         } catch (e) { }
         return out;
     }
@@ -118,32 +120,35 @@
             ctx.fillText(s.name, px, py + 34);
         });
 
-        // ── ⚔️ 동반 출격 칸 (화면 아래) ────────────────────
+        // ── ⚔️ 동반 출격 칸 (지도 오른쪽 여백) ──────────────
+        //    예전엔 화면 아래라 지도를 가렸다. 세로로 세워 비켜 둔다.
         escHits = [];
         const list = escortList();
         if (list.length) {
-            const bw = 168, bh = 44, gap = 14;
-            const total = list.length * bw + (list.length - 1) * gap;
-            let bx = (W - total) / 2, by = H - bh - 10;
+            const bw = 130, bh = 40, gap = 10;
+            let bx = W - bw - 12;
+            let by = 16;
 
-            ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
+            ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
             ctx.fillStyle = "rgba(150,180,200,0.9)";
-            ctx.fillText("함께 출격 (하나만 고를 수 있습니다)", W / 2, by - 9);
+            ctx.fillText("함께 출격", bx + bw / 2, by - 4);
 
             list.forEach(function (e) {
-                const on = (escort === e.id);
-                escHits.push({ id: e.id, x: bx, y: by, w: bw, h: bh });
-                ctx.fillStyle = on ? "rgba(60,120,150,0.95)" : "rgba(22,32,52,0.9)";
+                const on = (escort === e.id) && !e.used;
+                if (!e.used) escHits.push({ id: e.id, x: bx, y: by, w: bw, h: bh });
+                ctx.fillStyle = e.used ? "rgba(40,40,46,0.9)"
+                              : (on ? "rgba(60,120,150,0.95)" : "rgba(22,32,52,0.9)");
                 ctx.beginPath();
                 ctx.roundRect ? ctx.roundRect(bx, by, bw, bh, 9) : ctx.rect(bx, by, bw, bh);
                 ctx.fill();
-                ctx.strokeStyle = on ? e.color : "rgba(120,150,175,0.6)";
+                ctx.strokeStyle = e.used ? "rgba(90,90,96,0.7)" : (on ? e.color : "rgba(120,150,175,0.6)");
                 ctx.lineWidth = on ? 3.5 : 2;
                 ctx.stroke();
-                ctx.fillStyle = on ? "#ffffff" : e.color;
-                ctx.font = "bold 15px sans-serif";
-                ctx.fillText((on ? "✔ " : "") + e.name, bx + bw / 2, by + bh / 2 + 5);
-                bx += bw + gap;
+                ctx.fillStyle = e.used ? "#6f7076" : (on ? "#ffffff" : e.color);
+                ctx.font = "bold 13px sans-serif";
+                ctx.fillText(e.used ? (e.name + ' (완료)') : ((on ? "✔ " : "") + e.name),
+                             bx + bw / 2, by + bh / 2 + 5);
+                by += bh + gap;   // 세로로 쌓는다
             });
         }
 
