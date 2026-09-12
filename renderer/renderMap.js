@@ -773,13 +773,13 @@ export class RenderMap {
         if (bases[1] && this.isVisible(camX, camY, viewW, viewH, constants.BLUE_NEXUS_X, groundY, 150, 300)) { 
             ctx.fillStyle = "#fff"; ctx.font = "bold 35px sans-serif"; ctx.textAlign = "center";
             // 🏛️ 세계정부가 되었으면 이름도 바꾼다
-            ctx.fillText(bases[1].govType === 'wg' ? "세계정부" : "블루 넥서스", constants.BLUE_NEXUS_X, groundY - 270); 
+            ctx.fillText((bases[1] && bases[1].govType === 'wg') ? "세계정부" : "블루 넥서스", constants.BLUE_NEXUS_X, groundY - 270); 
             ctx.fillStyle = "#3498db"; ctx.fillRect(constants.BLUE_NEXUS_X - 98, groundY - 318, 196 * (Math.max(0, bases[1].hp) / bases[1].maxHp), 16); 
             ctx.strokeStyle = "#000"; ctx.lineWidth = 1.5; ctx.strokeRect(constants.BLUE_NEXUS_X - 98, groundY - 318, 196, 16); 
         }
         if (bases[2] && this.isVisible(camX, camY, viewW, viewH, constants.RED_NEXUS_X, groundY, 150, 300)) { 
             ctx.fillStyle = "#fff"; ctx.font = "bold 35px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText(bases[2].govType === 'wg' ? "세계정부" : "레드 넥서스", constants.RED_NEXUS_X, groundY - 270); 
+            ctx.fillText((bases[2] && bases[2].govType === 'wg') ? "세계정부" : "레드 넥서스", constants.RED_NEXUS_X, groundY - 270); 
             ctx.fillStyle = "#e74c3c"; ctx.fillRect(constants.RED_NEXUS_X - 98, groundY - 318, 196 * (Math.max(0, bases[2].hp) / bases[2].maxHp), 16); 
             ctx.strokeStyle = "#000"; ctx.lineWidth = 1.5; ctx.strokeRect(constants.RED_NEXUS_X - 98, groundY - 318, 196, 16); 
         }
@@ -891,12 +891,15 @@ export class RenderMap {
 
         // 🎖️ 세계정부 스킬 웹 상태에 따라 포탑이 강화되고 대포가 선다
         const govOf = (tm) => {
-            const gs = (typeof window !== 'undefined') ? window.govState : null;
-            if (!gs || !gs.gov || gs.gov[tm] !== 'wg') return null;
-            const GT = (typeof window !== 'undefined') ? window.GovTree : null;
-            if (!GT) return null;
-            return GT.bonusOf((gs.tree && gs.tree[tm]) || {});
+            try {
+                const gs = (typeof window !== 'undefined') ? window.govState : null;
+                if (!gs || !gs.gov || gs.gov[tm] !== 'wg') return null;
+                const GT = (typeof window !== 'undefined') ? window.GovTree : null;
+                if (!GT || typeof GT.bonusOf !== 'function') return null;
+                return GT.bonusOf((gs.tree && gs.tree[tm]) || {});
+            } catch (e) { return null; }
         };
+        // 🛟 첫 프레임에는 서버 데이터가 아직 없을 수 있다. 어디서도 멈추면 안 된다.
         const gb1 = govOf(1), gb2 = govOf(2);
         // 💚 회복 돔 — 넥서스보다 먼저 그려 뒤에 깔리게 한다
         if (gb1 && gb1.healZone > 0) drawHealDome(constants.BLUE_NEXUS_X, gb1.healZone);

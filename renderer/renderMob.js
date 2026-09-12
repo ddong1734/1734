@@ -10,7 +10,7 @@
 import { RenderUtils } from './renderUtils.js';
 import { drawKidStack, drawGolemBody } from './fxkid.js';
 import { drawPacifista } from './fxpacifista.js';
-import { drawWarlord, drawWarship, drawEscortField } from './fxwarship.js';
+import { drawWarlord, drawWarship, drawEscortField, drawKnight, drawGorosei } from './fxwarship.js';
 import { drawHpTicks, drawKashimoCharge, drawAmberBody, drawDaburaLightBody } from './renderEntityParts.js';
 import { drawNpc } from './renderNpc.js';
 import { drawPortal, drawPortalCountdown, drawDarkPortalCountdown } from './renderPortal.js';
@@ -52,14 +52,17 @@ export function drawMobs(ctx, state, z) {
             if (RenderUtils.isVisible(state.camX, state.camY, state.viewW, state.viewH, grp.fx, grp.fy, grp.r + 80, grp.r + 80)) {
                 drawEscortField(ctx, grp.fx, grp.fy, grp.r, state.mathNow);
             }
-            grp.units.forEach(function (e) {
+            grp.units.forEach(function (e, i) {
                 if (!RenderUtils.isVisible(state.camX, state.camY, state.viewW, state.viewH, e.x, e.y, 120, 180)) return;
-                drawWarlord(ctx, {
-                    x: e.x, y: e.y, radius: e.radius, team: e.team,
-                    kind: (e.kind === 'gorosei') ? 'seraph' : 'warlord',
-                    hp: 1, maxHp: 1, infinite: true,
-                    escortName: (e.kind === 'gorosei') ? '오로성' : '신의 기사단'
-                }, state.mathNow);
+                if (e.kind === 'knights') {
+                    // 🛡️ 흰 정장에 금빛이 어우러진 모습
+                    drawKnight(ctx, { x: e.x, y: e.y, radius: e.radius, team: e.team }, state.mathNow);
+                } else {
+                    // ⭐ 검은 정장의 백발 노인 — 다섯이 각기 다른 무기를 든다
+                    drawGorosei(ctx, {
+                        x: e.x, y: e.y, radius: e.radius, team: e.team, idx: i
+                    }, state.mathNow);
+                }
             });
         }
 

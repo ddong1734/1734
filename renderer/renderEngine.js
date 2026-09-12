@@ -254,10 +254,27 @@ window.renderGameFrame = (
     // ── 🎨 그리기 ────────────────────────────────────────────────────
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, W, H);
+    // 🛟 첫 프레임에 캔버스 크기가 0 이면 SCALE 이 0/NaN 이 되어
+    //    아무것도 안 그려지고 화면이 까맣게 보인다. 이때는 건너뛴다.
+    if (!Number.isFinite(SCALE) || SCALE <= 0 || !W || !H) return;
 
     ctx.save();
     ctx.scale(SCALE, SCALE);
     ctx.translate(-camX + shakeX, -camY + shakeY);
+
+    // 🛟 [폴백] 맵 계층이 실패해도 화면이 새까맣게 남지 않도록
+    //    하늘과 땅을 먼저 깔아 둔다. 맵이 정상이면 그 위에 덮인다.
+    try {
+        const gY = (typeof state.groundY === 'number') ? state.groundY : 2000;
+        const L = camX - 200, T = camY - 200, Wv = viewW + 400, Hv = viewH + 400;
+        const sky = ctx.createLinearGradient(0, T, 0, gY);
+        sky.addColorStop(0, '#9fd8f5');
+        sky.addColorStop(1, '#dff1fb');
+        ctx.fillStyle = sky;
+        ctx.fillRect(L, T, Wv, Math.max(0, gY - T));
+        ctx.fillStyle = '#2e9e4f';
+        ctx.fillRect(L, gY, Wv, Math.max(0, T + Hv - gY));
+    } catch (e) { }
 
     // 🛟 한 계층에서 예외가 나도 나머지 계층은 계속 그린다
     try { mapRenderer.render(ctx, state); }
