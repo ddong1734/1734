@@ -433,6 +433,7 @@ function resetGame() {
     State.abyssCasts = {};
     State.abyssCd = { 1: 0, 2: 0 };
     State.escorts = {};
+    State.escortUsed = { 1: {}, 2: {} };
     State.govTree = { 1: {}, 2: {} };
     State.kuzanpBalls = [];
     State.turrets = State.turrets.filter(function (t) { return !t.isCannon; });

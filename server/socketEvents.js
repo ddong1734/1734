@@ -166,6 +166,9 @@ function giveTichReward(p) {
 function register() {
 
 io.on('connection', (socket) => {
+    // 🚫 [동반 유닛] 이미 출격한 목록
+    try { socket.emit('escortUsedSync', State.escortUsed); } catch (e) {}
+
     // 🏛️ [세계정부] 접속하면 현재 진영·트리 상태를 보낸다
     try {
         socket.emit('govSync', {
@@ -861,8 +864,15 @@ io.on('connection', (socket) => {
         // ⚔️ 동반 출격 — 해금한 것만, 둘 중 하나만 가능하다
         let esc = null;
         const tree = State.govTree[p.team] || {};
-        if (escort === 'knights' && tree.knights) esc = 'knights';
-        else if (escort === 'gorosei' && tree.gorosei) esc = 'gorosei';
+        const used = State.escortUsed[p.team] || (State.escortUsed[p.team] = {});
+        if (escort === 'knights' && tree.knights && !used.knights) esc = 'knights';
+        else if (escort === 'gorosei' && tree.gorosei && !used.gorosei) esc = 'gorosei';
+        else if (escort && used[escort]) { socket.emit('buyFail', '이미 출격했습니다.'); return; }
+        // 🚫 한 번 내보내면 그 판에서는 다시 부를 수 없다
+        if (esc) {
+            used[esc] = true;
+            io.emit('escortUsedSync', State.escortUsed);
+        }
 
         State.abyssCasts[socket.id] = {
             id: socket.id, team: p.team, endAt: now + 3000,

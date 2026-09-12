@@ -642,7 +642,7 @@ const ESCORT_SPEC = {
     gorosei: { name: '오로성',      count: 5, damage: 260, atkCool: 700, radius: 66 }
 };
 /** 🟣 보라 필드 반경 — 이 안에서만 싸우고, 밖으로는 나가지 않는다 */
-const ESCORT_FIELD_R = 700;
+const ESCORT_FIELD_R = 1000;
 
 /**
  * 동반 유닛을 목적지에 불러낸다.
