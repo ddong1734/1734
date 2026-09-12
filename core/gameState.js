@@ -129,6 +129,7 @@ window.gateCasts = {};
 window.abyssCasts = {};
 // ⚔️ 어비스 동반 유닛
 window.escorts = {};
+window.escortUsed = { 1: {}, 2: {} };
 window.daidoComboCount = 0;
 window.daidoLastComboTime = 0; 
 window.borsLastComboTime = 0; 

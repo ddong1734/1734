@@ -150,6 +150,9 @@ window.registerNetModule('world', function (socket, U) {
             : ('📚 경험치 ' + d.amount + ' 강탈!'));
     });
 
+    // 🚫 [어비스 동반] 이미 출격한 목록
+    socket.on('escortUsedSync', (m) => { window.escortUsed = m || { 1: {}, 2: {} }; });
+
     // ⚔️ [어비스 동반] 신의 기사단 · 오로성
     socket.on('syncEscorts', (m) => { window.escorts = m || {}; });
     socket.on('escortStrike', (d) => {
