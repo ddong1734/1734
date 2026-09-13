@@ -308,6 +308,8 @@ function makePlayer(opts) {
     return Object.assign({
         id: opts.id, nickname: opts.nick, characterType: charType, team: opts.team,
         joinOrder: opts.joinOrder || 0,   // 🏛️ 진영 동점 시 '먼저 들어온 사람' 판정용
+        // 👤 계정 전적용 집계
+        killCount: 0, deathCount: 0, dealtDamage: 0,
         sessionId: opts.sessionId, disconnected: false,
         x: opts.team === 1 ? 12800 : 19200, y: 1955,
         hp: ch.hp, maxHp: ch.hp, gold: 100000,

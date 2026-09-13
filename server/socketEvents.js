@@ -166,6 +166,47 @@ function giveTichReward(p) {
 function register() {
 
 io.on('connection', (socket) => {
+    // ════════════════════════════════════════════════════════════
+    // 👤 계정 — 브라우저가 보낸 ID 로 전적을 찾아 준다
+    // ════════════════════════════════════════════════════════════
+    const Accounts = require('./accounts.js');
+
+    socket.on('accountHello', async (accountId) => {
+        try {
+            if (!Accounts.isReady()) {
+                socket.emit('accountState', { off: true });
+                return;
+            }
+            const acc = await Accounts.load(accountId);
+            if (acc) {
+                socket.accountId = accountId;
+                socket.emit('accountState', { account: acc });
+            } else {
+                // 처음 온 사람 — 닉네임을 정해야 한다
+                socket.emit('accountState', { needNickname: true });
+            }
+        } catch (e) {
+            socket.emit('accountState', { off: true });
+        }
+    });
+
+    socket.on('accountCreate', async (d) => {
+        try {
+            if (!Accounts.isReady() || !d || !d.id) return;
+            const nick = String(d.nickname || '').trim().slice(0, 8);
+            if (!nick) { socket.emit('accountFail', '이름을 입력해 주세요.'); return; }
+            const acc = await Accounts.create(d.id, nick);
+            if (acc) {
+                socket.accountId = d.id;
+                socket.emit('accountState', { account: acc, fresh: true });
+            } else {
+                socket.emit('accountFail', '계정을 만들지 못했습니다.');
+            }
+        } catch (e) {
+            socket.emit('accountFail', '계정을 만들지 못했습니다.');
+        }
+    });
+
     // 🚫 [동반 유닛] 이미 출격한 목록
     try { socket.emit('escortUsedSync', State.escortUsed); } catch (e) {}
 

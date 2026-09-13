@@ -214,6 +214,27 @@ function applyBaseDamage(attackerTeam, damage) {
     if (enemyBase.hp <= 0 && State.gameStarted) {
         State.gameStarted = false;
         io.emit('gameOver', attackerTeam);
+
+        // 👤 판이 끝났다 — 사람마다 전적을 남긴다
+        try {
+            const Accounts = require('./accounts.js');
+            if (Accounts.isReady()) {
+                for (const pid in State.players) {
+                    const p = State.players[pid];
+                    if (!p) continue;
+                    const sock = io.sockets.sockets.get(pid);
+                    if (!sock || !sock.accountId) continue;
+                    Accounts.addResult(sock.accountId, {
+                        win: (p.team === attackerTeam),
+                        kills: p.killCount || 0,
+                        deaths: p.deathCount || 0,
+                        damage: p.dealtDamage || 0
+                    }).then(function (res) {
+                        if (res) sock.emit('accountState', { account: res, afterGame: true });
+                    }).catch(function () {});
+                }
+            }
+        } catch (e) { console.error('[ACCOUNT gameOver]', e); }
         setTimeout(resetGame, 2000);
     }
 }
@@ -336,8 +357,12 @@ function checkPlayerDeath(targetPlayer, attackerId) {
     // ⏱️ 기본 부활 15초. 임펠 다운을 연 상대에게 죽으면 30초로 늘어난다.
     let respawnMs = 15000;
 
+    // 👤 전적 집계
+    targetPlayer.deathCount = (targetPlayer.deathCount || 0) + 1;
+
     if (attackerId && State.players[attackerId] && attackerId !== targetPlayer.id) {
         const killer = State.players[attackerId];
+        killer.killCount = (killer.killCount || 0) + 1;
         killer.gold += (typeof govGold==='function'? govGold(killer,800) : 800);
         io.to(attackerId).emit('updateGold', killer.gold);
         gainXp(killer, Math.max(1, targetPlayer.level) * 10);
