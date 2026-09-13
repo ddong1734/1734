@@ -150,6 +150,52 @@ window.registerNetModule('world', function (socket, U) {
             : ('📚 경험치 ' + d.amount + ' 강탈!'));
     });
 
+    // ════════════════════════════════════════════════════════
+    // 👤 계정
+    // ════════════════════════════════════════════════════════
+    socket.on('accountState', (d) => {
+        try {
+            if (!d) return;
+            if (d.off) {
+                // 계정 기능이 꺼진 서버 — 예전처럼 이름을 직접 적는다
+                window.accountOff = true;
+                const inp = document.getElementById('nicknameInput');
+                if (inp) inp.style.display = '';
+                return;
+            }
+            if (d.needNickname) {
+                if (typeof window.askNickname === 'function') window.askNickname();
+                return;
+            }
+            if (d.account) {
+                window.myAccount = d.account;
+                if (typeof window.closeNickname === 'function') window.closeNickname();
+
+                // 이름 칸을 숨기고 계정 이름을 보여 준다
+                const inp = document.getElementById('nicknameInput');
+                if (inp) { inp.style.display = 'none'; inp.value = d.account.nickname || ''; }
+                const bar = document.getElementById('accountNameBar');
+                const nm = document.getElementById('accountNameText');
+                const lv = document.getElementById('accountLvText');
+                if (bar) bar.style.display = 'flex';
+                if (nm) nm.textContent = d.account.nickname || '이름없음';
+                if (lv) lv.textContent = 'Lv. ' + (d.account.level || 1);
+
+                if (d.afterGame && d.account.gained) {
+                    if (typeof window.showAlert === 'function') {
+                        window.showAlert('경험치 +' + d.account.gained + ' 획득!');
+                    }
+                }
+            }
+        } catch (e) { }
+    });
+    socket.on('accountFail', (m) => {
+        const el = document.getElementById('nickSetupMsg');
+        if (el) { el.style.color = '#ff9b9b'; el.textContent = m || '실패했습니다.'; }
+    });
+
+
+
     // 🚫 [어비스 동반] 이미 출격한 목록
     socket.on('escortUsedSync', (m) => { window.escortUsed = m || { 1: {}, 2: {} }; });
 

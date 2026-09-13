@@ -30,6 +30,8 @@ window.initNetwork = (socket) => {
     // ── 🛟 연결 상태에 따른 잠금 복구 (모듈보다 먼저 건다) ────────────
     socket.on('disconnect', () => { U.releaseAllLocks('서버 연결 끊김'); });
     socket.on('connect', () => { if (window.gameLoopStarted) U.releaseAllLocks('서버 재연결'); });
+    // 👤 이 브라우저의 계정을 서버에 알린다
+    try { if (typeof window.myAccountId === 'function') socket.emit('accountHello', window.myAccountId()); } catch (e) {}
     if (socket.io && socket.io.on) {
         socket.io.on('reconnect', () => { if (window.gameLoopStarted) U.releaseAllLocks('소켓 재연결'); });
     }

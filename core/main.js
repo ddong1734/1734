@@ -238,8 +238,21 @@ const getModalDom = () => {
     return window._modalDom;
 };
 
-window.resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+window.resize = () => {
+    const w = Math.max(1, window.innerWidth), h = Math.max(1, window.innerHeight);
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+};
 window.addEventListener('resize', window.resize);
+// 📱 가로 회전은 브라우저마다 끝나는 시점이 달라서 resize 가 한 박자 늦게 온다.
+//    회전 직후 몇 번 더 맞춰 주지 않으면 그동안 화면이 까맣게 남는다.
+window.addEventListener('orientationchange', () => {
+    [0, 80, 200, 400, 700, 1100].forEach(ms => setTimeout(window.resize, ms));
+});
+if (window.screen && screen.orientation && screen.orientation.addEventListener) {
+    screen.orientation.addEventListener('change', () => {
+        [0, 80, 200, 400, 700, 1100].forEach(ms => setTimeout(window.resize, ms));
+    });
+}
 window.resize();
 
 window.showNicknameScreen = () => {
@@ -260,7 +273,10 @@ if (socket.connected) window.attemptAutoReconnect();
 socket.on('reconnectUnavailable', window.showNicknameScreen);
 
 document.getElementById('btn-confirm-name').addEventListener('click', () => { 
-    let input = document.getElementById('nicknameInput').value.trim(); 
+    // 👤 계정이 있으면 그 이름을 쓴다 (이름은 한 번만 정한다)
+    let input = (window.myAccount && window.myAccount.nickname)
+              ? window.myAccount.nickname
+              : document.getElementById('nicknameInput').value.trim(); 
     if(!input) return; 
     window.myNickname = input; 
     let selectedCharEl = document.querySelector('input[name="charSelect"]:checked');
@@ -275,8 +291,28 @@ document.getElementById('btn-start-battle').addEventListener('click', () => sock
 
 document.getElementById('btn-enter-battlefield').addEventListener('click', async () => { 
     if (window.gameLoopStarted) return; 
+    // 🛟 아래 준비 과정에서 무슨 일이 생겨도 렌더 루프만은 반드시 시작한다
+    try { await enterBattlefield(); }
+    catch (e) {
+        console.error('[ENTER]', e);
+        if (typeof window.showFatal === 'function') window.showFatal('전장 진입 중 오류: ' + (e && e.message));
+        const ld = document.getElementById('loadingOverlay');
+        if (ld) ld.style.display = 'none';
+        if (!window.gameLoopStarted && typeof window.renderGameFrame === 'function') {
+            window.gameLoopStarted = true;
+            window._lerpLastTime = Date.now();
+            requestAnimationFrame(renderLoop);
+        }
+    }
+});
+
+async function enterBattlefield() { 
     document.getElementById('forceStartOverlay').style.display = 'none'; 
-    try { await document.documentElement.requestFullscreen(); await screen.orientation.lock('landscape'); } catch(e){} 
+    try { await document.documentElement.requestFullscreen(); } catch (e) { }
+    try { await screen.orientation.lock('landscape'); } catch (e) { }
+    // 📱 전체화면·회전이 자리 잡을 때까지 여러 번 크기를 다시 맞춘다
+    [0, 60, 150, 300, 550, 900, 1400].forEach(ms => setTimeout(window.resize, ms));
+    
     
     canvas.style.display = 'block'; 
     document.getElementById('mobileControls').style.display = 'block'; 
@@ -284,11 +320,18 @@ document.getElementById('btn-enter-battlefield').addEventListener('click', async
     if (typeof window.showMiniMap === 'function') window.showMiniMap(true);   // 🗺️ 미니맵
     document.getElementById('goldUI').style.display = 'block'; 
     
-    window.players = window.pendingServerPlayers; 
-    for (let pid in window.players) { let sp = window.players[pid]; sp.netX = sp.x; sp.netY = sp.y; }
+    // 🛟 [중요] 서버 데이터가 아직 안 왔으면 pendingServerPlayers 가 null 이다.
+    //    예전에는 그대로 대입해 바로 아래에서 예외가 났고, 그 바람에
+    //    렌더 루프가 시작되지 못해 화면이 계속 까맣게 남았다.
+    window.players = window.pendingServerPlayers || {};
+    for (let pid in window.players) {
+        let sp = window.players[pid];
+        if (!sp) continue;
+        sp.netX = sp.x; sp.netY = sp.y;
+    }
 
-    window.myId = socket.id; 
-    if(window.players[window.myId]) { Object.assign(window.myPlayer, window.players[window.myId]); } 
+    window.myId = socket.id;
+    if (window.players[window.myId]) { Object.assign(window.myPlayer, window.players[window.myId]); } 
 
     // 🛟 전장 진입 시점에 모든 잠금을 깨끗이 비운다
     window.myPlayer.isCasting = false;
@@ -322,9 +365,69 @@ document.getElementById('btn-enter-battlefield').addEventListener('click', async
     
     window.initControls(socket);
     
-    window.gameLoopStarted = true; 
-    window._lerpLastTime = Date.now();
-    requestAnimationFrame(renderLoop); 
+    // 🛟 renderer/renderEngine.js 는 <script type="module"> 이다.
+    //    모듈은 33개 파일을 따로 받아 오므로 느린 회선에서는 늦게 준비된다.
+    //    준비 전에 시작하면 그릴 함수가 없어 화면이 계속 까맣게 남는다.
+    const startLoop = () => {
+        const ld = document.getElementById('loadingOverlay');
+        if (ld) ld.style.display = 'none';
+        window.resize();
+        window.gameLoopStarted = true;
+        window._lerpLastTime = Date.now();
+        requestAnimationFrame(renderLoop);
+    };
+
+    if (typeof window.renderGameFrame === 'function') {
+        startLoop();
+    } else {
+        // ⏳ 로딩 화면을 띄우고 준비될 때까지 기다린다
+        const ld = document.getElementById('loadingOverlay');
+        const sub = document.getElementById('loadingSub');
+        if (ld) ld.style.display = 'flex';
+        let waited = 0;
+        const tick = setInterval(() => {
+            waited += 100;
+            if (typeof window.renderGameFrame === 'function') {
+                clearInterval(tick);
+                startLoop();
+                return;
+            }
+            if (sub && waited % 1000 === 0) {
+                sub.textContent = '잠시만 기다려 주세요… (' + (waited / 1000) + '초)';
+            }
+            if (waited >= 15000) {
+                clearInterval(tick);
+                if (ld) ld.style.display = 'none';
+                if (typeof window.showFatal === 'function') {
+                    window.showFatal('그래픽 모듈(renderer)을 불러오지 못했습니다.\n'
+                        + 'renderer 폴더의 파일 33개가 모두 올라갔는지 확인해 주세요.');
+                }
+            }
+        }, 100);
+    }
+}
+
+// ============================================================================
+// 🚨 치명적 오류 표시 — 검은 화면 대신 원인을 눈에 보이게 한다
+// ============================================================================
+window.showFatal = (msg) => {
+    try {
+        const el = document.getElementById('fatalOverlay');
+        const m = document.getElementById('fatalMsg');
+        if (!el || !m) return;
+        if (el.style.display === 'flex') return;   // 처음 것만 보여 준다
+        m.textContent = String(msg || '').slice(0, 500);
+        el.style.display = 'flex';
+    } catch (e) { }
+};
+window.addEventListener('error', (ev) => {
+    // 모듈 로딩 실패(404 등)도 여기서 잡힌다
+    const src = (ev && ev.target && ev.target.src) ? ev.target.src : '';
+    if (src) window.showFatal('파일을 불러오지 못했습니다:\n' + src);
+    else if (ev && ev.message) window.showFatal(ev.message);
+}, true);
+window.addEventListener('unhandledrejection', (ev) => {
+    window.showFatal('처리되지 않은 오류: ' + ((ev && ev.reason && ev.reason.message) || ev.reason || ''));
 });
 
 // ============================================================================
