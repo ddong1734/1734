@@ -17,6 +17,8 @@
 
 const express = require('express');
 const app = express();
+// 🧪 서버가 언제 떴는지 — 재배포되면 이 값이 바뀐다
+const SERVER_BOOT_AT = new Date().toISOString();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
@@ -92,6 +94,21 @@ const SOLID_WALLS = [
 
 app.use(express.static(__dirname));
 app.get('/', (req, res) => { res.sendFile(__dirname + '/index.html'); });
+
+// ============================================================================
+// 🧪 [임시 검사] 이 서버에서 파일 저장이 유지되는지 확인한다.
+//
+//   브라우저에서 아래 주소를 열어 보면 된다.
+//     /storage-test        → 지금까지의 기록을 보여 준다
+//     /storage-test?mark=1 → 지금 시각을 하나 적어 넣는다
+//
+//   ✅ 재배포 뒤에도 예전 기록이 남아 있으면 → 파일 저장 방식으로 계정을 만들 수 있다
+//   ❌ 매번 비어 있으면 → 외부 DB 가 필요하다
+//
+//   확인이 끝나면 이 블록은 지워도 된다.
+// ============================================================================
+
+
 
 // ============================================================================
 // 🔧 기본 유틸
